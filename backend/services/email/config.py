@@ -1,8 +1,13 @@
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
+# Get the backend directory (3 levels up from this file)
+backend_dir = Path(__file__).resolve().parent.parent.parent
+env_path = backend_dir / '.env'
+
 # Load environment variables from .env file
-load_dotenv()
+load_dotenv(dotenv_path=env_path)
 
 # SMTP Server Configuration
 SMTP_SERVER = "smtp.gmail.com"  # For Gmail
@@ -15,7 +20,7 @@ SENDER_EMAIL = os.getenv("SENDER_EMAIL")
 SENDER_PASSWORD = os.getenv("SENDER_PASSWORD")  # Use app-specific password, NOT your regular password
 
 # Recipient Email
-RECIPIENT_EMAIL = os.getenv("RECIPIENT_EMAIL") 
+RECIPIENT_EMAIL = os.getenv("RECIPIENT_EMAIL")
 
 # Common SMTP Servers:
 # Gmail: smtp.gmail.com (port 587 or 465)

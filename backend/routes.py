@@ -2,6 +2,12 @@ from flask import Blueprint, jsonify, request
 import os
 import requests
 from datetime import datetime, timedelta
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+env_path = Path(__file__).resolve().parent / '.env'
+load_dotenv(dotenv_path=env_path)
 
 # Create Blueprint
 api_bp = Blueprint('api', __name__)
