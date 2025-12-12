@@ -133,4 +133,3 @@ class TestSendFormattedEmail:
         assert sent_message['From'] == 'Sky Team 5'
         assert 'Subject' in sent_message
         assert '📰 Daily News Digest' in sent_message['Subject']
-

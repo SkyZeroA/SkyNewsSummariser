@@ -109,4 +109,3 @@ class TestSkyNewsYesterdayEndpoint:
         assert response.status_code == 500
         data = response.get_json()
         assert 'error' in data
-

@@ -1,3 +1,4 @@
+
 import pytest
 from unittest.mock import patch, MagicMock
 from services.email import send_formatted_email
@@ -48,4 +49,3 @@ class TestEmailServiceIntegration:
             assert SMTP_PORT is not None
         except ImportError:
             pytest.fail("Email config should be importable")
-
