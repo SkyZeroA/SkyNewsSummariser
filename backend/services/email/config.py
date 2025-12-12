@@ -1,13 +1,9 @@
 import os
-from pathlib import Path
-from dotenv import load_dotenv
-
-# Get the backend directory (3 levels up from this file)
-backend_dir = Path(__file__).resolve().parent.parent.parent
-env_path = backend_dir / '.env'
+from dotenv import load_dotenv, find_dotenv
 
 # Load environment variables from .env file
-load_dotenv(dotenv_path=env_path)
+# find_dotenv() automatically searches up the directory tree for .env
+load_dotenv(find_dotenv())
 
 # SMTP Server Configuration
 SMTP_SERVER = "smtp.gmail.com"  # For Gmail

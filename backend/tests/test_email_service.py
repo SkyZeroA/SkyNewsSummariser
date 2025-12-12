@@ -1,5 +1,8 @@
 import pytest
 from unittest.mock import patch, MagicMock, mock_open
+from services.email.config import SENDER_EMAIL, RECIPIENT_EMAIL, SMTP_SERVER, SMTP_PORT, SENDER_PASSWORD
+from services.email.sender import create_html_email, send_formatted_email
+import pytest
 import os
 
 
@@ -8,7 +11,6 @@ class TestEmailConfig:
     
     def test_config_loads_environment_variables(self):
         """Test that config loads environment variables"""
-        from services.email.config import SENDER_EMAIL, RECIPIENT_EMAIL, SMTP_SERVER, SMTP_PORT
         
         # These should be loaded from .env file
         assert SENDER_EMAIL is not None
@@ -18,7 +20,6 @@ class TestEmailConfig:
     
     def test_smtp_server_is_configured(self):
         """Test that SMTP server is properly configured"""
-        from services.email.config import SMTP_SERVER, SMTP_PORT
         
         assert isinstance(SMTP_SERVER, str)
         assert len(SMTP_SERVER) > 0
@@ -32,7 +33,6 @@ class TestCreateHtmlEmail:
     @patch('builtins.open', new_callable=mock_open, read_data='<html><body>Test Email</body></html>')
     def test_create_html_email_reads_template(self, mock_file):
         """Test that create_html_email reads the template file"""
-        from services.email.sender import create_html_email
         
         result = create_html_email()
         assert result == '<html><body>Test Email</body></html>'
@@ -41,7 +41,6 @@ class TestCreateHtmlEmail:
     @patch('builtins.open', new_callable=mock_open, read_data='<html><h1>{{title}}</h1></html>')
     def test_create_html_email_returns_string(self, mock_file):
         """Test that create_html_email returns a string"""
-        from services.email.sender import create_html_email
         
         result = create_html_email()
         assert isinstance(result, str)
@@ -49,8 +48,6 @@ class TestCreateHtmlEmail:
     
     def test_create_html_email_template_exists(self):
         """Test that the email template file exists"""
-        from services.email.sender import create_html_email
-        import os
         
         # Get the template path
         template_path = os.path.join(
@@ -71,7 +68,6 @@ class TestSendFormattedEmail:
     @patch('services.email.sender.create_html_email')
     def test_send_email_connects_to_smtp(self, mock_create_html, mock_smtp):
         """Test that send_formatted_email connects to SMTP server"""
-        from services.email.sender import send_formatted_email
         
         # Mock the HTML content
         mock_create_html.return_value = '<html><body>Test</body></html>'
@@ -92,8 +88,6 @@ class TestSendFormattedEmail:
     @patch('services.email.sender.create_html_email')
     def test_send_email_uses_correct_credentials(self, mock_create_html, mock_smtp):
         """Test that send_formatted_email uses correct credentials"""
-        from services.email.sender import send_formatted_email
-        from services.email.config import SENDER_EMAIL, SENDER_PASSWORD
         
         mock_create_html.return_value = '<html><body>Test</body></html>'
         mock_server = MagicMock()
@@ -108,7 +102,6 @@ class TestSendFormattedEmail:
     @patch('services.email.sender.create_html_email')
     def test_send_email_handles_smtp_error(self, mock_create_html, mock_smtp):
         """Test that send_formatted_email handles SMTP errors gracefully"""
-        from services.email.sender import send_formatted_email
         
         mock_create_html.return_value = '<html><body>Test</body></html>'
         
@@ -125,7 +118,6 @@ class TestSendFormattedEmail:
     @patch('services.email.sender.create_html_email')
     def test_send_email_creates_multipart_message(self, mock_create_html, mock_smtp):
         """Test that send_formatted_email creates a multipart message"""
-        from services.email.sender import send_formatted_email
         
         mock_create_html.return_value = '<html><body>Test</body></html>'
         mock_server = MagicMock()
