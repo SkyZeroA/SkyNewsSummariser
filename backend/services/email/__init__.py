@@ -1,5 +1,5 @@
 # Email service package
-from .sender import send_formatted_email
+from services.email.sender import send_formatted_email
 
 __all__ = ['send_formatted_email']
 
