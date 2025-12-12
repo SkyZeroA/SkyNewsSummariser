@@ -2,12 +2,10 @@ from flask import Blueprint, jsonify, request
 import os
 import requests
 from datetime import datetime, timedelta
-from pathlib import Path
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
-env_path = Path(__file__).resolve().parent / '.env'
-load_dotenv(dotenv_path=env_path)
+load_dotenv()
 
 # Create Blueprint
 api_bp = Blueprint('api', __name__)
@@ -27,71 +25,6 @@ def home():
             "/api/news/sky/yesterday": "Get Sky News articles from yesterday",
         }
     })
-
-
-    """
-    Get Sky News articles from NewsAPI using /everything endpoint
-    Query parameters:
-    - from_date: Start date (YYYY-MM-DD format, optional)
-    - to_date: End date (YYYY-MM-DD format, optional)
-    - page_size: Number of articles (default: 10, max: 100)
-    - page: Page number (default: 1)
-    - q: Search query (REQUIRED for /everything endpoint)
-    """
-    if not NEWS_API_KEY:
-        return jsonify({
-            "error": "NEWS_API_KEY not configured. Please add it to your .env file"
-        }), 500
-
-    # Get query parameters
-    from_date = request.args.get('from_date')
-    to_date = request.args.get('to_date')
-    page_size = request.args.get('page_size', 10, type=int)
-    page = request.args.get('page', 1, type=int)
-    query = request.args.get('q', 'news')  # Default query to avoid empty results
-
-    # Validate page_size
-    if page_size > 100:
-        page_size = 100
-
-    # Build API request parameters
-    # Use q parameter with domains for /everything endpoint
-    params = {
-        'apiKey': NEWS_API_KEY,
-        'q': query,
-        'domains': 'sky.com',
-        'pageSize': page_size,
-        'page': page,
-        'sortBy': 'publishedAt',
-        'language': 'en'
-    }
-
-    if from_date:
-        params['from'] = from_date
-    if to_date:
-        params['to'] = to_date
-
-    try:
-        # Make request to NewsAPI
-        response = requests.get(f"{NEWS_API_BASE_URL}/everything", params=params)
-        response.raise_for_status()
-
-        data = response.json()
-
-        return jsonify({
-            "status": "success",
-            "totalResults": data.get('totalResults', 0),
-            "articles": data.get('articles', []),
-            "page": page,
-            "pageSize": page_size
-        })
-
-    except requests.exceptions.RequestException as e:
-        return jsonify({
-            "error": "Failed to fetch news from NewsAPI",
-            "details": str(e)
-        }), 500
-
 
 @api_bp.route('/api/news/sky/yesterday', methods=['GET'])
 def get_sky_news_yesterday():

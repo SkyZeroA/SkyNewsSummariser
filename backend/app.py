@@ -1,8 +1,9 @@
 from flask import Flask
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 from routes import api_bp
 
 # Load environment variables
+# find_dotenv() automatically searches up the directory tree for .env
 load_dotenv()
 
 app = Flask(__name__)
