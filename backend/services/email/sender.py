@@ -1,27 +1,29 @@
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from datetime import datetime, timedelta
-import email_config
+from datetime import datetime
 import os
+import sys
 
-# Email configuration from email_config.py
-SMTP_SERVER = email_config.SMTP_SERVER
-SMTP_PORT = email_config.SMTP_PORT
-SENDER_EMAIL = email_config.SENDER_EMAIL
-SENDER_PASSWORD = email_config.SENDER_PASSWORD
-RECIPIENT_EMAIL = email_config.RECIPIENT_EMAIL
+# Handle both relative imports (when used as module) and direct execution
+try:
+    from .config import SMTP_SERVER, SMTP_PORT, SENDER_EMAIL, SENDER_PASSWORD, RECIPIENT_EMAIL
+except ImportError:
+    # If running as a script, add parent directory to path
+    sys.path.insert(0, os.path.dirname(__file__))
+    from config import SMTP_SERVER, SMTP_PORT, SENDER_EMAIL, SENDER_PASSWORD, RECIPIENT_EMAIL
 
 
 def create_html_email():
-    # Read HTML template from file
-    template_path = os.path.join(os.path.dirname(__file__), 'email_template.html')
+    """Read HTML template from file"""
+    template_path = os.path.join(os.path.dirname(__file__), 'template.html')
     with open(template_path, 'r', encoding='utf-8') as f:
         html = f.read()
     return html
 
 
 def send_formatted_email():
+    """Send formatted HTML email"""
     try:
         # Create message
         message = MIMEMultipart()
