@@ -1,6 +1,9 @@
 CREATE DATABASE SkyNewsSummariser;
 USE SkyNewsSummariser;
 
-CREATE TABLE Subscriber (
-    email VARCHAR(255) PRIMARY KEY
+CREATE TABLE subscriber (
+    subscriber_id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
