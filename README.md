@@ -4,8 +4,8 @@ A full-stack application that fetches and summarizes Sky News articles, with ema
 
 ## Table of Contents
 - [Backend Setup](#backend-setup)
-- [Frontend Setup](#frontend-setup)
 - [Running Tests](#running-tests)
+- [Frontend Setup](#frontend-setup)
 
 ---
 
