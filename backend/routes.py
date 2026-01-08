@@ -26,8 +26,8 @@ def home():
         "message": "Sky News Summariser API",
         "version": "1.0.0",
         "endpoints": {
-            "/api/news/sky/yesterday": "Get Sky News articles from yesterday",
-            "/api/news/chartbeat/top": "Get top articles from Chartbeat by popularity",
+            "/api/news/chartbeat/top": "Get top articles from Chartbeat by real-time popularity",
+            "/api/news/chartbeat/historical": "Get yesterday's top articles from Chartbeat (historical data)",
         }
     })
 
@@ -121,10 +121,14 @@ def get_chartbeat_top_stories():
     if limit < 1:
         limit = 1
 
+    # Request more items from API to account for filtering out non-story pages
+    # We'll filter to stories only and then limit the results
+    api_limit = limit * 3  # Request 3x to ensure we get enough stories after filtering
+
     # Build API request parameters
     params = {
         'host': 'news.sky.com',  # Sky News domain
-        'limit': limit,
+        'limit': api_limit,
         'all_platforms': 1,  # Include all platforms (desktop, mobile, tablet, app)
     }
 
@@ -152,6 +156,11 @@ def get_chartbeat_top_stories():
             # Get the path and construct full URL
             path = page.get('path', '')
 
+            # Only include story pages (filter out /home, /watch-live, etc.)
+            # Paths can be in format: "/story/...", "news.sky.com/story/...", or "https://news.sky.com/story/..."
+            if not ('/story/' in path or path.startswith('story/')):
+                continue
+
             # Construct full URL - path already contains the domain sometimes
             if path.startswith('http'):
                 full_url = path
@@ -173,12 +182,15 @@ def get_chartbeat_top_stories():
 
             formatted_stories.append(story)
 
+        # Limit the results to the requested number after filtering
+        formatted_stories = formatted_stories[:limit]
+
         return jsonify({
             "status": "success",
             "total_stories": len(formatted_stories),
             "stories": formatted_stories,
             "limit": limit,
-            "sort_by": sort_by if sort_by else "concurrent_visitors"
+            "sort_by": sort_by if sort_by else "concurrent_visitors",
         })
 
     except requests.exceptions.RequestException as e:
