@@ -1,35 +1,32 @@
-import pytest
 from unittest.mock import patch, MagicMock
-from datetime import datetime, timedelta
-import requests
 
 class TestHomeEndpoint:
     """Tests for the home endpoint"""
-    
+
     def test_home_returns_200(self, client):
         """Test that home endpoint returns 200 status code"""
         response = client.get('/')
         assert response.status_code == 200
-    
+
     def test_home_returns_json(self, client):
         """Test that home endpoint returns JSON"""
         response = client.get('/')
         assert response.content_type == 'application/json'
-    
+
     def test_home_contains_message(self, client):
         """Test that home endpoint contains welcome message"""
         response = client.get('/')
         data = response.get_json()
         assert 'message' in data
         assert data['message'] == 'Sky News Summariser API'
-    
+
     def test_home_contains_version(self, client):
         """Test that home endpoint contains version"""
         response = client.get('/')
         data = response.get_json()
         assert 'version' in data
         assert data['version'] == '1.0.0'
-    
+
     def test_home_contains_endpoints(self, client):
         """Test that home endpoint lists available endpoints"""
         response = client.get('/')
@@ -38,74 +35,98 @@ class TestHomeEndpoint:
         assert isinstance(data['endpoints'], dict)
 
 
-class TestSkyNewsYesterdayEndpoint:
-    """Tests for /api/news/sky/yesterday endpoint"""
+class TestChartbeatTopStoriesFunctional:
+    """Tests for Chartbeat top stories endpoint"""
 
     @patch('routes.requests.get')
-    def test_yesterday_returns_200_on_success(self, mock_get, client):
-        """Test that yesterday endpoint returns 200 on successful API call"""
+    def test_chartbeat_returns_non_empty_stories(self, mock_get, client, monkeypatch):
+        """Test that Chartbeat endpoint returns non-empty stories array"""
+        # Set up environment variables
+        monkeypatch.setenv('CHARTBEAT_API_KEY', 'test_api_key')
+        monkeypatch.setenv('CHARTBEAT_API_URL', 'https://api.chartbeat.com/live/toppages/v3/')
+
+        # Mock successful API response with story data
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
-            'status': 'ok',
-            'totalResults': 5,
-            'articles': []
-        }
-        mock_get.return_value = mock_response
-
-        response = client.get('/api/news/sky/yesterday')
-        assert response.status_code == 200
-
-    @patch('routes.requests.get')
-    def test_yesterday_uses_correct_date_range(self, mock_get, client):
-        """Test that yesterday endpoint uses correct date range"""
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {
-            'status': 'ok',
-            'totalResults': 0,
-            'articles': []
-        }
-        mock_get.return_value = mock_response
-
-        response = client.get('/api/news/sky/yesterday')
-        assert response.status_code == 200
-
-        # Verify the API was called with yesterday's date
-        call_args = mock_get.call_args
-        params = call_args.kwargs['params']
-
-        yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
-        today = datetime.now().strftime('%Y-%m-%d')
-        assert params['from'] == yesterday
-        assert params['to'] == today  # The endpoint uses today as the 'to' date
-
-    @patch('routes.requests.get')
-    def test_yesterday_returns_articles(self, mock_get, client):
-        """Test that yesterday endpoint returns articles"""
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {
-            'status': 'ok',
-            'totalResults': 2,
-            'articles': [
-                {'title': 'Article 1', 'url': 'https://test1.com'},
-                {'title': 'Article 2', 'url': 'https://test2.com'}
+            'pages': [
+                {
+                    'path': '/story/uk-news-12345',
+                    'title': 'Breaking News Story',
+                    'stats': {'people': 1500}
+                },
+                {
+                    'path': '/story/world-news-67890',
+                    'title': 'International Update',
+                    'stats': {'people': 1200}
+                },
+                {
+                    'path': '/home',  # This should be filtered out
+                    'title': 'Home Page',
+                    'stats': {'people': 5000}
+                }
             ]
         }
         mock_get.return_value = mock_response
 
-        response = client.get('/api/news/sky/yesterday')
+        # Make request to endpoint
+        response = client.get('/api/news/chartbeat/top')
+
+        # Verify response
+        assert response.status_code == 200
         data = response.get_json()
-        assert 'articles' in data
-        assert len(data['articles']) == 2
+
+        # Check that we got stories back
+        assert 'stories' in data
+        assert isinstance(data['stories'], list)
+        assert len(data['stories']) > 0, "Stories array should not be empty"
+
+        # Verify stories are properly formatted
+        for story in data['stories']:
+            assert 'title' in story
+            assert 'url' in story
+            assert 'stats' in story
+            assert story['title'] != '', "Story title should not be empty"
+            assert story['url'] != '', "Story URL should not be empty"
 
     @patch('routes.requests.get')
-    def test_yesterday_handles_errors(self, mock_get, client):
-        """Test that yesterday endpoint handles errors gracefully"""
-        mock_get.side_effect = requests.exceptions.RequestException('Network error')
+    def test_chartbeat_filters_non_story_pages(self, mock_get, client, monkeypatch):
+        """Test that non-story pages are filtered out from results"""
+        # Set up environment variables
+        monkeypatch.setenv('CHARTBEAT_API_KEY', 'test_api_key')
+        monkeypatch.setenv('CHARTBEAT_API_URL', 'https://api.chartbeat.com/live/toppages/v3/')
 
-        response = client.get('/api/news/sky/yesterday')
-        assert response.status_code == 500
+        # Mock API response with mixed content
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            'pages': [
+                {
+                    'path': '/story/test-story-1',
+                    'title': 'Test Story 1',
+                    'stats': {'people': 100}
+                },
+                {
+                    'path': '/watch-live',
+                    'title': 'Watch Live',
+                    'stats': {'people': 500}
+                },
+                {
+                    'path': '/story/test-story-2',
+                    'title': 'Test Story 2',
+                    'stats': {'people': 80}
+                }
+            ]
+        }
+        mock_get.return_value = mock_response
+
+        response = client.get('/api/news/chartbeat/top')
         data = response.get_json()
-        assert 'error' in data
+
+        # Should only have 2 stories (non-story pages filtered out)
+        assert len(data['stories']) == 2
+        assert all('/story/' in story['url'] for story in data['stories'])
+
+
+
+
