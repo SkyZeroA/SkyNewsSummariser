@@ -1,0 +1,22 @@
+version: 0.1
+
+env:
+  shell: bash
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 22.x
+    commands:
+      - echo "Installing dependencies..."
+      - corepack enable
+      - pnpm install
+
+  build:
+    commands:
+      - echo "Deploying to ${STAGE}..."
+      - pnpm run deploy
+
+  post_build:
+    commands:
+      - echo "Deployment completed successfully for ${STAGE}"

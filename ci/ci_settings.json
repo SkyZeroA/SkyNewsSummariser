@@ -1,0 +1,13 @@
+{
+    "ProjectName": "summariser",
+    "GitRepoOwner": "SkyZeroA",
+    "GitRepoName": "summariser",
+    "DeployBuildSpecPath": "ci/buildspec.yml",
+    "TeardownBuildSpecPath": "ci/teardown.buildspec.yml",
+    "Image": "aws/codebuild/standard:7.0",
+    "CDKMode": "true",
+    "Promote": true,
+    "S3OutputBucket": "TODO:",
+    "S3OutputArtifactName": "cd-release.zip",
+    "TARGET_STACK_ID": "ci"
+}

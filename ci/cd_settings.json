@@ -1,0 +1,10 @@
+{
+    "ProjectName": "summariser",
+    "SourceBucketKey": "cd-release.zip",
+    "DeploymentBuildSpecPath": "ci/deploy.buildspec.yml",
+    "SmokeTestsBuildSpecPath": "ci/smoke.buildspec.yml",
+    "IncludeStagingDeploy": "true",
+    "IncludeProdDeploy": "true",
+    "CDKMode": "true",
+    "TARGET_STACK_ID": "cd-serverless"
+}
