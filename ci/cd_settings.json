@@ -1,6 +1,5 @@
 {
     "ProjectName": "summariser",
-    "SourceBucketKey": "cd-release.zip",
     "DeploymentBuildSpecPath": "ci/deploy.buildspec.yml",
     "SmokeTestsBuildSpecPath": "ci/smoke.buildspec.yml",
     "IncludeStagingDeploy": "true",
