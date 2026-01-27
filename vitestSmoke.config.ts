@@ -1,0 +1,10 @@
+import { defineConfig } from 'vitest/config';
+import { vitestsConfig } from './test/vitest.common.config.js';
+
+export default defineConfig({
+	...vitestsConfig,
+	test: {
+		...vitestsConfig.test,
+		include: ['**/test/smoke/**/*.spec.ts'],
+	},
+});
