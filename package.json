@@ -28,7 +28,7 @@
 		"teardown-branch": "STAGE=$(git rev-parse --abbrev-ref HEAD | tr '[:upper:]' '[:lower:]') pnpm run teardown",
 		"format": "prettier --check ./lib ./test test/functional test/smoke ./bin --config ./.prettierrc.json",
 		"format-fix": "prettier --write ./lib ./test test/functional test/smoke ./bin --config ./.prettierrc.json",
-		"lint": "oxlint --disable-react-plugin --import-plugin --vitest-plugin --promise-plugin --node-plugin -c .oxlintrc.json",
+		"lint": "oxlint --import-plugin --vitest-plugin --promise-plugin --node-plugin -c .oxlintrc.json",
 		"lint-fix": "pnpm run lint --fix",
 		"prepare": "husky",
 		"setup-husky": "cp .husky/pre-commit.example .husky/pre-commit"
@@ -38,6 +38,7 @@
 		"{lib,smokeTests}/**/*.ts": "pnpm run lint"
 	},
 	"devDependencies": {
+		"@types/jest": "^30.0.0",
 		"@types/node": "^25.0.10",
 		"aws-cdk": "^2.1103.0",
 		"husky": "^9.1.7",
