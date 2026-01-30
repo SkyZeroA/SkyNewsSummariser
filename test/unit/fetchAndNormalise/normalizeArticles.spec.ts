@@ -84,9 +84,7 @@ describe('normalizeArticles', () => {
 			text: vi.fn(() => 'Content'),
 		};
 
-		(cheerio.load as any)
-			.mockReturnValueOnce(() => mockCheerio)
-			.mockReturnValueOnce(() => mockCheerio);
+		(cheerio.load as any).mockReturnValueOnce(() => mockCheerio).mockReturnValueOnce(() => mockCheerio);
 
 		const result = await normalizeArticles(articles);
 
@@ -116,9 +114,7 @@ describe('normalizeArticles', () => {
 			text: vi.fn(() => 'Content'),
 		};
 
-		(cheerio.load as any)
-			.mockReturnValueOnce(() => mockCheerio)
-			.mockReturnValueOnce(() => mockCheerio);
+		(cheerio.load as any).mockReturnValueOnce(() => mockCheerio).mockReturnValueOnce(() => mockCheerio);
 
 		const result = await normalizeArticles(articles);
 

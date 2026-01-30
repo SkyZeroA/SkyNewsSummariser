@@ -106,9 +106,7 @@ describe('fetchFromChartBeat', () => {
 			statusText: 'Unauthorized',
 		});
 
-		await expect(fetchFromChartBeat('test-key', '2024-01-15')).rejects.toThrow(
-			'ChartBeat API error: 401 Unauthorized'
-		);
+		await expect(fetchFromChartBeat('test-key', '2024-01-15')).rejects.toThrow('ChartBeat API error: 401 Unauthorized');
 	});
 
 	it('should throw TypeError on invalid response structure', async () => {
@@ -117,17 +115,13 @@ describe('fetchFromChartBeat', () => {
 			json: async () => ({ data: [] }),
 		});
 
-		await expect(fetchFromChartBeat('test-key', '2024-01-15')).rejects.toThrow(
-			'Invalid ChartBeat response: missing pages array'
-		);
+		await expect(fetchFromChartBeat('test-key', '2024-01-15')).rejects.toThrow('Invalid ChartBeat response: missing pages array');
 	});
 
 	it('should handle network errors', async () => {
 		(global.fetch as any).mockRejectedValueOnce(new Error('Network timeout'));
 
-		await expect(fetchFromChartBeat('test-key', '2024-01-15')).rejects.toThrow(
-			'Network timeout'
-		);
+		await expect(fetchFromChartBeat('test-key', '2024-01-15')).rejects.toThrow('Network timeout');
 	});
 
 	it('should handle empty pages array', async () => {

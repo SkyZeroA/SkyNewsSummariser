@@ -64,9 +64,7 @@ describe('handler', () => {
 			text: vi.fn(() => 'Weather content here'),
 		};
 
-		(cheerio.load as any)
-			.mockReturnValueOnce(() => mockCheerio1)
-			.mockReturnValueOnce(() => mockCheerio2);
+		(cheerio.load as any).mockReturnValueOnce(() => mockCheerio1).mockReturnValueOnce(() => mockCheerio2);
 
 		const result = (await handler({}, {} as any, {} as any)) as FetchAndNormaliseResult;
 
@@ -86,8 +84,6 @@ describe('handler', () => {
 	it('should throw error when CHARTBEAT_API_KEY is missing', async () => {
 		delete process.env.CHARTBEAT_API_KEY;
 
-		await expect(handler({}, {} as any, {} as any)).rejects.toThrow(
-			'CHARTBEAT_API_KEY environment variable is required'
-		);
+		await expect(handler({}, {} as any, {} as any)).rejects.toThrow('CHARTBEAT_API_KEY environment variable is required');
 	});
 });
