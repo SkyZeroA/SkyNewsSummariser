@@ -86,4 +86,33 @@ describe('handler', () => {
 
 		await expect(handler({}, {} as any, {} as any)).rejects.toThrow('CHARTBEAT_API_KEY environment variable is required');
 	});
+
+	it('should return empty result when ChartBeat returns no articles', async () => {
+		(global.fetch as any).mockResolvedValueOnce({
+			ok: true,
+			json: async () => ({ pages: [] }),
+		});
+
+		const result = (await handler({}, {} as any, {} as any)) as FetchAndNormaliseResult;
+
+		expect(result.articles).toHaveLength(0);
+		expect(result.count).toBe(0);
+		expect(result.fetchedDate).toBeDefined();
+	});
+
+	it('should propagate errors from ChartBeat API', async () => {
+		(global.fetch as any).mockResolvedValueOnce({
+			ok: false,
+			status: 500,
+			statusText: 'Internal Server Error',
+		});
+
+		await expect(handler({}, {} as any, {} as any)).rejects.toThrow('ChartBeat API error: 500 Internal Server Error');
+	});
+
+	it('should propagate network errors', async () => {
+		(global.fetch as any).mockRejectedValueOnce(new Error('Network connection failed'));
+
+		await expect(handler({}, {} as any, {} as any)).rejects.toThrow('Network connection failed');
+	});
 });

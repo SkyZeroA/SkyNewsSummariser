@@ -174,4 +174,24 @@ describe('fetchFromChartBeat', () => {
 
 		expect(articles[0].url).toBe('');
 	});
+
+	it('should handle missing visitors with 0 default', async () => {
+		const mockResponse = {
+			pages: [
+				{
+					title: 'Article without visitors',
+					link: 'https://www.skynews.com/article/no-visitors',
+				},
+			],
+		};
+
+		(global.fetch as any).mockResolvedValueOnce({
+			ok: true,
+			json: async () => mockResponse,
+		});
+
+		const articles = await fetchFromChartBeat('test-key', '2024-01-15');
+
+		expect(articles[0].visitors).toBe(0);
+	});
 });
