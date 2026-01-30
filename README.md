@@ -141,3 +141,10 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+
+### Husky
+
+Husky runs commands st given points in the git cycle, like before each commit
+
+The `pre-commit.example` file should be copied into a file called `pre-commit` in the `.husky` folder. This will cause the format commands to be run before each commit, so the builds will not fail due to formatting.

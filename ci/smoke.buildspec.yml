@@ -1,0 +1,23 @@
+version: 0.1
+
+env:
+  variables:
+    ENV_NAME: ${STAGE}
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 22.x
+    commands:
+      - echo "Setting up smoke tests for ${ENV_NAME}..."
+      - corepack enable
+      - pnpm install
+
+  build:
+    commands:
+      - echo "Running smoke tests against ${ENV_NAME} deployment..."
+      - pnpm run test-smoke
+
+  post_build:
+    commands:
+      - echo "Smoke tests completed for ${ENV_NAME}"

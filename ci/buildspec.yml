@@ -1,0 +1,39 @@
+version: 0.2
+
+env:
+  shell: bash
+  git-credential-helper: yes
+  parameter-store:
+    GH_TOKEN: /pipeline/githubAccessToken
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 22.x
+    commands:
+      - export BRANCH="$(echo $CODEBUILD_WEBHOOK_HEAD_REF | cut -d/ -f3-)"
+      - export STAGE=$(echo ${BRANCH} | awk '{print tolower($0)}')
+      - export TRUNK_BRANCH=main
+      - echo "Branch is ${BRANCH}, Stage is ${STAGE}"
+
+      - corepack enable
+      - pnpm run ci
+      - pnpm run build
+      - pnpm run format
+      - pnpm run lint
+      - pnpm run test
+
+  build:
+    commands:
+      - echo "Deploying to ${STAGE}..."
+      - pnpm run deploy
+
+  post_build:
+    commands:
+      - |
+        if [ "$BRANCH" = "$TRUNK_BRANCH" ] && [ "$CODEBUILD_BUILD_SUCCEEDING" -eq 1 ]; then
+          echo "Promoting artifact to CD pipeline..."
+          pnpm exec automation-pipeline promote -d "$CODEBUILD_SRC_DIR" -b "$ARTIFACT_BUCKET" -k "$ARTIFACT_KEY" -r "$PROD_ROLE"
+        else
+          echo "Not promoting - branch is ${BRANCH} or build failed."
+        fi

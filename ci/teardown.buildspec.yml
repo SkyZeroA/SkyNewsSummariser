@@ -1,0 +1,27 @@
+version: 0.2
+
+env:
+  shell: bash
+  git-credential-helper: yes
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 22.x
+    commands:
+      - export PR_ORIGIN=$(echo $CODEBUILD_WEBHOOK_HEAD_REF | awk -F/ '{ printf tolower($3) }')
+      - export STAGE=$(echo $PR_ORIGIN | sed 's/main/test/')
+      - echo "Tearing down resources for ${STAGE}"
+      
+      - corepack enable
+      - pnpm run ci
+      - pnpm build
+
+  build:
+    commands:
+      - echo "Starting teardown for ${STAGE}..."
+      - pnpm run teardown
+      
+  post_build:
+    commands:
+      - echo "Teardown completed for ${STAGE}"
