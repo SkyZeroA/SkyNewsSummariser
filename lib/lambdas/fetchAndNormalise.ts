@@ -20,7 +20,7 @@ export interface FetchAndNormaliseResult {
 }
 
 // Fetches the most popular articles from Chartbeat from yesterday
-const fetchFromChartBeat = async (apiKey: string, previousDate: string): Promise<ChartBeatArticle[]> => {
+export const fetchFromChartBeat = async (apiKey: string, previousDate: string): Promise<ChartBeatArticle[]> => {
 	try {
 		const url = new URL('https://api.chartbeat.com/live/toppages/v3/');
 		url.searchParams.append('apikey', apiKey);
@@ -57,7 +57,7 @@ const fetchFromChartBeat = async (apiKey: string, previousDate: string): Promise
 };
 
 // Fetches the actual text in each article from the URL
-const fetchArticleContent = async (url: string): Promise<string> => {
+export const fetchArticleContent = async (url: string): Promise<string> => {
 	try {
 		const response = await fetch(url);
 		if (!response.ok) {
@@ -79,7 +79,7 @@ const fetchArticleContent = async (url: string): Promise<string> => {
 };
 
 // Normalises the articles to a standard format
-const normalizeArticles = async (articles: ChartBeatArticle[]): Promise<NormalizedArticle[]> => {
+export const normalizeArticles = async (articles: ChartBeatArticle[]): Promise<NormalizedArticle[]> => {
 	// Fetch content for all articles in parallel
 	const normalizedPromises = articles.map(async (article) => {
 		const content = await fetchArticleContent(article.url);
@@ -98,7 +98,7 @@ const normalizeArticles = async (articles: ChartBeatArticle[]): Promise<Normaliz
 };
 
 // Gets the date for yesterday in YYYY-MM-DD format
-const getYesterdayDate = (): string => {
+export const getYesterdayDate = (): string => {
 	const yesterday = new Date();
 	yesterday.setDate(yesterday.getDate() - 1);
 	return yesterday.toISOString().split('T')[0];
