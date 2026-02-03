@@ -1,105 +1,12 @@
 # Sky News Summariser
 
 A full-stack application that fetches and summarizes Sky News articles, with email notification capabilities.
+This is hosted in AWS
 
 ## Table of Contents
-- [Backend Setup](#backend-setup)
-- [Running Tests](#running-tests)
 - [Frontend Setup](#frontend-setup)
-
----
-
-## Backend Setup
-
-### Environment Configuration
-
-Add a `.env` file in the backend directory with the following variables:
-
-```env
-SENDER_EMAIL=<Useful info in Slack>
-SENDER_PASSWORD=<Useful info in Slack>
-RECIPIENT_EMAIL=<Use your personal email address or Sky's email address>
-CHARTBEAT_API_URL=<Useful info in Slack>
-CHARTBEAT_API_KEY=<Useful info in Slack>
-```
-
-### Running the Code
-
-#### Email Scripts
-To send a formatted HTML email, run:
-```bash
-python3 services/email/sender.py
-```
-
-#### Flask API Server
-
-To start the Flask API server:
-```bash
-cd backend
-python3 app.py
-```
-
-The API will be available at `http://localhost:5000`
-
-**API Endpoints:**
-- `GET /` - API information
-- `GET /api/news/chartbeat/top` - Get top articles from Chartbeat by real-time popularity
-
----
-
-## Running Tests
-
-### Install Test Dependencies
-
-First, make sure you have pytest installed:
-
-```bash
-pip3 install pytest pytest-cov pytest-mock
-```
-
-### Running Tests
-
-```bash
-# Run all tests
-python3 -m pytest -v
-
-# Run with coverage report
-python3 -m pytest --cov=. --cov-report=term --cov-report=html
-
-# Run specific test file
-python3 -m pytest tests/test_routes.py -v
-
-# Run specific test class
-python3 -m pytest tests/test_routes.py::TestHomeEndpoint -v
-
-# Run specific test
-python3 -m pytest tests/test_routes.py::TestHomeEndpoint::test_home_returns_200 -v
-```
-
-### Test Coverage
-
-Generate HTML coverage report:
-
-```bash
-# Generate HTML coverage report
-python3 -m pytest --cov=. --cov-report=html
-
-# Open the report
-open htmlcov/index.html  # macOS
-```
-
-### Verbose Output
-
-```bash
-# Show detailed output
-python3 -m pytest -v
-
-# Show even more details
-python3 -m pytest -vv
-
-# Show print statements
-python3 -m pytest -s
-```
+- [Running Tests](#running-tests)
+- [Husky](#husky)
 
 ---
 
@@ -109,42 +16,56 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ### Getting Started
 
-First, run the development server:
+First, run the development server.
+If in the root folder, run:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm --dir frontend dev
 ```
+If in the frontend folder, remove `--dir frontend`.
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Running Tests
 
-### Learn More
+The test suites can be run using commands found in the `package.json` file.
+They are as follows:
 
-To learn more about Next.js, take a look at the following resources:
+`pnpm run test` runs unit tests
+`pnpm run coverage` runs these same unit tests and outputs the coverage
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+`pnpm run test-functional` runs functional tests - these will require you to be logged into the AWS account from your terminal
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+You can do that by doing the following:
 
-### Deploy on Vercel
+```bash
+aws --version
+```
+to check if you have AWS CLI installed.
+if not run 
+```bash
+brew install awscli
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Once it is installed, run `aws configure` to begin.
+It will ask you for the following information:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+`AWS ACCESS KEY ID` - found under Access Keys on the login page
+`AWS ACCESS SECRET KEY` - found under Access Keys on the login page
+`AWS SESSION TOKEN` - found under Access Keys on the login page
+`Default region name` - `eu-west-1`
+`Default output format` - `None` or press `Enter`
 
+You will have to log in again if you close the terminal or any of the access keys or the session token expires
 
-### Husky
+`pnpm run test-smoke` runs smoke tests - also requires login
 
-Husky runs commands st given points in the git cycle, like before each commit
+---
 
-The `pre-commit.example` file should be copied into a file called `pre-commit` in the `.husky` folder. This will cause the format commands to be run before each commit, so the builds will not fail due to formatting.
+## Husky
+
+Husky runs commands at given points in the git cycle, like before each commit
+The `pre-commit` file contains commands run before the commit, to ensure the code is formatted and tests pass
+You might have to commit again if format changes your code so do not forget to
