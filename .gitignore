@@ -1,19 +1,23 @@
 node_modules/
 
-# CDK asset staging directory
-.cdk.staging
-cdk.out
-.tmp
-outputs.json
-.DS_Store
-.husky/pre-commit
-/.idea/prettier.xml
+dist/
+build/
+cdk.out/
+.next/
+out/
 
+.vscode/
 .idea/
-*.iml
 
-lib/lambdas/read/types/output/generated.ts
+.DS_Store
+
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
 coverage/
+.nyc_output/
 
-.env
-__pycache__/
+cdk.context.json
+
+next-env.d.ts
