@@ -3,7 +3,7 @@ import { beforeEach, afterEach, vi } from 'vitest';
 // Set up environment variables for tests
 process.env = {
 	...process.env,
-	AWS_REGION: 'us-east-1',
+	AWS_REGION: 'eu-west-1',
 	NODE_ENV: 'test',
 };
 
