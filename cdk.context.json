@@ -1,0 +1,11 @@
+{
+  "environments": {
+    "default": {
+      "region": "eu-west-1"
+    },
+    "non-prod": {
+      "accountId": "YOUR-DEV-ACCOUNT-ID",
+      "region": "eu-west-1"
+    }
+  }
+}

@@ -1,0 +1,66 @@
+{
+	"name": "summariser",
+	"type": "module",
+	"version": "0.1.0",
+	"bin": {
+		"summariser": "bin/summariser.ts"
+	},
+	"scripts": {
+		"ci": "pnpm install --frozen-lockfile",
+		"build": "tsc",
+		"watch": "tsc -w",
+		"test": "vitest run",
+		"test-watch": "vitest",
+		"coverage": "vitest run --coverage",
+		"test-smoke": "vitest run --config vitestSmoke.config.ts",
+		"test-smoke-branch": "ENV_NAME=$(git rev-parse --abbrev-ref HEAD | tr '[:upper:]' '[:lower:]') pnpm run test-smoke",
+		"test-functional": "vitest run --config vitestFunctional.config.ts",
+		"test-functional-branch": "ENV_NAME=$(git rev-parse --abbrev-ref HEAD | tr '[:upper:]' '[:lower:]') pnpm run test-functional",
+		"cdk": "cdk",
+		"diff": "pnpm run build && cdk diff --all --context stage=${STAGE}",
+		"diff-branch": "STAGE=$(git rev-parse --abbrev-ref HEAD | tr '[:upper:]' '[:lower:]') pnpm run diff",
+		"synth": "pnpm run build && cdk synth --all --context stage=${STAGE}",
+		"synth-branch": "STAGE=$(git rev-parse --abbrev-ref HEAD | tr '[:upper:]' '[:lower:]') pnpm run synth",
+		"deploy-cdk": "aws-cloudformation-wait-ready --region eu-west-1 --stack-name summariser-${STAGE} && cdk deploy --all --context stage=${STAGE} --context appVersion=${NEW_VERSION} --method=direct --require-approval never --outputs-file outputs.json",
+		"deploy": "echo {} > outputs.json && pnpm run build && pnpm run test && pnpm run deploy-cdk",
+		"deploy-branch": "AWS_SDK_LOAD_CONFIG=1 STAGE=$(git rev-parse --abbrev-ref HEAD | tr '[:upper:]' '[:lower:]') pnpm run deploy",
+		"teardown": "cdk destroy --all --force --context stage=${STAGE}",
+		"teardown-branch": "STAGE=$(git rev-parse --abbrev-ref HEAD | tr '[:upper:]' '[:lower:]') pnpm run teardown",
+		"format": "prettier --check ./lib ./test test/functional test/smoke ./bin --config ./.prettierrc.json",
+		"format-fix": "prettier --write ./lib ./test test/functional test/smoke ./bin --config ./.prettierrc.json",
+		"lint": "oxlint --import-plugin --vitest-plugin --promise-plugin --node-plugin -c .oxlintrc.json",
+		"lint-fix": "pnpm run lint --fix",
+		"prepare": "husky",
+		"setup-husky": "cp .husky/pre-commit.example .husky/pre-commit"
+	},
+	"lint-staged": {
+		"{lib,smokeTests}/**/*": "prettier --write",
+		"{lib,smokeTests}/**/*.ts": "pnpm run lint"
+	},
+	"devDependencies": {
+		"@types/jest": "^30.0.0",
+		"@types/node": "^25.0.10",
+		"@vitest/coverage-v8": "3.2.4",
+		"aws-cdk": "^2.1103.0",
+		"aws-sdk-client-mock": "^4.1.0",
+		"husky": "^9.1.7",
+		"lint-staged": "^15.5.2",
+		"oxlint": "^1.42.0",
+		"prettier": "^3.7.4",
+		"ts-node": "^10.9.2",
+		"tsx": "^4.21.0",
+		"typescript": "^5.9.3",
+		"vite-tsconfig-paths": "^5.1.4",
+		"vitest": "^3.2.4"
+	},
+	"packageManager": "pnpm@10.23.0+sha512.21c4e5698002ade97e4efe8b8b4a89a8de3c85a37919f957e7a0f30f38fbc5bbdd05980ffe29179b2fb6e6e691242e098d945d1601772cad0fef5fb6411e2a4b",
+	"dependencies": {
+		"@aws-sdk/client-bedrock-runtime": "^3.738.0",
+		"@aws-sdk/client-s3": "^3.738.0",
+		"@aws-sdk/client-sfn": "^3.738.0",
+		"@types/aws-lambda": "^8.10.158",
+		"aws-cdk-lib": "^2.236.0",
+		"cheerio": "^1.2.0",
+		"constructs": "^10.4.5"
+	}
+}

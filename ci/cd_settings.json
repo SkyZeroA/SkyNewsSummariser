@@ -1,0 +1,9 @@
+{
+    "ProjectName": "summariser",
+    "DeploymentBuildSpecPath": "ci/deploy.buildspec.yml",
+    "SmokeTestsBuildSpecPath": "ci/smoke.buildspec.yml",
+    "IncludeStagingDeploy": "true",
+    "IncludeProdDeploy": "true",
+    "CDKMode": "true",
+    "TARGET_STACK_ID": "cd-serverless"
+}

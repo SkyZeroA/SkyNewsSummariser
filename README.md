@@ -19,14 +19,9 @@ Add a `.env` file in the backend directory with the following variables:
 SENDER_EMAIL=<Useful info in Slack>
 SENDER_PASSWORD=<Useful info in Slack>
 RECIPIENT_EMAIL=<Use your personal email address or Sky's email address>
-NEWS_API_KEY=<Useful info in Slack>
-NEWS_API_BASE_URL=https://newsapi.org/v2
+CHARTBEAT_API_URL=<Useful info in Slack>
+CHARTBEAT_API_KEY=<Useful info in Slack>
 ```
-
-To get a NewsAPI key:
-1. Go to https://newsapi.org/
-2. Sign up for a free account
-3. Copy your API key and add it to the `.env` file
 
 ### Running the Code
 
@@ -48,7 +43,7 @@ The API will be available at `http://localhost:5000`
 
 **API Endpoints:**
 - `GET /` - API information
-- `GET /api/news/sky/yesterday` - Get Sky News articles from yesterday
+- `GET /api/news/chartbeat/top` - Get top articles from Chartbeat by real-time popularity
 
 ---
 
@@ -146,3 +141,10 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+
+### Husky
+
+Husky runs commands st given points in the git cycle, like before each commit
+
+The `pre-commit.example` file should be copied into a file called `pre-commit` in the `.husky` folder. This will cause the format commands to be run before each commit, so the builds will not fail due to formatting.

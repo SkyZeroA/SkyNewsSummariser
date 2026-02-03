@@ -1,42 +1,19 @@
-# Environment variables
-.env
+node_modules/
 
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-venv/
-ENV/
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-.pytest_cache
-.coverage
-htmlcov
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
+# CDK asset staging directory
+.cdk.staging
+cdk.out
+.tmp
+outputs.json
 .DS_Store
-Thumbs.db
+.husky/pre-commit
+/.idea/prettier.xml
 
+.idea/
+*.iml
+
+lib/lambdas/read/types/output/generated.ts
+coverage/
+
+.env
+__pycache__/
