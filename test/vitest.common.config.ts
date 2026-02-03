@@ -9,7 +9,16 @@ export const vitestsConfig = {
 		clearMocks: true,
 		exclude: ['*./cdk.out/**', '**/node_modules/**', '**/.{idea,git,cache,output,temp}/**', '**/.d.ts', '**/frontend/**'],
 		coverage: {
-			exclude: ['cdk.out/**', 'node_modules/**', '.{idea,git,cache,output,temp}/**', '**/*.d.ts', '**/test/**', '**/frontend/**', '**/bin/**', '**/old/**'],
+			exclude: [
+				'cdk.out/**',
+				'node_modules/**',
+				'.{idea,git,cache,output,temp}/**',
+				'**/*.d.ts',
+				'**/test/**',
+				'**/frontend/**',
+				'**/bin/**',
+				'**/old/**',
+			],
 		},
 		testTimeout: 120_000,
 		hookTimeout: 60_000,
