@@ -1,6 +1,6 @@
 export default function Header() {
   return (
-    <header className="w-full border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-black">
+    <header>
       <p> This is header</p>
     </header>
   );
