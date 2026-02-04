@@ -96,7 +96,7 @@ export default function Header() {
       <NavbarContent>
         <NavbarMenuToggle
           aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-          className="sm:hidden"
+          className="sm:hidden text-gray-900 dark:text-gray-100"
         />
         <NavbarBrand>
           <p className="font-bold text-2xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -185,6 +185,38 @@ export default function Header() {
             </NavbarMenuItem>
           );
         })}
+
+        {/* Font Size Selector for Mobile */}
+        <NavbarMenuItem>
+          <div className="w-full py-2">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+              Text Size
+            </p>
+            <ButtonGroup size="sm" variant="flat" className="w-full">
+              <Button
+                color={fontSize === "small" ? "primary" : "default"}
+                onPress={() => changeFontSize("small")}
+                className="flex-1"
+              >
+                Small
+              </Button>
+              <Button
+                color={fontSize === "medium" ? "primary" : "default"}
+                onPress={() => changeFontSize("medium")}
+                className="flex-1"
+              >
+                Medium
+              </Button>
+              <Button
+                color={fontSize === "large" ? "primary" : "default"}
+                onPress={() => changeFontSize("large")}
+                className="flex-1"
+              >
+                Large
+              </Button>
+            </ButtonGroup>
+          </div>
+        </NavbarMenuItem>
       </NavbarMenu>
     </Navbar>
   );
