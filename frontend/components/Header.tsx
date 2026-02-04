@@ -10,12 +10,27 @@ import {
   NavbarMenuItem,
   Link,
   Switch,
+  Button,
+  ButtonGroup,
 } from "@heroui/react";
 import { useState, useEffect } from "react";
+
+// Apply font size to document
+const applyFontSize = (size: "small" | "medium" | "large") => {
+  document.documentElement.classList.remove(
+    "text-size-small",
+    "text-size-medium",
+    "text-size-large",
+  );
+  document.documentElement.classList.add(`text-size-${size}`);
+};
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [fontSize, setFontSize] = useState<"small" | "medium" | "large">(
+    "medium",
+  );
 
   // Initialize dark mode from localStorage or system preference
   useEffect(() => {
@@ -31,6 +46,17 @@ export default function Header() {
       setIsDarkMode(false);
       document.documentElement.classList.remove("dark");
     }
+
+    // Initialize font size from localStorage
+    const savedFontSize = localStorage.getItem("fontSize") as
+      | "small"
+      | "medium"
+      | "large"
+      | null;
+    if (savedFontSize) {
+      setFontSize(savedFontSize);
+      applyFontSize(savedFontSize);
+    }
   }, []);
 
   // Toggle dark mode
@@ -45,6 +71,13 @@ export default function Header() {
       document.documentElement.classList.remove("dark");
       localStorage.setItem("theme", "light");
     }
+  };
+
+  // Change font size
+  const changeFontSize = (size: "small" | "medium" | "large") => {
+    setFontSize(size);
+    applyFontSize(size);
+    localStorage.setItem("fontSize", size);
   };
 
   const menuItems = [
@@ -87,6 +120,31 @@ export default function Header() {
       </NavbarContent>
 
       <NavbarContent justify="end">
+        <NavbarItem className="hidden sm:flex">
+          <ButtonGroup size="sm" variant="flat">
+            <Button
+              color={fontSize === "small" ? "primary" : "default"}
+              onPress={() => changeFontSize("small")}
+              className="min-w-unit-8 px-2"
+            >
+              A
+            </Button>
+            <Button
+              color={fontSize === "medium" ? "primary" : "default"}
+              onPress={() => changeFontSize("medium")}
+              className="min-w-unit-10 px-2"
+            >
+              A
+            </Button>
+            <Button
+              color={fontSize === "large" ? "primary" : "default"}
+              onPress={() => changeFontSize("large")}
+              className="min-w-unit-12 px-2"
+            >
+              A
+            </Button>
+          </ButtonGroup>
+        </NavbarItem>
         <NavbarItem>
           <Switch
             isSelected={isDarkMode}

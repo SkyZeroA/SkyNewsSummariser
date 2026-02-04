@@ -19,3 +19,40 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Font size classes */
+.text-size-small {
+  font-size: 14px;
+}
+
+.text-size-small article h1 {
+  font-size: 1.875rem; /* 30px */
+}
+
+.text-size-small article p {
+  font-size: 0.875rem; /* 14px */
+}
+
+.text-size-medium {
+  font-size: 16px;
+}
+
+.text-size-medium article h1 {
+  font-size: 2.25rem; /* 36px */
+}
+
+.text-size-medium article p {
+  font-size: 1rem; /* 16px */
+}
+
+.text-size-large {
+  font-size: 18px;
+}
+
+.text-size-large article h1 {
+  font-size: 2.625rem; /* 42px */
+}
+
+.text-size-large article p {
+  font-size: 1.125rem; /* 18px */
+}
