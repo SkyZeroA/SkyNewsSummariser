@@ -1,6 +1,6 @@
 "use client";
 
-import { Link, Divider } from "@heroui/react";
+import { Divider } from "@heroui/react";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -25,30 +25,10 @@ export default function Footer() {
         <Divider className="my-6" />
 
         {/* Bottom Section */}
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="flex flex-col md:flex-row justify-center items-center gap-4">
           <p className="text-sm text-gray-600 dark:text-gray-400">
             © {currentYear} Sky News Summariser. All rights reserved.
           </p>
-          <div className="flex gap-6">
-            <Link
-              href="/sitemap"
-              className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-            >
-              Sitemap
-            </Link>
-            <Link
-              href="/accessibility"
-              className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-            >
-              Accessibility
-            </Link>
-            <Link
-              href="/contact"
-              className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-            >
-              Contact
-            </Link>
-          </div>
         </div>
       </div>
     </footer>

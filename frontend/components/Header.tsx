@@ -164,27 +164,18 @@ export default function Header() {
       </NavbarContent>
 
       <NavbarMenu>
-        {menuItems.map((item, index) => {
-          let linkColor: "primary" | "danger" | "foreground" = "foreground";
-          if (index === 0) {
-            linkColor = "primary";
-          } else if (index === menuItems.length - 1) {
-            linkColor = "danger";
-          }
-
-          return (
-            <NavbarMenuItem key={`${item.name}-${index}`}>
-              <Link
-                className="w-full"
-                color={linkColor}
-                href={item.href}
-                size="lg"
-              >
-                {item.name}
-              </Link>
-            </NavbarMenuItem>
-          );
-        })}
+        {menuItems.map((item, index) => (
+          <NavbarMenuItem key={`${item.name}-${index}`}>
+            <Link
+              className="w-full"
+              color="foreground"
+              href={item.href}
+              size="lg"
+            >
+              {item.name}
+            </Link>
+          </NavbarMenuItem>
+        ))}
 
         {/* Font Size Selector for Mobile */}
         <NavbarMenuItem>
