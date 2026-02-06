@@ -39,6 +39,7 @@
 		"jest/require-hook": "off",
 		"jest/max-expects": "off",
 		"import/max-dependencies": "off",
+		"import/no-unassigned-import": "off",
 		"promise/prefer-await-to-then": "off",
 		"unicorn/no-await-expression-member": "off",
 		"consistent-indexed-object-style": "off",
