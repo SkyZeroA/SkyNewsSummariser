@@ -127,21 +127,21 @@ export default function Header() {
               onPress={() => changeFontSize("small")}
               className="min-w-unit-8 px-2"
             >
-              A
+              <span className="text-xs !text-xs">A</span>
             </Button>
             <Button
               color={fontSize === "medium" ? "primary" : "default"}
               onPress={() => changeFontSize("medium")}
               className="min-w-unit-10 px-2"
             >
-              A
+              <span className="text-sm !text-sm">A</span>
             </Button>
             <Button
               color={fontSize === "large" ? "primary" : "default"}
               onPress={() => changeFontSize("large")}
               className="min-w-unit-12 px-2"
             >
-              A
+              <span className="text-base !text-base">A</span>
             </Button>
           </ButtonGroup>
         </NavbarItem>
