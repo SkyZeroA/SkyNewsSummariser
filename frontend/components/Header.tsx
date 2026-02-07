@@ -49,25 +49,21 @@ export default function Header() {
     return savedFontSize || "medium";
   });
 
-  // Apply dark mode and font size on mount
+  // Apply dark mode on mount and when it changes
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDarkMode);
+  }, [isDarkMode]);
+
+  // Apply font size on mount and when it changes
+  useEffect(() => {
     applyFontSize(fontSize);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fontSize]);
 
   // Toggle dark mode
   const toggleDarkMode = () => {
     const newDarkMode = !isDarkMode;
     setIsDarkMode(newDarkMode);
-
-    if (newDarkMode) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
+    localStorage.setItem("theme", newDarkMode ? "dark" : "light");
   };
 
   // Change font size
