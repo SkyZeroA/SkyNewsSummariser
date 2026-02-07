@@ -27,34 +27,47 @@ const applyFontSize = (size: "small" | "medium" | "large") => {
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  // Initialize state from DOM to match the blocking script
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    if (typeof document !== "undefined") {
-      return document.documentElement.classList.contains("dark");
-    }
-    return false;
-  });
+  const [mounted, setMounted] = useState(false);
 
-  const [fontSize, setFontSize] = useState<"small" | "medium" | "large">(() => {
+  // Initialize with default value to avoid hydration mismatch
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [fontSize, setFontSize] = useState<"small" | "medium" | "large">("medium");
+
+  // Sync with localStorage and DOM after mount to avoid hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+
+    // Sync dark mode from DOM (set by blocking script in layout)
+    if (typeof document !== "undefined") {
+      const isDark = document.documentElement.classList.contains("dark");
+      setIsDarkMode(isDark);
+    }
+
+    // Sync font size from localStorage
     if (typeof localStorage !== "undefined") {
       const savedFontSize = localStorage.getItem("fontSize") as
         | "small"
         | "medium"
         | "large"
         | null;
-      return savedFontSize || "medium";
+      if (savedFontSize) {
+        setFontSize(savedFontSize);
+      }
     }
-    return "medium";
-  });
+  }, []);
 
-  // Apply dark mode on mount and when it changes
+  // Apply dark mode when it changes (but not on initial mount since blocking script handles that)
   useEffect(() => {
-    document.documentElement.classList.toggle("dark", isDarkMode);
+    if (typeof document !== "undefined") {
+      document.documentElement.classList.toggle("dark", isDarkMode);
+    }
   }, [isDarkMode]);
 
-  // Apply font size on mount and when it changes
+  // Apply font size when it changes
   useEffect(() => {
-    applyFontSize(fontSize);
+    if (typeof document !== "undefined") {
+      applyFontSize(fontSize);
+    }
   }, [fontSize]);
 
   // Toggle dark mode
@@ -137,15 +150,17 @@ export default function Header() {
           </ButtonGroup>
         </NavbarItem>
         <NavbarItem>
-          <Switch
-            isSelected={isDarkMode}
-            onValueChange={toggleDarkMode}
-            size="sm"
-            color="primary"
-            startContent={<span className="text-xs">☀️</span>}
-            endContent={<span className="text-xs">🌙</span>}
-            aria-label="Toggle dark mode"
-          />
+          {mounted && (
+            <Switch
+              isSelected={isDarkMode}
+              onValueChange={toggleDarkMode}
+              size="sm"
+              color="primary"
+              startContent={<span className="text-xs">☀️</span>}
+              endContent={<span className="text-xs">🌙</span>}
+              aria-label="Toggle dark mode"
+            />
+          )}
         </NavbarItem>
         <NavbarItem>
           <Link href="/admin/login" className="text-sm">
