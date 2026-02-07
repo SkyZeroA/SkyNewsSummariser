@@ -215,33 +215,41 @@ export default function AdminDashboard() {
               </h2>
             </CardHeader>
             <CardBody className="px-0 py-0 overflow-y-auto">
-              <div className="divide-y divide-gray-200 dark:divide-gray-700">
+              <div>
                 {summaries.map((summary) => (
-                  <button
+                  <div
                     key={summary.id}
-                    onClick={() => selectSummary(summary)}
-                    className={`w-full text-left px-6 py-4 transition-colors ${
+                    className={`border-l-4 transition-colors ${
                       selectedSummary?.id === summary.id
-                        ? "bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-600"
-                        : "hover:bg-gray-50 dark:hover:bg-gray-800 border-l-4 border-transparent"
+                        ? "border-blue-600 bg-blue-50 dark:bg-blue-900/20"
+                        : "border-transparent"
                     }`}
                   >
+                    <button
+                      onClick={() => selectSummary(summary)}
+                      className={`w-full text-left px-6 py-4 transition-colors border-b border-gray-200 dark:border-gray-700 ${
+                        selectedSummary?.id === summary.id
+                          ? ""
+                          : "hover:bg-gray-50 dark:hover:bg-gray-800"
+                      }`}
+                    >
                     <h3 className="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">
                       {summary.articleTitle}
                     </h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-2">
                       {summary.summaryText}
                     </p>
-                    <Link
-                      href={summary.articleUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      View Source →
-                    </Link>
-                  </button>
+                      <Link
+                        href={summary.articleUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        View Source →
+                      </Link>
+                    </button>
+                  </div>
                 ))}
               </div>
             </CardBody>
