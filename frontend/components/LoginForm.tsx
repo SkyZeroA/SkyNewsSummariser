@@ -23,10 +23,17 @@ export default function LoginForm({ onSubmit }: LoginFormProps) {
       return;
     }
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // Email validation - only @sky.uk emails allowed
+    const emailRegex = /^[^\s@]+@sky\.uk$/;
     if (!emailRegex.test(email)) {
-      setError("Please enter a valid email address");
+      setError("Please enter a valid @sky.uk email address");
+      return;
+    }
+
+    // Password validation - at least 8 characters, 1 uppercase, 1 lowercase, 1 number, 1 special character
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(password)) {
+      setError("Password must be at least 8 characters with 1 uppercase, 1 lowercase, 1 number, and 1 special character");
       return;
     }
 

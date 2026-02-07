@@ -163,7 +163,7 @@ export default function Header() {
           )}
         </NavbarItem>
         <NavbarItem>
-          <Link href="/admin/login" className="text-sm">
+          <Link href="/login" className="text-sm">
             Admin Login
           </Link>
         </NavbarItem>
@@ -188,7 +188,7 @@ export default function Header() {
           <Link
             className="w-full"
             color="primary"
-            href="/admin/login"
+            href="/login"
             size="lg"
           >
             Admin Login
