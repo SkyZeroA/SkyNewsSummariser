@@ -27,27 +27,26 @@ const applyFontSize = (size: "small" | "medium" | "large") => {
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    if (globalThis.window === undefined) {
-      return false;
-    }
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [fontSize, setFontSize] = useState<"small" | "medium" | "large">("medium");
+
+  // Initialize state from localStorage after mount to avoid hydration mismatch
+  useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
     const prefersDark = globalThis.matchMedia(
       "(prefers-color-scheme: dark)",
     ).matches;
-    return savedTheme === "dark" || (!savedTheme && prefersDark);
-  });
-  const [fontSize, setFontSize] = useState<"small" | "medium" | "large">(() => {
-    if (globalThis.window === undefined) {
-      return "medium";
-    }
+    setIsDarkMode(savedTheme === "dark" || (!savedTheme && prefersDark));
+
     const savedFontSize = localStorage.getItem("fontSize") as
       | "small"
       | "medium"
       | "large"
       | null;
-    return savedFontSize || "medium";
-  });
+    if (savedFontSize) {
+      setFontSize(savedFontSize);
+    }
+  }, []);
 
   // Apply dark mode on mount and when it changes
   useEffect(() => {
