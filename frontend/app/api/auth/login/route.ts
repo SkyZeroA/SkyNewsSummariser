@@ -3,22 +3,22 @@ import { NextRequest, NextResponse } from "next/server";
 // Fake user database with three users
 const FAKE_USERS = [
   {
-    email: "admin@sky.uk",
-    password: "Admin123!",
-    name: "Admin User",
-    role: "admin",
+    email: "adnan.salahuddin@sky.uk",
+    password: "Sky@2025",
+    name: "Adnan",
+    role: "Software Engineer Graduate",
   },
   {
-    email: "editor@sky.uk",
-    password: "Editor123!",
-    name: "Editor User",
-    role: "editor",
+    email: "harry.taylor3@sky.uk",
+    password: "Sky@2025",
+    name: "Harry",
+    role: "Associate Software Engineer",
   },
   {
-    email: "viewer@sky.uk",
-    password: "Viewer123!",
-    name: "Viewer User",
-    role: "viewer",
+    email: "taran.che@sky.uk",
+    password: "Sky@2025",
+    name: "Taran",
+    role: "Associate Software Engineer",
   },
 ];
 

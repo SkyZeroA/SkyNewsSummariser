@@ -14,6 +14,7 @@ import {
   ButtonGroup,
 } from "@heroui/react";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 // Apply font size to document
 const applyFontSize = (size: "small" | "medium" | "large") => {
@@ -26,8 +27,11 @@ const applyFontSize = (size: "small" | "medium" | "large") => {
 };
 
 export default function Header() {
+  const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userName, setUserName] = useState<string>("");
 
   // Initialize with default value to avoid hydration mismatch
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -53,7 +57,43 @@ export default function Header() {
       if (savedFontSize) {
         setFontSize(savedFontSize);
       }
+
+      // Check if user is logged in
+      const authToken = localStorage.getItem("authToken");
+      const userStr = localStorage.getItem("user");
+
+      if (authToken && userStr) {
+        setIsLoggedIn(true);
+        try {
+          const user = JSON.parse(userStr);
+          setUserName(user.name || "");
+        } catch (error) {
+          console.error("Failed to parse user data:", error);
+        }
+      }
     }
+
+    // Listen for storage changes (login/logout events)
+    const handleStorageChange = () => {
+      const authToken = localStorage.getItem("authToken");
+      const userStr = localStorage.getItem("user");
+
+      if (authToken && userStr) {
+        setIsLoggedIn(true);
+        try {
+          const user = JSON.parse(userStr);
+          setUserName(user.name || "");
+        } catch (error) {
+          console.error("Failed to parse user data:", error);
+        }
+      } else {
+        setIsLoggedIn(false);
+        setUserName("");
+      }
+    };
+
+    globalThis.addEventListener("storage", handleStorageChange);
+    return () => globalThis.removeEventListener("storage", handleStorageChange);
   }, []);
 
   // Apply dark mode when it changes (but not on initial mount since blocking script handles that)
@@ -82,6 +122,15 @@ export default function Header() {
     setFontSize(size);
     applyFontSize(size);
     localStorage.setItem("fontSize", size);
+  };
+
+  // Handle logout
+  const handleLogout = () => {
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("user");
+    setIsLoggedIn(false);
+    setUserName("");
+    router.push("/");
   };
 
   const menuItems = [
@@ -163,9 +212,27 @@ export default function Header() {
           )}
         </NavbarItem>
         <NavbarItem>
-          <Link href="/login" className="text-sm">
-            Admin Login
-          </Link>
+          {mounted && (
+            isLoggedIn ? (
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  Welcome, <span className="font-semibold">{userName}</span>
+                </span>
+                <Button
+                  color="danger"
+                  variant="flat"
+                  size="sm"
+                  onPress={handleLogout}
+                >
+                  Logout
+                </Button>
+              </div>
+            ) : (
+              <Link href="/login" className="text-sm">
+                Admin Login
+              </Link>
+            )
+          )}
         </NavbarItem>
       </NavbarContent>
 
@@ -183,16 +250,40 @@ export default function Header() {
           </NavbarMenuItem>
         ))}
 
-        {/* Admin Login Link for Mobile */}
+        {/* Admin Login/Logout for Mobile */}
+        {isLoggedIn && (
+          <NavbarMenuItem>
+            <div className="w-full py-2">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                Logged in as
+              </p>
+              <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                {userName}
+              </p>
+            </div>
+          </NavbarMenuItem>
+        )}
         <NavbarMenuItem>
-          <Link
-            className="w-full"
-            color="primary"
-            href="/login"
-            size="lg"
-          >
-            Admin Login
-          </Link>
+          {isLoggedIn ? (
+            <Button
+              className="w-full"
+              color="danger"
+              variant="flat"
+              size="lg"
+              onPress={handleLogout}
+            >
+              Logout
+            </Button>
+          ) : (
+            <Link
+              className="w-full"
+              color="primary"
+              href="/login"
+              size="lg"
+            >
+              Admin Login
+            </Link>
+          )}
         </NavbarMenuItem>
 
         {/* Font Size Selector for Mobile */}

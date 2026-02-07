@@ -21,6 +21,9 @@ export default function AdminLoginPage() {
       localStorage.setItem('authToken', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
 
+      // Dispatch custom event to notify header of login state change
+      globalThis.dispatchEvent(new Event('storage'));
+
       // Redirect to admin dashboard
       router.push('/admin');
     } else {
