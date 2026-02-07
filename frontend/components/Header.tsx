@@ -27,36 +27,33 @@ const applyFontSize = (size: "small" | "medium" | "large") => {
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [fontSize, setFontSize] = useState<"small" | "medium" | "large">(
-    "medium",
-  );
-
-  // Initialize dark mode from localStorage or system preference
-  useEffect(() => {
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (globalThis.window === undefined) {
+      return false;
+    }
     const savedTheme = localStorage.getItem("theme");
     const prefersDark = globalThis.matchMedia(
       "(prefers-color-scheme: dark)",
     ).matches;
-
-    if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
-      setIsDarkMode(true);
-      document.documentElement.classList.add("dark");
-    } else {
-      setIsDarkMode(false);
-      document.documentElement.classList.remove("dark");
+    return savedTheme === "dark" || (!savedTheme && prefersDark);
+  });
+  const [fontSize, setFontSize] = useState<"small" | "medium" | "large">(() => {
+    if (globalThis.window === undefined) {
+      return "medium";
     }
-
-    // Initialize font size from localStorage
     const savedFontSize = localStorage.getItem("fontSize") as
       | "small"
       | "medium"
       | "large"
       | null;
-    if (savedFontSize) {
-      setFontSize(savedFontSize);
-      applyFontSize(savedFontSize);
-    }
+    return savedFontSize || "medium";
+  });
+
+  // Apply dark mode and font size on mount
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", isDarkMode);
+    applyFontSize(fontSize);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Toggle dark mode
@@ -99,9 +96,9 @@ export default function Header() {
           className="sm:hidden text-gray-900 dark:text-gray-100"
         />
         <NavbarBrand>
-          <p className="font-bold text-2xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <Link href="/" className="font-bold text-2xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:opacity-80 transition-opacity cursor-pointer">
             Sky News Summariser
-          </p>
+          </Link>
         </NavbarBrand>
       </NavbarContent>
 
@@ -157,8 +154,8 @@ export default function Header() {
           />
         </NavbarItem>
         <NavbarItem>
-          <Link href="/login" className="text-sm">
-            Login
+          <Link href="/admin/login" className="text-sm">
+            Admin Login
           </Link>
         </NavbarItem>
       </NavbarContent>
@@ -176,6 +173,18 @@ export default function Header() {
             </Link>
           </NavbarMenuItem>
         ))}
+
+        {/* Admin Login Link for Mobile */}
+        <NavbarMenuItem>
+          <Link
+            className="w-full"
+            color="primary"
+            href="/admin/login"
+            size="lg"
+          >
+            Admin Login
+          </Link>
+        </NavbarMenuItem>
 
         {/* Font Size Selector for Mobile */}
         <NavbarMenuItem>
