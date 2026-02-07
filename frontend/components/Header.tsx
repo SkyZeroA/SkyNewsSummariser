@@ -27,26 +27,25 @@ const applyFontSize = (size: "small" | "medium" | "large") => {
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [fontSize, setFontSize] = useState<"small" | "medium" | "large">("medium");
-
-  // Initialize state from localStorage after mount to avoid hydration mismatch
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("theme");
-    const prefersDark = globalThis.matchMedia(
-      "(prefers-color-scheme: dark)",
-    ).matches;
-    setIsDarkMode(savedTheme === "dark" || (!savedTheme && prefersDark));
-
-    const savedFontSize = localStorage.getItem("fontSize") as
-      | "small"
-      | "medium"
-      | "large"
-      | null;
-    if (savedFontSize) {
-      setFontSize(savedFontSize);
+  // Initialize state from DOM to match the blocking script
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof document !== "undefined") {
+      return document.documentElement.classList.contains("dark");
     }
-  }, []);
+    return false;
+  });
+
+  const [fontSize, setFontSize] = useState<"small" | "medium" | "large">(() => {
+    if (typeof localStorage !== "undefined") {
+      const savedFontSize = localStorage.getItem("fontSize") as
+        | "small"
+        | "medium"
+        | "large"
+        | null;
+      return savedFontSize || "medium";
+    }
+    return "medium";
+  });
 
   // Apply dark mode on mount and when it changes
   useEffect(() => {
