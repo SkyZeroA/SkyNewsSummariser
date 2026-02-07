@@ -14,6 +14,7 @@ import {
   ButtonGroup,
 } from "@heroui/react";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 // Apply font size to document
 const applyFontSize = (size: "small" | "medium" | "large") => {
@@ -26,51 +27,94 @@ const applyFontSize = (size: "small" | "medium" | "large") => {
 };
 
 export default function Header() {
+  const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userName, setUserName] = useState<string>("");
+
+  // Initialize with default value to avoid hydration mismatch
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [fontSize, setFontSize] = useState<"small" | "medium" | "large">(
-    "medium",
-  );
+  const [fontSize, setFontSize] = useState<"small" | "medium" | "large">("medium");
 
-  // Initialize dark mode from localStorage or system preference
+  // Sync with localStorage and DOM after mount to avoid hydration mismatch
   useEffect(() => {
-    const savedTheme = localStorage.getItem("theme");
-    const prefersDark = globalThis.matchMedia(
-      "(prefers-color-scheme: dark)",
-    ).matches;
+    setMounted(true);
 
-    if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
-      setIsDarkMode(true);
-      document.documentElement.classList.add("dark");
-    } else {
-      setIsDarkMode(false);
-      document.documentElement.classList.remove("dark");
+    // Sync dark mode from DOM (set by blocking script in layout)
+    if (typeof document !== "undefined") {
+      const isDark = document.documentElement.classList.contains("dark");
+      setIsDarkMode(isDark);
     }
 
-    // Initialize font size from localStorage
-    const savedFontSize = localStorage.getItem("fontSize") as
-      | "small"
-      | "medium"
-      | "large"
-      | null;
-    if (savedFontSize) {
-      setFontSize(savedFontSize);
-      applyFontSize(savedFontSize);
+    // Sync font size from localStorage
+    if (typeof localStorage !== "undefined") {
+      const savedFontSize = localStorage.getItem("fontSize") as
+        | "small"
+        | "medium"
+        | "large"
+        | null;
+      if (savedFontSize) {
+        setFontSize(savedFontSize);
+      }
+
+      // Check if user is logged in
+      const authToken = localStorage.getItem("authToken");
+      const userStr = localStorage.getItem("user");
+
+      if (authToken && userStr) {
+        setIsLoggedIn(true);
+        try {
+          const user = JSON.parse(userStr);
+          setUserName(user.name || "");
+        } catch (error) {
+          console.error("Failed to parse user data:", error);
+        }
+      }
     }
+
+    // Listen for storage changes (login/logout events)
+    const handleStorageChange = () => {
+      const authToken = localStorage.getItem("authToken");
+      const userStr = localStorage.getItem("user");
+
+      if (authToken && userStr) {
+        setIsLoggedIn(true);
+        try {
+          const user = JSON.parse(userStr);
+          setUserName(user.name || "");
+        } catch (error) {
+          console.error("Failed to parse user data:", error);
+        }
+      } else {
+        setIsLoggedIn(false);
+        setUserName("");
+      }
+    };
+
+    globalThis.addEventListener("storage", handleStorageChange);
+    return () => globalThis.removeEventListener("storage", handleStorageChange);
   }, []);
+
+  // Apply dark mode when it changes (but not on initial mount since blocking script handles that)
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.classList.toggle("dark", isDarkMode);
+    }
+  }, [isDarkMode]);
+
+  // Apply font size when it changes
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      applyFontSize(fontSize);
+    }
+  }, [fontSize]);
 
   // Toggle dark mode
   const toggleDarkMode = () => {
     const newDarkMode = !isDarkMode;
     setIsDarkMode(newDarkMode);
-
-    if (newDarkMode) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
+    localStorage.setItem("theme", newDarkMode ? "dark" : "light");
   };
 
   // Change font size
@@ -78,6 +122,15 @@ export default function Header() {
     setFontSize(size);
     applyFontSize(size);
     localStorage.setItem("fontSize", size);
+  };
+
+  // Handle logout
+  const handleLogout = () => {
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("user");
+    setIsLoggedIn(false);
+    setUserName("");
+    router.push("/");
   };
 
   const menuItems = [
@@ -99,9 +152,9 @@ export default function Header() {
           className="sm:hidden text-gray-900 dark:text-gray-100"
         />
         <NavbarBrand>
-          <p className="font-bold text-2xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <Link href="/" className="font-bold text-2xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:opacity-80 transition-opacity cursor-pointer">
             Sky News Summariser
-          </p>
+          </Link>
         </NavbarBrand>
       </NavbarContent>
 
@@ -146,20 +199,40 @@ export default function Header() {
           </ButtonGroup>
         </NavbarItem>
         <NavbarItem>
-          <Switch
-            isSelected={isDarkMode}
-            onValueChange={toggleDarkMode}
-            size="sm"
-            color="primary"
-            startContent={<span className="text-xs">☀️</span>}
-            endContent={<span className="text-xs">🌙</span>}
-            aria-label="Toggle dark mode"
-          />
+          {mounted && (
+            <Switch
+              isSelected={isDarkMode}
+              onValueChange={toggleDarkMode}
+              size="sm"
+              color="primary"
+              startContent={<span className="text-xs">☀️</span>}
+              endContent={<span className="text-xs">🌙</span>}
+              aria-label="Toggle dark mode"
+            />
+          )}
         </NavbarItem>
         <NavbarItem>
-          <Link href="/login" className="text-sm">
-            Login
-          </Link>
+          {mounted && (
+            isLoggedIn ? (
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  Welcome, <span className="font-semibold">{userName}</span>
+                </span>
+                <Button
+                  color="danger"
+                  variant="flat"
+                  size="sm"
+                  onPress={handleLogout}
+                >
+                  Logout
+                </Button>
+              </div>
+            ) : (
+              <Link href="/login" className="text-sm">
+                Admin Login
+              </Link>
+            )
+          )}
         </NavbarItem>
       </NavbarContent>
 
@@ -176,6 +249,42 @@ export default function Header() {
             </Link>
           </NavbarMenuItem>
         ))}
+
+        {/* Admin Login/Logout for Mobile */}
+        {isLoggedIn && (
+          <NavbarMenuItem>
+            <div className="w-full py-2">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                Logged in as
+              </p>
+              <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                {userName}
+              </p>
+            </div>
+          </NavbarMenuItem>
+        )}
+        <NavbarMenuItem>
+          {isLoggedIn ? (
+            <Button
+              className="w-full"
+              color="danger"
+              variant="flat"
+              size="lg"
+              onPress={handleLogout}
+            >
+              Logout
+            </Button>
+          ) : (
+            <Link
+              className="w-full"
+              color="primary"
+              href="/login"
+              size="lg"
+            >
+              Admin Login
+            </Link>
+          )}
+        </NavbarMenuItem>
 
         {/* Font Size Selector for Mobile */}
         <NavbarMenuItem>
