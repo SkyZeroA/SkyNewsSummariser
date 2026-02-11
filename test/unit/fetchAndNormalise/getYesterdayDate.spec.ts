@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getYesterdayDate } from '../../../lib/lambdas/fetchAndNormalise';
+import { getYesterdayDate } from '@lib/lambdas/fetchAndNormalise.ts';
 
 describe('getYesterdayDate', () => {
 	it('should return previous day in YYYY-MM-DD format', () => {

@@ -21,7 +21,7 @@
 		"diff-branch": "STAGE=$(git rev-parse --abbrev-ref HEAD | tr '[:upper:]' '[:lower:]') pnpm run diff",
 		"synth": "pnpm run build && cdk synth --all --context stage=${STAGE}",
 		"synth-branch": "STAGE=$(git rev-parse --abbrev-ref HEAD | tr '[:upper:]' '[:lower:]') pnpm run synth",
-		"deploy-cdk": "aws-cloudformation-wait-ready --region eu-west-1 --stack-name summariser-${STAGE} && cdk deploy --all --context stage=${STAGE} --context appVersion=${NEW_VERSION} --method=direct --require-approval never --outputs-file outputs.json",
+		"deploy-cdk": "cdk deploy --all --context stage=${STAGE} --context appVersion=${NEW_VERSION} --method=direct --require-approval never --outputs-file outputs.json",
 		"deploy": "echo {} > outputs.json && pnpm run build && pnpm run test && pnpm run deploy-cdk",
 		"deploy-branch": "AWS_SDK_LOAD_CONFIG=1 STAGE=$(git rev-parse --abbrev-ref HEAD | tr '[:upper:]' '[:lower:]') pnpm run deploy",
 		"teardown": "cdk destroy --all --force --context stage=${STAGE}",
