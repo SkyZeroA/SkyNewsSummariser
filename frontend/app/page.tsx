@@ -9,6 +9,15 @@ export default function Home() {
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  // Clear messages when user starts typing
+  const handleEmailChange = (value: string) => {
+    setEmail(value);
+    if (error || success) {
+      setError("");
+      setSuccess("");
+    }
+  };
+
   const handleSubscribe = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
     setError("");
@@ -85,7 +94,7 @@ export default function Home() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
       {/* Summary Section */}
-      <section className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg shadow-lg p-8 mb-8">
+      <section className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg shadow-lg p-8 mb-8 animate-fadeIn">
         <h1 className="text-3xl font-bold mb-6 uppercase tracking-wide">
           Summary
         </h1>
@@ -93,28 +102,28 @@ export default function Home() {
           <div>
             <h2 className="text-xl font-semibold mb-3">Yesterdays News</h2>
             <ul className="space-y-3 text-gray-700 dark:text-gray-300 list-disc list-inside">
-              <li>
+              <li className="animate-slideUp" style={{ animationDelay: '0.1s', animationFillMode: 'both' }}>
                 The NHS is under severe winter pressure as a mutated "super flu" drives record hospital admissions,
                 with doctors warning the health service is "on the brink" of being overwhelmed by the surge in cases.
               </li>
-              <li>
+              <li className="animate-slideUp" style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
                 The Bank of England unexpectedly pauses its October, increasing expectations that the Bank of England will
                 cut interest rates soon after the end of the year, with economists now predicting a 0.25% reduction in February.
               </li>
-              <li>
+              <li className="animate-slideUp" style={{ animationDelay: '0.3s', animationFillMode: 'both' }}>
                 Police are investigating after learning bags of stolen items were stolen from a UK museum,
                 including irreplaceable ancient artifacts dating back thousands of years, with the museum's security
                 procedures now under review.
               </li>
-              <li>
+              <li className="animate-slideUp" style={{ animationDelay: '0.4s', animationFillMode: 'both' }}>
                 A major UK retailer has announced plans to close 50 stores nationwide, citing rising global tensions
                 and increased online activity.
               </li>
-              <li>
+              <li className="animate-slideUp" style={{ animationDelay: '0.5s', animationFillMode: 'both' }}>
                 A National UK firm has been fined £5m delayed its financial results due to an ongoing accounting probe while
                 the company's shares plunged 13% offering some relief to the sector.
               </li>
-              <li>
+              <li className="animate-slideUp" style={{ animationDelay: '0.6s', animationFillMode: 'both' }}>
                 Transport officials are urging the rollout of a major new national rail timetable this weekend,
                 despite warnings of "friendly disruption" on some routes.
               </li>
@@ -124,16 +133,22 @@ export default function Home() {
       </section>
 
       {/* Summarised Articles Section */}
-      <section className="mb-8">
+      <section className="mb-8 animate-fadeIn" style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 uppercase tracking-wide">
           Summarised Articles
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {summarisedArticles.map((article) => (
-            <Card key={article.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+          {summarisedArticles.map((article, index) => (
+            <Card
+              key={article.id}
+              isPressable
+              onPress={() => console.log(`Clicked article: ${article.title}`)}
+              className="overflow-hidden hover:shadow-xl hover:scale-105 transition-all duration-300 animate-scaleIn"
+              style={{ animationDelay: `${0.3 + index * 0.1}s`, animationFillMode: 'both' }}
+            >
               <CardBody className="p-0">
-                <div className="relative w-full h-48 bg-gray-200 dark:bg-gray-700">
-                  <div className="absolute inset-0 flex items-center justify-center text-gray-400">
+                <div className="relative w-full h-48 bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                  <div className="absolute inset-0 flex items-center justify-center text-gray-400 transition-transform duration-300 hover:scale-110">
                     Image placeholder
                   </div>
                 </div>
@@ -149,7 +164,7 @@ export default function Home() {
       </section>
 
       {/* Email Subscription Section */}
-      <section className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg shadow-lg p-8 mb-8">
+      <section className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg shadow-lg p-8 mb-8 animate-fadeIn" style={{ animationDelay: '0.7s', animationFillMode: 'both' }}>
         <div className="text-center mb-6">
           <h2 className="text-2xl font-bold mb-2">
             Want this delivered daily?
@@ -166,32 +181,32 @@ export default function Home() {
                 type="email"
                 placeholder="Enter your email address"
                 value={email}
-                onValueChange={setEmail}
+                onValueChange={handleEmailChange}
                 isRequired
                 variant="flat"
                 classNames={{
                   input: "text-gray-900 dark:text-white",
-                  inputWrapper: "bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700",
+                  inputWrapper: "bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 transition-all duration-300 hover:border-blue-400 dark:hover:border-blue-500",
                 }}
               />
             </div>
             <Button
               type="submit"
               isLoading={isLoading}
-              className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-6 py-2 rounded h-10"
+              className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-6 py-2 rounded h-10 transition-all duration-300 hover:scale-105 hover:shadow-lg"
             >
               Subscribe
             </Button>
           </div>
 
-          {error && (
-            <div className="mt-3 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-3 rounded">
+          {error && !success && (
+            <div className="mt-3 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-3 rounded animate-slideUp">
               {error}
             </div>
           )}
 
-          {success && (
-            <div className="mt-3 text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 p-3 rounded">
+          {success && !error && (
+            <div className="mt-3 text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 p-3 rounded animate-slideUp">
               {success}
             </div>
           )}
@@ -199,7 +214,7 @@ export default function Home() {
       </section>
 
       {/* Most Read Section */}
-      <section className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8">
+      <section className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8 animate-fadeIn" style={{ animationDelay: '0.8s', animationFillMode: 'both' }}>
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 uppercase tracking-wide">
           Most Read
         </h2>
@@ -207,10 +222,11 @@ export default function Home() {
           {mostReadArticles.map((article, index) => (
             <div
               key={index}
-              className="flex items-start gap-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors cursor-pointer"
+              className="flex items-start gap-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-all duration-300 cursor-pointer hover:scale-102 hover:shadow-md animate-slideUp"
+              style={{ animationDelay: `${0.9 + index * 0.05}s`, animationFillMode: 'both' }}
             >
               <div className="flex-shrink-0">
-                <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                <span className="text-2xl font-bold text-blue-600 dark:text-blue-400 transition-transform duration-300 hover:scale-110 inline-block">
                   {index + 1}
                 </span>
               </div>

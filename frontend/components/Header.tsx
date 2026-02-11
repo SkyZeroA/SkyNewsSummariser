@@ -143,28 +143,28 @@ export default function Header() {
       isBordered
       isMenuOpen={isMenuOpen}
       onMenuOpenChange={setIsMenuOpen}
-      className="bg-white dark:bg-gray-900"
+      className="bg-white dark:bg-gray-900 animate-fadeIn"
       maxWidth="xl"
     >
       <NavbarContent>
         <NavbarMenuToggle
           aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-          className="sm:hidden text-gray-900 dark:text-gray-100"
+          className="sm:hidden text-gray-900 dark:text-gray-100 transition-transform duration-300 hover:scale-110"
         />
         <NavbarBrand>
-          <Link href="/" className="font-bold text-2xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:opacity-80 transition-opacity cursor-pointer">
+          <Link href="/" className="font-bold text-2xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:opacity-80 transition-all duration-300 hover:scale-105 cursor-pointer">
             Sky News Summariser
           </Link>
         </NavbarBrand>
       </NavbarContent>
 
       <NavbarContent className="hidden sm:flex gap-6" justify="center">
-        {menuItems.map((item) => (
-          <NavbarItem key={item.name}>
+        {menuItems.map((item, index) => (
+          <NavbarItem key={item.name} className="animate-fadeIn" style={{ animationDelay: `${0.1 + index * 0.1}s`, animationFillMode: 'both' }}>
             <Link
               color="foreground"
               href={item.href}
-              className="hover:text-blue-600 transition-colors"
+              className="hover:text-blue-600 transition-all duration-300 hover:scale-105"
             >
               {item.name}
             </Link>
@@ -173,32 +173,32 @@ export default function Header() {
       </NavbarContent>
 
       <NavbarContent justify="end">
-        <NavbarItem className="hidden sm:flex">
+        <NavbarItem className="hidden sm:flex animate-fadeIn" style={{ animationDelay: '0.3s', animationFillMode: 'both' }}>
           <ButtonGroup size="sm" variant="flat">
             <Button
               color={fontSize === "small" ? "primary" : "default"}
               onPress={() => changeFontSize("small")}
-              className="min-w-unit-8 px-2"
+              className="min-w-unit-8 px-2 transition-all duration-300 hover:scale-110"
             >
               <span className="text-xs !text-xs">A</span>
             </Button>
             <Button
               color={fontSize === "medium" ? "primary" : "default"}
               onPress={() => changeFontSize("medium")}
-              className="min-w-unit-10 px-2"
+              className="min-w-unit-10 px-2 transition-all duration-300 hover:scale-110"
             >
               <span className="text-sm !text-sm">A</span>
             </Button>
             <Button
               color={fontSize === "large" ? "primary" : "default"}
               onPress={() => changeFontSize("large")}
-              className="min-w-unit-12 px-2"
+              className="min-w-unit-12 px-2 transition-all duration-300 hover:scale-110"
             >
               <span className="text-base !text-base">A</span>
             </Button>
           </ButtonGroup>
         </NavbarItem>
-        <NavbarItem>
+        <NavbarItem className="animate-fadeIn" style={{ animationDelay: '0.4s', animationFillMode: 'both' }}>
           {mounted && (
             <Switch
               isSelected={isDarkMode}
@@ -208,10 +208,11 @@ export default function Header() {
               startContent={<span className="text-xs">☀️</span>}
               endContent={<span className="text-xs">🌙</span>}
               aria-label="Toggle dark mode"
+              className="transition-all duration-300 hover:scale-105"
             />
           )}
         </NavbarItem>
-        <NavbarItem>
+        <NavbarItem className="animate-fadeIn" style={{ animationDelay: '0.5s', animationFillMode: 'both' }}>
           {mounted && (
             isLoggedIn ? (
               <div className="flex items-center gap-3">
@@ -223,12 +224,13 @@ export default function Header() {
                   variant="flat"
                   size="sm"
                   onPress={handleLogout}
+                  className="transition-all duration-300 hover:scale-105"
                 >
                   Logout
                 </Button>
               </div>
             ) : (
-              <Link href="/login" className="text-sm">
+              <Link href="/login" className="text-sm transition-all duration-300 hover:scale-105">
                 Admin Login
               </Link>
             )
@@ -238,9 +240,9 @@ export default function Header() {
 
       <NavbarMenu>
         {menuItems.map((item, index) => (
-          <NavbarMenuItem key={`${item.name}-${index}`}>
+          <NavbarMenuItem key={`${item.name}-${index}`} className="animate-slideUp" style={{ animationDelay: `${index * 0.1}s`, animationFillMode: 'both' }}>
             <Link
-              className="w-full"
+              className="w-full transition-all duration-300 hover:translate-x-2"
               color="foreground"
               href={item.href}
               size="lg"

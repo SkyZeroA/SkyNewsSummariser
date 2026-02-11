@@ -34,7 +34,7 @@ export default function AdminLoginPage() {
 
   return (
     <div className="flex flex-col items-center justify-center px-4 py-12">
-      <div className="mb-8 text-center">
+      <div className="mb-8 text-center animate-fadeIn">
         <h2 className="font-bold text-3xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
           Administration Portal
         </h2>
@@ -43,7 +43,9 @@ export default function AdminLoginPage() {
         </p>
       </div>
 
-      <LoginForm onSubmit={handleLogin} />
+      <div className="animate-scaleIn" style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
+        <LoginForm onSubmit={handleLogin} />
+      </div>
     </div>
   );
 }

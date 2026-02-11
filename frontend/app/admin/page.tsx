@@ -177,7 +177,7 @@ export default function AdminDashboard() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
+        <div className="text-center animate-fadeIn">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-400">Loading summaries...</p>
         </div>
@@ -188,7 +188,7 @@ export default function AdminDashboard() {
   return (
     <div className="max-w-[1600px] mx-auto px-6 py-8">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-8 animate-fadeIn">
         <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
           Summary Review
         </h1>
@@ -198,7 +198,7 @@ export default function AdminDashboard() {
       </div>
 
       {summaries.length === 0 ? (
-        <Card>
+        <Card className="animate-scaleIn">
           <CardBody className="text-center py-12">
             <p className="text-gray-600 dark:text-gray-400 text-lg">
               No pending summaries to review
@@ -208,7 +208,7 @@ export default function AdminDashboard() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-250px)]">
           {/* Left Panel - Summary List */}
-          <Card className="overflow-hidden">
+          <Card className="overflow-hidden animate-slideUp" style={{ animationDelay: '0.1s', animationFillMode: 'both' }}>
             <CardHeader className="px-6 pt-6 pb-4 border-b border-gray-200 dark:border-gray-700">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                 Pending Summaries ({summaries.length})
@@ -216,21 +216,22 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardBody className="px-0 py-0 overflow-y-auto">
               <div>
-                {summaries.map((summary) => (
+                {summaries.map((summary, index) => (
                   <div
                     key={summary.id}
-                    className={`border-l-4 transition-colors ${
+                    className={`border-l-4 transition-all duration-300 animate-fadeIn ${
                       selectedSummary?.id === summary.id
                         ? "border-blue-600 bg-blue-50 dark:bg-blue-900/20"
                         : "border-transparent"
                     }`}
+                    style={{ animationDelay: `${0.2 + index * 0.05}s`, animationFillMode: 'both' }}
                   >
                     <button
                       onClick={() => selectSummary(summary)}
-                      className={`w-full text-left px-6 py-4 transition-colors border-b border-gray-200 dark:border-gray-700 ${
+                      className={`w-full text-left px-6 py-4 transition-all duration-300 border-b border-gray-200 dark:border-gray-700 ${
                         selectedSummary?.id === summary.id
                           ? ""
-                          : "hover:bg-gray-50 dark:hover:bg-gray-800"
+                          : "hover:bg-gray-50 dark:hover:bg-gray-800 hover:translate-x-1"
                       }`}
                     >
                     <h3 className="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">
@@ -243,7 +244,7 @@ export default function AdminDashboard() {
                         href={summary.articleUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline transition-colors duration-300"
                         onClick={(e) => e.stopPropagation()}
                       >
                         View Source →
@@ -256,7 +257,7 @@ export default function AdminDashboard() {
           </Card>
 
           {/* Right Panel - Edit Summary */}
-          <Card className="overflow-hidden">
+          <Card className="overflow-hidden animate-slideUp" style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
             <CardHeader className="px-6 pt-6 pb-4 border-b border-gray-200 dark:border-gray-700">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                 Edit Summary
@@ -265,38 +266,44 @@ export default function AdminDashboard() {
             <CardBody className="px-6 py-6 overflow-y-auto">
               {selectedSummary ? (
                 <div className="flex flex-col gap-6 h-full">
-                  <Input
-                    label="Article Title"
-                    placeholder="Enter article title"
-                    value={editedTitle}
-                    onValueChange={setEditedTitle}
-                    variant="bordered"
-                    classNames={{
-                      input: "text-gray-900 dark:text-white",
-                      label: "text-gray-700 dark:text-gray-300",
-                    }}
-                  />
+                  <div className="animate-fadeIn" style={{ animationDelay: '0.3s', animationFillMode: 'both' }}>
+                    <Input
+                      label="Article Title"
+                      placeholder="Enter article title"
+                      value={editedTitle}
+                      onValueChange={setEditedTitle}
+                      variant="bordered"
+                      classNames={{
+                        input: "text-gray-900 dark:text-white",
+                        label: "text-gray-700 dark:text-gray-300",
+                        inputWrapper: "transition-all duration-300 hover:border-blue-400 dark:hover:border-blue-500",
+                      }}
+                    />
+                  </div>
 
-                  <Textarea
-                    label="AI-Generated Summary"
-                    placeholder="Enter summary text"
-                    value={editedSummary}
-                    onValueChange={setEditedSummary}
-                    variant="bordered"
-                    minRows={12}
-                    classNames={{
-                      input: "text-gray-900 dark:text-white",
-                      label: "text-gray-700 dark:text-gray-300",
-                    }}
-                  />
+                  <div className="animate-fadeIn" style={{ animationDelay: '0.4s', animationFillMode: 'both' }}>
+                    <Textarea
+                      label="AI-Generated Summary"
+                      placeholder="Enter summary text"
+                      value={editedSummary}
+                      onValueChange={setEditedSummary}
+                      variant="bordered"
+                      minRows={12}
+                      classNames={{
+                        input: "text-gray-900 dark:text-white",
+                        label: "text-gray-700 dark:text-gray-300",
+                        inputWrapper: "transition-all duration-300 hover:border-blue-400 dark:hover:border-blue-500",
+                      }}
+                    />
+                  </div>
 
                   <div className="flex-1"></div>
 
-                  <div className="flex gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex gap-4 pt-4 border-t border-gray-200 dark:border-gray-700 animate-fadeIn" style={{ animationDelay: '0.5s', animationFillMode: 'both' }}>
                     <Button
                       color="success"
                       size="lg"
-                      className="flex-1 font-semibold"
+                      className="flex-1 font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg"
                       onPress={handleApprove}
                       isLoading={isSaving}
                     >
@@ -306,7 +313,7 @@ export default function AdminDashboard() {
                       color="danger"
                       size="lg"
                       variant="flat"
-                      className="flex-1 font-semibold"
+                      className="flex-1 font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg"
                       onPress={handleReject}
                       isLoading={isSaving}
                     >
@@ -322,6 +329,7 @@ export default function AdminDashboard() {
                       size="sm"
                       onPress={handleUpdateSummary}
                       isLoading={isSaving}
+                      className="animate-slideUp transition-all duration-300 hover:scale-105"
                     >
                       Save Changes
                     </Button>
@@ -329,7 +337,7 @@ export default function AdminDashboard() {
                 </div>
               ) : (
                 <div className="flex items-center justify-center h-full">
-                  <p className="text-gray-500 dark:text-gray-400">
+                  <p className="text-gray-500 dark:text-gray-400 animate-fadeIn">
                     Select a summary to edit
                   </p>
                 </div>
