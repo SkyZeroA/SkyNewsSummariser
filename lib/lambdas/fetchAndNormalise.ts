@@ -151,5 +151,3 @@ export const handler: Handler<unknown, FetchAndNormaliseResult> = async () => {
 		throw error;
 	}
 };
-
-export const main = handler;
