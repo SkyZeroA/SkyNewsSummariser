@@ -2,12 +2,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mockClient } from 'aws-sdk-client-mock';
 import 'aws-sdk-client-mock-vitest/extend';
 import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
-import { handler } from '../../../lib/lambdas/subscribeEmail';
+import { handler } from '@lib/lambdas/subscribeEmail.ts';
 
 const ddbMock = mockClient(DynamoDBDocumentClient);
 
-vi.mock('crypto', () => ({
-	randomUUID: vi.fn(() => 'test-uuid-1234'),
+vi.mock('uuid', () => ({
+	v4: vi.fn(() => 'test-uuid-1234'),
 }));
 
 describe('handler', () => {

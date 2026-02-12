@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isValidEmail } from '../../../lib/lambdas/subscribeEmail';
+import { isValidEmail } from '../../../lib/lambdas/subscribeEmail.ts';
 
 describe('isValidEmail', () => {
 	it('should return true for valid email addresses', () => {

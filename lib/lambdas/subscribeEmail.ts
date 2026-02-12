@@ -1,7 +1,7 @@
 import { Handler } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
-import { randomUUID } from 'node:crypto';
+import { v4 as uuidv4 } from 'uuid';
 
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
@@ -26,7 +26,7 @@ export const handler: Handler<{ email: string }, void> = async (event) => {
 
 	// Create timestamp and unsubscribe token
 	const timestamp = new Date().toISOString();
-	const unsubscribeToken = randomUUID();
+	const unsubscribeToken = uuidv4();
 
 	const tableName = process.env.TABLE_NAME;
 	if (!tableName) {
