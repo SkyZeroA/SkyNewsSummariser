@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { fetchFromChartBeat } from '../../../lib/lambdas/fetchAndNormalise';
+import { fetchFromChartBeat } from '@lib/lambdas/fetchAndNormalise.ts';
 
 // Mock global fetch
 global.fetch = vi.fn();
