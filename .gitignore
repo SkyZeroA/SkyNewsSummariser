@@ -11,6 +11,8 @@ out/
 
 .DS_Store
 
+outputs.json
+
 *.log
 npm-debug.log*
 pnpm-debug.log*
