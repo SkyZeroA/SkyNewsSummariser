@@ -32,9 +32,9 @@
   "FailureSnsTopic": "",
   "SendFailureSlackNotifications": "false",
   "Promote": true,
-  "S3OutputBucket": "summariser-cd-serverless-cdsourcesourcebucket9b42b-pta3ynwrnmpp",
+  "S3OutputBucket": "summariser-cd-serverless-cdsourcesourcebucket9b42b-gh3wkabka2z5",
   "S3OutputArtifactName": "cd-release.zip",
   "CrossAccountRole": "",
   "TARGET_STACK_ID": "ci",
-  "TAGS": "[\n  {\n    \"name\": \"project\",\n    \"value\": \"cheui\"\n  },\n  {\n    \"name\": \"territory\",\n    \"value\": \"uk\"\n  },\n  {\n    \"name\": \"billing_team\",\n    \"value\": \"gpds\"\n  },\n  {\n    \"name\": \"service\",\n    \"value\": \"che\"\n  }\n]\n"
+  "TAGS": "[\n  {\n    \"name\": \"project\",\n    \"value\": \"summariser\"\n  },\n  {\n    \"name\": \"territory\",\n    \"value\": \"gb\"\n  },\n  {\n    \"name\": \"billing_team\",\n    \"value\": \"gpds\"\n  },\n  {\n    \"name\": \"service\",\n    \"value\": \"summariser\"\n  }\n]\n"
 }
