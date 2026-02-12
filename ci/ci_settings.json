@@ -15,7 +15,7 @@
   "BuildComputeType": "MEDIUM",
   "Image": "aws/codebuild/standard:7.0",
   "BuildTimeout": "60",
-  "ParameterARNs": "",
+  "ParameterARNs": "arn:aws:ssm:eu-west-1:887792374450:parameter/summariser/chartbeat-api-key",
   "WriteParameterARNs": "",
   "SecretARNs": "",
   "RoleARNs": "",

@@ -1,5 +1,6 @@
 import { Handler } from 'aws-lambda';
 import * as cheerio from 'cheerio';
+import { buildUrl, getPath, normalizePath } from '@lib/lambdas/fetchAndNormalise/helpers.ts';
 
 export interface ChartBeatArticle {
 	title: string;
@@ -15,20 +16,22 @@ export interface NormalizedArticle {
 
 export interface FetchAndNormaliseResult {
 	articles: NormalizedArticle[];
-	fetchedDate: string;
 	count: number;
 }
 
-// Fetches the most popular articles from Chartbeat from yesterday
-export const fetchFromChartBeat = async (apiKey: string, previousDate: string): Promise<ChartBeatArticle[]> => {
+const DEFAULT_EXCLUDE_PATHS = ['/', '/uk', '/watch-live', 'home'];
+
+// Fetches the most popular articles from Chartbeat live endpoint
+export const fetchFromChartBeat = async (apiKey: string): Promise<ChartBeatArticle[]> => {
 	try {
+		const host = 'news.sky.com';
+		const limit = '10';
+		const excludePaths = new Set(DEFAULT_EXCLUDE_PATHS.map((value) => normalizePath(value)));
+
 		const url = new URL('https://api.chartbeat.com/live/toppages/v3/');
 		url.searchParams.append('apikey', apiKey);
-		url.searchParams.append('host', 'www.skynews.com');
-		url.searchParams.append('limit', '10');
-		url.searchParams.append('date', previousDate);
-
-		console.log(`Fetching articles from ChartBeat for date: ${previousDate}`);
+		url.searchParams.append('host', host);
+		url.searchParams.append('limit', limit);
 
 		// Get and validate response from chartbeat
 		const response = await fetch(url.toString());
@@ -36,22 +39,29 @@ export const fetchFromChartBeat = async (apiKey: string, previousDate: string): 
 			throw new Error(`ChartBeat API error: ${response.status} ${response.statusText}`);
 		}
 
-		// Format response into json and check for pages array - contains links to individual articles
+		// Format response into json and check for pages array
 		const data: unknown = await response.json();
-
-		// Type guard to check if data has the expected structure
 		if (typeof data !== 'object' || data === null || !('pages' in data) || !Array.isArray(data.pages)) {
 			throw new TypeError('Invalid ChartBeat response: missing pages array');
 		}
 
-		return data.pages.map((page: unknown) => {
-			const p = page as Record<string, unknown>;
-			return {
-				title: (p.title as string) || 'Untitled',
-				url: (p.link as string) || (p.url as string) || '',
-				visitors: (p.visitors as number) || (p.pageviews as number) || 0,
-			};
-		});
+		return data.pages
+			.map((page: unknown) => {
+				const p = page as Record<string, unknown>;
+				const rawValue = (p.path as string) || '';
+				const path = getPath(rawValue, host);
+				const normalizedPath = normalizePath(path);
+				const stats = (p.stats as Record<string, unknown>) ?? {};
+
+				return {
+					title: (p.title as string) || 'Untitled',
+					url: buildUrl(rawValue, host, path),
+					visitors: (stats.visits as number) || 0,
+					path: normalizedPath,
+				};
+			})
+			.filter((article) => article.path && !excludePaths.has(article.path))
+			.map(({ title, url, visitors }) => ({ title, url, visitors }));
 	} catch (error) {
 		console.error('Error fetching from ChartBeat:', error);
 		throw error;
@@ -99,13 +109,6 @@ export const normalizeArticles = async (articles: ChartBeatArticle[]): Promise<N
 	return normalized.filter((article) => article.content && article.title).toSorted((a, b) => b.visitors - a.visitors);
 };
 
-// Gets the date for yesterday in YYYY-MM-DD format
-export const getYesterdayDate = (): string => {
-	const yesterday = new Date();
-	yesterday.setDate(yesterday.getDate() - 1);
-	return yesterday.toISOString().split('T')[0];
-};
-
 // Lambda handler for fetching and normalizing ChartBeat articles
 export const handler: Handler<unknown, FetchAndNormaliseResult> = async () => {
 	// Set and validate APi key
@@ -114,19 +117,14 @@ export const handler: Handler<unknown, FetchAndNormaliseResult> = async () => {
 		throw new Error('CHARTBEAT_API_KEY environment variable is required. Set this in your Lambda configuration.');
 	}
 
-	const previousDate = getYesterdayDate();
-
-	console.log(`Starting fetch and normalize for date: ${previousDate}`);
-
 	try {
 		// Fetch articles from ChartBeat
-		const rawArticles = await fetchFromChartBeat(apiKey, previousDate);
+		const rawArticles = await fetchFromChartBeat(apiKey);
 
 		if (rawArticles.length === 0) {
 			console.warn('No articles found from ChartBeat');
 			return {
 				articles: [],
-				fetchedDate: previousDate,
 				count: 0,
 			};
 		}
@@ -134,16 +132,8 @@ export const handler: Handler<unknown, FetchAndNormaliseResult> = async () => {
 		// Normalize the articles
 		const normalizedArticles = await normalizeArticles(rawArticles);
 
-		console.log(`Successfully fetched and normalized ${normalizedArticles.length} articles`);
-
-		// Log top 3 articles for debugging
-		normalizedArticles.slice(0, 3).forEach((article, index) => {
-			console.log(`${index + 1}. ${article.title} (${article.visitors} visitors)`);
-		});
-
 		return {
 			articles: normalizedArticles,
-			fetchedDate: previousDate,
 			count: normalizedArticles.length,
 		};
 	} catch (error) {

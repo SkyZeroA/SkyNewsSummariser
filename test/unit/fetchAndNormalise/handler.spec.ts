@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as cheerio from 'cheerio';
-import { handler, type FetchAndNormaliseResult } from '@lib/lambdas/fetchAndNormalise.ts';
+import { handler, type FetchAndNormaliseResult } from '@lib/lambdas/fetchAndNormalise/fetchAndNormalise.ts';
 
 // Mock global fetch
 global.fetch = vi.fn();
@@ -25,13 +25,13 @@ describe('handler', () => {
 			pages: [
 				{
 					title: 'Breaking: Major Story',
-					link: 'https://www.skynews.com/article/breaking-news-1',
-					visitors: 15000,
+					path: '/story/breaking-news-1',
+					stats: { visits: 15000 },
 				},
 				{
 					title: 'Weather Update',
-					link: 'https://www.skynews.com/article/weather-update',
-					visitors: 8500,
+					path: '/story/weather-update',
+					stats: { visits: 8500 },
 				},
 			],
 		};
@@ -70,7 +70,6 @@ describe('handler', () => {
 
 		expect(result.articles).toHaveLength(2);
 		expect(result.count).toBe(2);
-		expect(result.fetchedDate).toBeDefined();
 
 		// Check articles are sorted by visitors (descending)
 		expect(result.articles[0].visitors).toBe(15000);
@@ -97,7 +96,6 @@ describe('handler', () => {
 
 		expect(result.articles).toHaveLength(0);
 		expect(result.count).toBe(0);
-		expect(result.fetchedDate).toBeDefined();
 	});
 
 	it('should propagate errors from ChartBeat API', async () => {

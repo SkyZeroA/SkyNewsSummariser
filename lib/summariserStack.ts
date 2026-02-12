@@ -15,7 +15,7 @@ export class SummariserStack extends Stack {
 		new NodejsFunction(this, 'FetchAndNormaliseLambda', {
 			runtime: lambda.Runtime.NODEJS_22_X,
 			handler: 'handler',
-			entry: path.join(__dirname, 'lambdas/fetchAndNormalise.ts'),
+			entry: path.join(__dirname, 'lambdas/fetchAndNormalise/fetchAndNormalise.ts'),
 			depsLockFilePath: path.join(__dirname, '../pnpm-lock.yaml'),
 			timeout: Duration.minutes(5),
 			memorySize: 1024,

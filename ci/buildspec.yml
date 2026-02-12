@@ -5,6 +5,7 @@ env:
   git-credential-helper: yes
   parameter-store:
     GH_TOKEN: /pipeline/githubAccessToken
+    CHARTBEAT_API_KEY: /summariser/chartbeat-api-key
 
 phases:
   install:

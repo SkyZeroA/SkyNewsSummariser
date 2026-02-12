@@ -22,3 +22,5 @@ cdk.context.json
 
 next-env.d.ts
 outputs.json
+
+scripts/
