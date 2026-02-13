@@ -2,6 +2,8 @@ import { Stack, StackProps, RemovalPolicy } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as lambdaNode from 'aws-cdk-lib/aws-lambda-nodejs';
+import * as path from 'node:path';
 
 export class SummariserStack extends Stack {
 	constructor(scope: Construct, id: string, props: StackProps) {
@@ -16,10 +18,10 @@ export class SummariserStack extends Stack {
 			tableName: 'summariser-subscribers',
 		});
 
-		const subscribeLambda = new lambda.Function(this, 'SubscribeLambda', {
+		const subscribeLambda = new lambdaNode.NodejsFunction(this, 'SubscribeLambda', {
 			runtime: lambda.Runtime.NODEJS_20_X,
-			handler: 'subscribeEmail.handler',
-			code: lambda.Code.fromAsset('lib/lambdas'),
+			entry: path.join(__dirname, '../lib/lambdas/subscribeEmail.ts'),
+			handler: 'handler',
 			environment: {
 				SUBSCRIBERS_TABLE: subscribersTable.tableName,
 			},
