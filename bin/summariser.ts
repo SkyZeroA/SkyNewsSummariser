@@ -6,6 +6,7 @@ const app = new App();
 const stage = app.node.tryGetContext('stage') as string;
 
 new SummariserStack(app, 'summariserStack', {
+	stage,
 	stackName: `summariser-stack-${stage}`,
 	env: {
 		account: process.env.CDK_DEFAULT_ACCOUNT,

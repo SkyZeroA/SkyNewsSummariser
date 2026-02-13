@@ -5,8 +5,12 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as lambdaNode from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as path from 'node:path';
 
+export interface SummariserStackProps extends StackProps {
+	stage: string;
+}
+
 export class SummariserStack extends Stack {
-	constructor(scope: Construct, id: string, props: StackProps) {
+	constructor(scope: Construct, id: string, props: SummariserStackProps) {
 		super(scope, id, props);
 
 		console.log('SummariserStack initialized');
@@ -15,7 +19,7 @@ export class SummariserStack extends Stack {
 			partitionKey: { name: 'email', type: dynamodb.AttributeType.STRING },
 			billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
 			removalPolicy: RemovalPolicy.DESTROY,
-			tableName: 'summariser-subscribers',
+			tableName: `summariser-subscribers-${props.stage}`,
 		});
 
 		const subscribeLambda = new lambdaNode.NodejsFunction(this, 'SubscribeLambda', {
