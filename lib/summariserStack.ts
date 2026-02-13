@@ -20,7 +20,7 @@ export class SummariserStack extends Stack {
 
 		const subscribeLambda = new lambdaNode.NodejsFunction(this, 'SubscribeLambda', {
 			runtime: lambda.Runtime.NODEJS_20_X,
-			entry: path.join(__dirname, '../lib/lambdas/subscribeEmail.ts'),
+			entry: path.resolve('lib/lambdas/subscribeEmail.ts'),
 			handler: 'handler',
 			environment: {
 				SUBSCRIBERS_TABLE: subscribersTable.tableName,
