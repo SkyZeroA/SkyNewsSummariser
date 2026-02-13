@@ -10,6 +10,22 @@ vi.mock('cheerio', () => ({
 	load: vi.fn(),
 }));
 
+const createCheerioMock = (textValue: string) => {
+	const strongSelection = {
+		text: vi.fn(() => ''),
+	};
+
+	const selection = {
+		filter: vi.fn(() => selection),
+		text: vi.fn(() => textValue),
+		find: vi.fn(() => strongSelection),
+	};
+
+	const $ = vi.fn(() => selection);
+
+	return { $ };
+};
+
 describe('handler', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -20,24 +36,21 @@ describe('handler', () => {
 		delete process.env.CHARTBEAT_API_KEY;
 	});
 
-	it('should fetch and normalize articles successfully', async () => {
+	it('should fetch and normalise articles successfully', async () => {
 		const mockChartBeatResponse = {
 			pages: [
-				{
-					title: 'Breaking: Major Story',
-					path: '/story/breaking-news-1',
-					stats: { visits: 15000 },
-				},
-				{
-					title: 'Weather Update',
-					path: '/story/weather-update',
-					stats: { visits: 8500 },
-				},
+				{ title: 'Article 1', path: '/story/article-1' },
+				{ title: 'Article 2', path: '/story/article-2' },
+				{ title: 'Article 3', path: '/story/article-3' },
+				{ title: 'Article 4', path: '/story/article-4' },
+				{ title: 'Article 5', path: '/story/article-5' },
+				{ title: 'Article 6', path: '/story/article-6' },
+				{ title: 'Article 7', path: '/story/article-7' },
+				{ title: 'Article 8', path: '/story/article-8' },
+				{ title: 'Article 9', path: '/story/article-9' },
+				{ title: 'Article 10', path: '/story/article-10' },
 			],
 		};
-
-		const mockArticleHtml1 = '<article>Breaking news content here</article>';
-		const mockArticleHtml2 = '<article>Weather content here</article>';
 
 		// Mock ChartBeat API response
 		(global.fetch as any).mockResolvedValueOnce({
@@ -45,39 +58,28 @@ describe('handler', () => {
 			json: async () => mockChartBeatResponse,
 		});
 
-		// Mock article content fetches
-		(global.fetch as any).mockResolvedValueOnce({
-			ok: true,
-			text: async () => mockArticleHtml1,
-		});
+		// Mock article content fetches for all 10 articles
+		for (let i = 1; i <= 10; i++) {
+			(global.fetch as any).mockResolvedValueOnce({
+				ok: true,
+				text: async () => `<div data-component-name="ui-article-body"><p>Content ${i}</p></div>`,
+			});
+		}
 
-		(global.fetch as any).mockResolvedValueOnce({
-			ok: true,
-			text: async () => mockArticleHtml2,
-		});
-
-		// Mock cheerio loads
-		const mockCheerio1 = {
-			text: vi.fn(() => 'Breaking news content here'),
-		};
-		const mockCheerio2 = {
-			text: vi.fn(() => 'Weather content here'),
-		};
-
-		(cheerio.load as any).mockReturnValueOnce(() => mockCheerio1).mockReturnValueOnce(() => mockCheerio2);
+		// Mock cheerio for all 10 articles
+		for (let i = 1; i <= 10; i++) {
+			const { $ } = createCheerioMock(`Content ${i}`);
+			(cheerio.load as any).mockReturnValueOnce($);
+		}
 
 		const result = (await handler({}, {} as any, {} as any)) as FetchAndNormaliseResult;
 
-		expect(result.articles).toHaveLength(2);
-		expect(result.count).toBe(2);
+		expect(result.articles).toHaveLength(10);
+		expect(result.count).toBe(10);
 
-		// Check articles are sorted by visitors (descending)
-		expect(result.articles[0].visitors).toBe(15000);
-		expect(result.articles[1].visitors).toBe(8500);
-
-		// Check content was fetched
-		expect(result.articles[0].content).toBe('Breaking news content here');
-		expect(result.articles[1].content).toBe('Weather content here');
+		// Check first and last articles
+		expect(result.articles[0].content).toBe('Content 1');
+		expect(result.articles[9].content).toBe('Content 10');
 	});
 
 	it('should throw error when CHARTBEAT_API_KEY is missing', async () => {
@@ -112,5 +114,148 @@ describe('handler', () => {
 		(global.fetch as any).mockRejectedValueOnce(new Error('Network connection failed'));
 
 		await expect(handler({}, {} as any, {} as any)).rejects.toThrow('Network connection failed');
+	});
+
+	it('should retry with increased limit when not enough articles have content', async () => {
+		const mockChartBeatResponse1 = {
+			pages: [
+				{ title: 'Article 1', path: '/story/article-1' },
+				{ title: 'Article 2', path: '/story/article-2' },
+				{ title: 'Article 3', path: '/story/article-3' },
+				{ title: 'Article 4', path: '/story/article-4' },
+				{ title: 'Article 5', path: '/story/article-5' },
+			],
+		};
+
+		const mockChartBeatResponse2 = {
+			pages: [
+				{ title: 'Article 1', path: '/story/article-1' },
+				{ title: 'Article 2', path: '/story/article-2' },
+				{ title: 'Article 3', path: '/story/article-3' },
+				{ title: 'Article 4', path: '/story/article-4' },
+				{ title: 'Article 5', path: '/story/article-5' },
+				{ title: 'Article 6', path: '/story/article-6' },
+				{ title: 'Article 7', path: '/story/article-7' },
+				{ title: 'Article 8', path: '/story/article-8' },
+				{ title: 'Article 9', path: '/story/article-9' },
+				{ title: 'Article 10', path: '/story/article-10' },
+			],
+		};
+
+		(global.fetch as any).mockResolvedValueOnce({
+			ok: true,
+			json: async () => mockChartBeatResponse1,
+		});
+
+		for (let i = 1; i <= 5; i++) {
+			(global.fetch as any).mockResolvedValueOnce({
+				ok: true,
+				text: async () => `<div data-component-name="ui-article-body"><p>Content ${i}</p></div>`,
+			});
+		}
+
+		for (let i = 1; i <= 5; i++) {
+			const { $ } = createCheerioMock(`Content ${i}`);
+			(cheerio.load as any).mockReturnValueOnce($);
+		}
+
+		(global.fetch as any).mockResolvedValueOnce({
+			ok: true,
+			json: async () => mockChartBeatResponse2,
+		});
+
+		for (let i = 1; i <= 10; i++) {
+			(global.fetch as any).mockResolvedValueOnce({
+				ok: true,
+				text: async () => `<div data-component-name="ui-article-body"><p>Content ${i}</p></div>`,
+			});
+		}
+
+		for (let i = 1; i <= 10; i++) {
+			const { $ } = createCheerioMock(`Content ${i}`);
+			(cheerio.load as any).mockReturnValueOnce($);
+		}
+
+		const result = (await handler({}, {} as any, {} as any)) as FetchAndNormaliseResult;
+
+		expect(result.articles).toHaveLength(10);
+		expect(result.count).toBe(10);
+
+		const fetchCalls = (global.fetch as any).mock.calls;
+		const chartbeatCalls = fetchCalls.filter((call: any[]) => call[0].includes('api.chartbeat.com'));
+		expect(chartbeatCalls).toHaveLength(2);
+		expect(chartbeatCalls[0][0]).toContain('limit=5');
+		expect(chartbeatCalls[1][0]).toContain('limit=10');
+	});
+
+	it('should filter out articles with empty content and retry', async () => {
+		// First fetch: 5 articles but only 2 have content
+		const mockChartBeatResponse1 = {
+			pages: [
+				{ title: 'Article 1', path: '/story/article-1' },
+				{ title: 'Article 2', path: '/story/article-2' },
+				{ title: 'Article 3', path: '/story/article-3' },
+			],
+		};
+
+		// Second fetch: 15 articles, all with content
+		const mockChartBeatResponse2 = {
+			pages: Array.from({ length: 15 }, (_, i) => ({
+				title: `Article ${i + 1}`,
+				path: `/story/article-${i + 1}`,
+			})),
+		};
+
+		// Mock first ChartBeat API call
+		(global.fetch as any).mockResolvedValueOnce({
+			ok: true,
+			json: async () => mockChartBeatResponse1,
+		});
+
+		// Mock first batch: 2 with content, 1 empty
+		(global.fetch as any).mockResolvedValueOnce({
+			ok: true,
+			text: async () => '<div data-component-name="ui-article-body"><p>Content 1</p></div>',
+		});
+		(global.fetch as any).mockResolvedValueOnce({
+			ok: true,
+			text: async () => '<div data-component-name="ui-article-body"><p>Content 2</p></div>',
+		});
+		(global.fetch as any).mockResolvedValueOnce({
+			ok: true,
+			text: async () => '<div></div>', // Empty content
+		});
+
+		const { $: $1 } = createCheerioMock('Content 1');
+		const { $: $2 } = createCheerioMock('Content 2');
+		const { $: $3 } = createCheerioMock(''); // Empty
+		(cheerio.load as any).mockReturnValueOnce($1).mockReturnValueOnce($2).mockReturnValueOnce($3);
+
+		// Mock second ChartBeat API call
+		(global.fetch as any).mockResolvedValueOnce({
+			ok: true,
+			json: async () => mockChartBeatResponse2,
+		});
+
+		// Mock second batch: 15 articles with content
+		for (let i = 1; i <= 15; i++) {
+			(global.fetch as any).mockResolvedValueOnce({
+				ok: true,
+				text: async () => `<div data-component-name="ui-article-body"><p>Content ${i}</p></div>`,
+			});
+			const { $ } = createCheerioMock(`Content ${i}`);
+			(cheerio.load as any).mockReturnValueOnce($);
+		}
+
+		const result = (await handler({}, {} as any, {} as any)) as FetchAndNormaliseResult;
+
+		// Should return 10 articles (filtered from second batch)
+		expect(result.articles).toHaveLength(10);
+		expect(result.count).toBe(10);
+
+		// Verify all returned articles have content
+		result.articles.forEach((article) => {
+			expect(article.content).not.toBe('');
+		});
 	});
 });

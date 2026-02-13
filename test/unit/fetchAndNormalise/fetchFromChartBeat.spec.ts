@@ -19,12 +19,10 @@ describe('fetchFromChartBeat', () => {
 				{
 					title: 'Breaking: Major Story',
 					path: '/story/breaking-news-1',
-					stats: { visits: 15000 },
 				},
 				{
 					title: 'Weather Update',
 					path: '/story/weather-update',
-					stats: { visits: 8500 },
 				},
 			],
 		};
@@ -34,12 +32,11 @@ describe('fetchFromChartBeat', () => {
 			json: async () => mockResponse,
 		});
 
-		const articles = await fetchFromChartBeat('test-key');
+		const articles = await fetchFromChartBeat('test-key', 10);
 
 		expect(articles).toHaveLength(2);
 		expect(articles[0].title).toBe('Breaking: Major Story');
 		expect(articles[0].url).toBe('https://news.sky.com/story/breaking-news-1');
-		expect(articles[0].visitors).toBe(15000);
 	});
 
 	it('should include API key in request URL', async () => {
@@ -48,12 +45,12 @@ describe('fetchFromChartBeat', () => {
 			json: async () => ({ pages: [] }),
 		});
 
-		await fetchFromChartBeat('test-api-key-12345');
+		await fetchFromChartBeat('test-api-key-12345', 15);
 
 		const url = (global.fetch as any).mock.calls[0][0];
 		expect(url).toContain('apikey=test-api-key-12345');
 		expect(url).toContain('host=news.sky.com');
-		expect(url).toContain('limit=10');
+		expect(url).toContain('limit=15');
 		expect(url).not.toContain('date=');
 	});
 
@@ -64,7 +61,7 @@ describe('fetchFromChartBeat', () => {
 			statusText: 'Unauthorized',
 		});
 
-		await expect(fetchFromChartBeat('test-key')).rejects.toThrow('ChartBeat API error: 401 Unauthorized');
+		await expect(fetchFromChartBeat('test-key', 10)).rejects.toThrow('ChartBeat API error: 401 Unauthorized');
 	});
 
 	it('should throw TypeError on invalid response structure', async () => {
@@ -73,13 +70,13 @@ describe('fetchFromChartBeat', () => {
 			json: async () => ({ data: [] }),
 		});
 
-		await expect(fetchFromChartBeat('test-key')).rejects.toThrow('Invalid ChartBeat response: missing pages array');
+		await expect(fetchFromChartBeat('test-key', 10)).rejects.toThrow('Invalid ChartBeat response: missing pages array');
 	});
 
 	it('should handle network errors', async () => {
 		(global.fetch as any).mockRejectedValueOnce(new Error('Network timeout'));
 
-		await expect(fetchFromChartBeat('test-key')).rejects.toThrow('Network timeout');
+		await expect(fetchFromChartBeat('test-key', 10)).rejects.toThrow('Network timeout');
 	});
 
 	it('should handle empty pages array', async () => {
@@ -88,17 +85,16 @@ describe('fetchFromChartBeat', () => {
 			json: async () => ({ pages: [] }),
 		});
 
-		const articles = await fetchFromChartBeat('test-key');
+		const articles = await fetchFromChartBeat('test-key', 10);
 
 		expect(articles).toHaveLength(0);
 	});
 
-	it('should handle missing title with Untitled default', async () => {
+	it('should handle missing title with empty string default', async () => {
 		const mockResponse = {
 			pages: [
 				{
 					path: '/article/no-title',
-					stats: { visits: 1000 },
 				},
 			],
 		};
@@ -108,9 +104,9 @@ describe('fetchFromChartBeat', () => {
 			json: async () => mockResponse,
 		});
 
-		const articles = await fetchFromChartBeat('test-key');
+		const articles = await fetchFromChartBeat('test-key', 10);
 
-		expect(articles[0].title).toBe('Untitled');
+		expect(articles[0].title).toBe('');
 	});
 
 	it('should handle missing URL with empty string default', async () => {
@@ -118,7 +114,6 @@ describe('fetchFromChartBeat', () => {
 			pages: [
 				{
 					title: 'Article',
-					stats: { visits: 1000 },
 				},
 			],
 		};
@@ -128,28 +123,8 @@ describe('fetchFromChartBeat', () => {
 			json: async () => mockResponse,
 		});
 
-		const articles = await fetchFromChartBeat('test-key');
+		const articles = await fetchFromChartBeat('test-key', 10);
 
 		expect(articles).toHaveLength(0);
-	});
-
-	it('should handle missing visitors with 0 default', async () => {
-		const mockResponse = {
-			pages: [
-				{
-					title: 'Article without visitors',
-					path: '/article/no-visitors',
-				},
-			],
-		};
-
-		(global.fetch as any).mockResolvedValueOnce({
-			ok: true,
-			json: async () => mockResponse,
-		});
-
-		const articles = await fetchFromChartBeat('test-key');
-
-		expect(articles[0].visitors).toBe(0);
 	});
 });

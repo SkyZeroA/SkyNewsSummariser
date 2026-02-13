@@ -23,6 +23,7 @@ phases:
       - pnpm run format
       - pnpm run lint
       - pnpm run test
+      - pnpm run test-functional
 
   build:
     commands:

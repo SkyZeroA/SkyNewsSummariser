@@ -8,7 +8,7 @@ export const buildUrl = (rawValue: string, host: string, path: string): string =
 	if (rawValue.startsWith(host)) {
 		return `https://${rawValue}`;
 	}
-	if (path === 'home' || path === '/') {
+	if (path === '/home' || path === '/') {
 		return `https://${host}/`;
 	}
 	if (path.startsWith('/')) {
@@ -22,32 +22,29 @@ export const getPath = (value: string, host: string): string => {
 		return '';
 	}
 	if (value === 'home') {
-		return 'home';
+		return '/home';
 	}
+
+	let path = '';
 	if (value.startsWith('http://') || value.startsWith('https://')) {
 		try {
 			const parsed = new URL(value);
-			return parsed.pathname || '/';
+			path = parsed.pathname;
 		} catch {
 			return '';
 		}
+	} else if (value.startsWith(host)) {
+		const extracted = value.slice(host.length);
+		path = extracted.startsWith('/') ? extracted : `/${extracted}`;
+	} else if (value.startsWith('/')) {
+		path = value;
+	} else {
+		path = `/${value}`;
 	}
-	if (value.startsWith(host)) {
-		const path = value.slice(host.length);
-		return path.startsWith('/') ? path : `/${path}`;
-	}
-	if (value.startsWith('/')) {
-		return value;
-	}
-	return `/${value}`;
-};
 
-export const normalizePath = (value: string): string => {
-	if (!value) {
-		return '';
-	}
-	if (value === '/') {
+	// Normalize: remove trailing slash (except for root '/')
+	if (path === '/') {
 		return '/';
 	}
-	return value.endsWith('/') ? value.slice(0, -1) : value;
+	return path.endsWith('/') ? path.slice(0, -1) : path;
 };
