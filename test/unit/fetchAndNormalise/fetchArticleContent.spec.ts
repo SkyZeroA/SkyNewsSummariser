@@ -107,7 +107,8 @@ describe('fetchArticleContent', () => {
 	it('should filter out "Read more from Sky News" text', async () => {
 		(global.fetch as any).mockResolvedValueOnce({
 			ok: true,
-			text: async () => '<div data-component-name="ui-article-body"><p><strong>Read more from Sky News:</strong> This is article content</p></div>',
+			text: async () =>
+				'<div data-component-name="ui-article-body"><p><strong>Read more from Sky News:</strong> This is article content</p></div>',
 		});
 
 		const strongSelection = {
