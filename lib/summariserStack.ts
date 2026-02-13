@@ -22,6 +22,7 @@ export class SummariserStack extends Stack {
 			runtime: lambda.Runtime.NODEJS_20_X,
 			entry: path.resolve('lib/lambdas/subscribeEmail.ts'),
 			handler: 'handler',
+			depsLockFilePath: path.resolve('pnpm-lock.yaml'),
 			environment: {
 				SUBSCRIBERS_TABLE: subscribersTable.tableName,
 			},
