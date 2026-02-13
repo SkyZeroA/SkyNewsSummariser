@@ -16,10 +16,10 @@ export class SummariserStack extends Stack {
 			tableName: 'summariser-subscribers',
 		});
 
-		const subscribeLambda = new lambda.Function(this, "SubscribeLambda", {
+		const subscribeLambda = new lambda.Function(this, 'SubscribeLambda', {
 			runtime: lambda.Runtime.NODEJS_20_X,
-			handler: "subscribeEmail.handler",
-			code: lambda.Code.fromAsset("lib/lambdas"),
+			handler: 'subscribeEmail.handler',
+			code: lambda.Code.fromAsset('lib/lambdas'),
 			environment: {
 				SUBSCRIBERS_TABLE: subscribersTable.tableName,
 			},
