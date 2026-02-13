@@ -10,6 +10,22 @@ vi.mock('cheerio', () => ({
 	load: vi.fn(),
 }));
 
+const createCheerioMock = (textValue: string) => {
+	const strongSelection = {
+		text: vi.fn(() => ''),
+	};
+
+	const selection = {
+		filter: vi.fn(() => selection),
+		text: vi.fn(() => textValue),
+		find: vi.fn(() => strongSelection),
+	};
+
+	const $ = vi.fn(() => selection);
+
+	return { $ };
+};
+
 describe('handler', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -36,8 +52,8 @@ describe('handler', () => {
 			],
 		};
 
-		const mockArticleHtml1 = '<article>Breaking news content here</article>';
-		const mockArticleHtml2 = '<article>Weather content here</article>';
+		const mockArticleHtml1 = '<div data-component-name="ui-article-body"><p>Breaking news content here</p></div>';
+		const mockArticleHtml2 = '<div data-component-name="ui-article-body"><p>Weather content here</p></div>';
 
 		// Mock ChartBeat API response
 		(global.fetch as any).mockResolvedValueOnce({
@@ -56,15 +72,10 @@ describe('handler', () => {
 			text: async () => mockArticleHtml2,
 		});
 
-		// Mock cheerio loads
-		const mockCheerio1 = {
-			text: vi.fn(() => 'Breaking news content here'),
-		};
-		const mockCheerio2 = {
-			text: vi.fn(() => 'Weather content here'),
-		};
+		const { $: cheerio1 } = createCheerioMock('Breaking news content here');
+		const { $: cheerio2 } = createCheerioMock('Weather content here');
 
-		(cheerio.load as any).mockReturnValueOnce(() => mockCheerio1).mockReturnValueOnce(() => mockCheerio2);
+		(cheerio.load as any).mockReturnValueOnce(cheerio1).mockReturnValueOnce(cheerio2);
 
 		const result = (await handler({}, {} as any, {} as any)) as FetchAndNormaliseResult;
 

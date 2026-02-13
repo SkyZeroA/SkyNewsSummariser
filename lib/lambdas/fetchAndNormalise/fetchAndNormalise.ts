@@ -78,12 +78,13 @@ export const fetchArticleContent = async (url: string): Promise<string> => {
 		}
 
 		const html = await response.text();
+
 		const $ = cheerio.load(html);
-
-		const articleBody = $('article').text() || $('[data-testid="article-body"]').text() || $('.article-body').text() || $('main').text() || '';
-
-		// Clean up whitespace
-		return articleBody.replaceAll(/\s+/g, ' ').trim();
+		const $article = $('[data-component-name=ui-article-body] > p').filter((_, el) => {
+			const strongText = $(el).find('strong').text().trim();
+			return !strongText.includes('Read more from Sky News:');
+		});
+		return $article.text().replaceAll(/\s+/g, ' ').trim();
 	} catch (error) {
 		console.error(`Error fetching article content from ${url}:`, error);
 		return '';
@@ -111,7 +112,7 @@ export const normalizeArticles = async (articles: ChartBeatArticle[]): Promise<N
 
 // Lambda handler for fetching and normalizing ChartBeat articles
 export const handler: Handler<unknown, FetchAndNormaliseResult> = async () => {
-	// Set and validate APi key
+	// Set and validate API key
 	const apiKey = process.env.CHARTBEAT_API_KEY;
 	if (!apiKey) {
 		throw new Error('CHARTBEAT_API_KEY environment variable is required. Set this in your Lambda configuration.');

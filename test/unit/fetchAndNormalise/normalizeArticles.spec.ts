@@ -10,6 +10,22 @@ vi.mock('cheerio', () => ({
 	load: vi.fn(),
 }));
 
+const createCheerioMock = (textValue: string) => {
+	const strongSelection = {
+		text: vi.fn(() => ''),
+	};
+
+	const selection = {
+		filter: vi.fn(() => selection),
+		text: vi.fn(() => textValue),
+		find: vi.fn(() => strongSelection),
+	};
+
+	const $ = vi.fn(() => selection);
+
+	return { $ };
+};
+
 describe('normalizeArticles', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -31,14 +47,8 @@ describe('normalizeArticles', () => {
 			.mockResolvedValueOnce({ ok: true, text: async () => '<article>High content</article>' })
 			.mockResolvedValueOnce({ ok: true, text: async () => '<article>Medium content</article>' });
 
-		const mockCheerio = {
-			text: vi.fn(() => 'Content'),
-		};
-
-		(cheerio.load as any)
-			.mockReturnValueOnce(() => mockCheerio)
-			.mockReturnValueOnce(() => mockCheerio)
-			.mockReturnValueOnce(() => mockCheerio);
+		const { $ } = createCheerioMock('Content');
+		(cheerio.load as any).mockReturnValueOnce($).mockReturnValueOnce($).mockReturnValueOnce($);
 
 		const result = await normalizeArticles(articles);
 
@@ -58,11 +68,8 @@ describe('normalizeArticles', () => {
 			.mockResolvedValueOnce({ ok: true, text: async () => '<article>Content here</article>' })
 			.mockResolvedValueOnce({ ok: false, statusText: 'Not Found' });
 
-		const mockCheerio = {
-			text: vi.fn(() => 'Content here'),
-		};
-
-		(cheerio.load as any).mockReturnValueOnce(() => mockCheerio);
+		const { $ } = createCheerioMock('Content here');
+		(cheerio.load as any).mockReturnValueOnce($);
 
 		const result = await normalizeArticles(articles);
 
@@ -80,11 +87,8 @@ describe('normalizeArticles', () => {
 			.mockResolvedValueOnce({ ok: true, text: async () => '<article>Valid content</article>' })
 			.mockResolvedValueOnce({ ok: true, text: async () => '<article>Content without title</article>' });
 
-		const mockCheerio = {
-			text: vi.fn(() => 'Content'),
-		};
-
-		(cheerio.load as any).mockReturnValueOnce(() => mockCheerio).mockReturnValueOnce(() => mockCheerio);
+		const { $ } = createCheerioMock('Content');
+		(cheerio.load as any).mockReturnValueOnce($).mockReturnValueOnce($);
 
 		const result = await normalizeArticles(articles);
 
@@ -110,11 +114,8 @@ describe('normalizeArticles', () => {
 			.mockResolvedValueOnce({ ok: true, text: async () => '<article>Content 1</article>' })
 			.mockResolvedValueOnce({ ok: true, text: async () => '<article>Content 2</article>' });
 
-		const mockCheerio = {
-			text: vi.fn(() => 'Content'),
-		};
-
-		(cheerio.load as any).mockReturnValueOnce(() => mockCheerio).mockReturnValueOnce(() => mockCheerio);
+		const { $ } = createCheerioMock('Content');
+		(cheerio.load as any).mockReturnValueOnce($).mockReturnValueOnce($);
 
 		const result = await normalizeArticles(articles);
 
