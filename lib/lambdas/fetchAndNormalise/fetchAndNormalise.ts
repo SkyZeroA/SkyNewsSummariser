@@ -130,9 +130,9 @@ export const handler: Handler<unknown, FetchAndNormaliseResult> = async () => {
 			};
 		}
 
-		// normalise the articles
+		// Normalise the articles
 		const normalisedArticles = await normaliseArticles(rawArticles);
-		console.log(normalisedArticles)
+		console.log(normalisedArticles);
 		return {
 			articles: normalisedArticles,
 			count: normalisedArticles.length,
