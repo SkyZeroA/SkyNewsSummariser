@@ -42,7 +42,7 @@ export const getPath = (value: string, host: string): string => {
 	return `/${value}`;
 };
 
-export const normalizePath = (value: string): string => {
+export const normalisePath = (value: string): string => {
 	if (!value) {
 		return '';
 	}

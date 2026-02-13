@@ -36,7 +36,7 @@ describe('handler', () => {
 		delete process.env.CHARTBEAT_API_KEY;
 	});
 
-	it('should fetch and normalize articles successfully', async () => {
+	it('should fetch and normalise articles successfully', async () => {
 		const mockChartBeatResponse = {
 			pages: [
 				{

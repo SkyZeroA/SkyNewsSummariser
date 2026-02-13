@@ -1,6 +1,6 @@
 import { Handler } from 'aws-lambda';
 import * as cheerio from 'cheerio';
-import { buildUrl, getPath, normalizePath } from '@lib/lambdas/fetchAndNormalise/helpers.ts';
+import { buildUrl, getPath, normalisePath } from '@lib/lambdas/fetchAndNormalise/helpers.ts';
 
 export interface ChartBeatArticle {
 	title: string;
@@ -8,14 +8,14 @@ export interface ChartBeatArticle {
 	visitors: number;
 }
 
-export interface NormalizedArticle {
+export interface normalisedArticle {
 	title: string;
 	content: string;
 	visitors: number;
 }
 
 export interface FetchAndNormaliseResult {
-	articles: NormalizedArticle[];
+	articles: normalisedArticle[];
 	count: number;
 }
 
@@ -26,7 +26,7 @@ export const fetchFromChartBeat = async (apiKey: string): Promise<ChartBeatArtic
 	try {
 		const host = 'news.sky.com';
 		const limit = '10';
-		const excludePaths = new Set(DEFAULT_EXCLUDE_PATHS.map((value) => normalizePath(value)));
+		const excludePaths = new Set(DEFAULT_EXCLUDE_PATHS.map((value) => normalisePath(value)));
 
 		const url = new URL('https://api.chartbeat.com/live/toppages/v3/');
 		url.searchParams.append('apikey', apiKey);
@@ -50,14 +50,14 @@ export const fetchFromChartBeat = async (apiKey: string): Promise<ChartBeatArtic
 				const p = page as Record<string, unknown>;
 				const rawValue = (p.path as string) || '';
 				const path = getPath(rawValue, host);
-				const normalizedPath = normalizePath(path);
+				const normalisedPath = normalisePath(path);
 				const stats = (p.stats as Record<string, unknown>) ?? {};
 
 				return {
 					title: (p.title as string) || 'Untitled',
 					url: buildUrl(rawValue, host, path),
 					visitors: (stats.visits as number) || 0,
-					path: normalizedPath,
+					path: normalisedPath,
 				};
 			})
 			.filter((article) => article.path && !excludePaths.has(article.path))
@@ -92,9 +92,9 @@ export const fetchArticleContent = async (url: string): Promise<string> => {
 };
 
 // Normalises the articles to a standard format
-export const normalizeArticles = async (articles: ChartBeatArticle[]): Promise<NormalizedArticle[]> => {
+export const normaliseArticles = async (articles: ChartBeatArticle[]): Promise<normalisedArticle[]> => {
 	// Fetch content for all articles in parallel
-	const normalizedPromises = articles.map(async (article) => {
+	const normalisedPromises = articles.map(async (article) => {
 		const content = await fetchArticleContent(article.url);
 		return {
 			title: article.title,
@@ -104,10 +104,10 @@ export const normalizeArticles = async (articles: ChartBeatArticle[]): Promise<N
 	});
 
 	// Wait for all promises to resolve
-	const normalized = await Promise.all(normalizedPromises);
+	const normalised = await Promise.all(normalisedPromises);
 
 	// Filter and sort the actual data
-	return normalized.filter((article) => article.content && article.title).toSorted((a, b) => b.visitors - a.visitors);
+	return normalised.filter((article) => article.content && article.title).toSorted((a, b) => b.visitors - a.visitors);
 };
 
 // Lambda handler for fetching and normalizing ChartBeat articles
@@ -130,12 +130,12 @@ export const handler: Handler<unknown, FetchAndNormaliseResult> = async () => {
 			};
 		}
 
-		// Normalize the articles
-		const normalizedArticles = await normalizeArticles(rawArticles);
-
+		// normalise the articles
+		const normalisedArticles = await normaliseArticles(rawArticles);
+		console.log(normalisedArticles)
 		return {
-			articles: normalizedArticles,
-			count: normalizedArticles.length,
+			articles: normalisedArticles,
+			count: normalisedArticles.length,
 		};
 	} catch (error) {
 		console.error('Error in fetchAndNormalise lambda:', error);
