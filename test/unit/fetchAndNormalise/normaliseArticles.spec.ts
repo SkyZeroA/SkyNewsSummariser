@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as cheerio from 'cheerio';
-import { normalizeArticles, type ChartBeatArticle } from '@lib/lambdas/fetchAndNormalise.ts';
+import { normaliseArticles, type ChartBeatArticle } from '@lib/lambdas/fetchAndNormalise/fetchAndNormalise.ts';
 
 // Mock global fetch
 global.fetch = vi.fn();
@@ -10,7 +10,23 @@ vi.mock('cheerio', () => ({
 	load: vi.fn(),
 }));
 
-describe('normalizeArticles', () => {
+const createCheerioMock = (textValue: string) => {
+	const strongSelection = {
+		text: vi.fn(() => ''),
+	};
+
+	const selection = {
+		filter: vi.fn(() => selection),
+		text: vi.fn(() => textValue),
+		find: vi.fn(() => strongSelection),
+	};
+
+	const $ = vi.fn(() => selection);
+
+	return { $ };
+};
+
+describe('normaliseArticles', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
@@ -19,7 +35,7 @@ describe('normalizeArticles', () => {
 		vi.clearAllMocks();
 	});
 
-	it('should normalize articles and sort by visitors descending', async () => {
+	it('should normalise articles and sort by visitors descending', async () => {
 		const articles: ChartBeatArticle[] = [
 			{ title: 'Low', url: 'https://example.com/low', visitors: 1000 },
 			{ title: 'High', url: 'https://example.com/high', visitors: 50000 },
@@ -31,16 +47,10 @@ describe('normalizeArticles', () => {
 			.mockResolvedValueOnce({ ok: true, text: async () => '<article>High content</article>' })
 			.mockResolvedValueOnce({ ok: true, text: async () => '<article>Medium content</article>' });
 
-		const mockCheerio = {
-			text: vi.fn(() => 'Content'),
-		};
+		const { $ } = createCheerioMock('Content');
+		(cheerio.load as any).mockReturnValueOnce($).mockReturnValueOnce($).mockReturnValueOnce($);
 
-		(cheerio.load as any)
-			.mockReturnValueOnce(() => mockCheerio)
-			.mockReturnValueOnce(() => mockCheerio)
-			.mockReturnValueOnce(() => mockCheerio);
-
-		const result = await normalizeArticles(articles);
+		const result = await normaliseArticles(articles);
 
 		expect(result).toHaveLength(3);
 		expect(result[0].visitors).toBe(50000);
@@ -58,13 +68,10 @@ describe('normalizeArticles', () => {
 			.mockResolvedValueOnce({ ok: true, text: async () => '<article>Content here</article>' })
 			.mockResolvedValueOnce({ ok: false, statusText: 'Not Found' });
 
-		const mockCheerio = {
-			text: vi.fn(() => 'Content here'),
-		};
+		const { $ } = createCheerioMock('Content here');
+		(cheerio.load as any).mockReturnValueOnce($);
 
-		(cheerio.load as any).mockReturnValueOnce(() => mockCheerio);
-
-		const result = await normalizeArticles(articles);
+		const result = await normaliseArticles(articles);
 
 		expect(result).toHaveLength(1);
 		expect(result[0].title).toBe('With Content');
@@ -80,13 +87,10 @@ describe('normalizeArticles', () => {
 			.mockResolvedValueOnce({ ok: true, text: async () => '<article>Valid content</article>' })
 			.mockResolvedValueOnce({ ok: true, text: async () => '<article>Content without title</article>' });
 
-		const mockCheerio = {
-			text: vi.fn(() => 'Content'),
-		};
+		const { $ } = createCheerioMock('Content');
+		(cheerio.load as any).mockReturnValueOnce($).mockReturnValueOnce($);
 
-		(cheerio.load as any).mockReturnValueOnce(() => mockCheerio).mockReturnValueOnce(() => mockCheerio);
-
-		const result = await normalizeArticles(articles);
+		const result = await normaliseArticles(articles);
 
 		expect(result).toHaveLength(1);
 		expect(result[0].title).toBe('Valid');
@@ -95,7 +99,7 @@ describe('normalizeArticles', () => {
 	it('should handle empty articles array', async () => {
 		const articles: ChartBeatArticle[] = [];
 
-		const result = await normalizeArticles(articles);
+		const result = await normaliseArticles(articles);
 
 		expect(result).toHaveLength(0);
 	});
@@ -110,13 +114,10 @@ describe('normalizeArticles', () => {
 			.mockResolvedValueOnce({ ok: true, text: async () => '<article>Content 1</article>' })
 			.mockResolvedValueOnce({ ok: true, text: async () => '<article>Content 2</article>' });
 
-		const mockCheerio = {
-			text: vi.fn(() => 'Content'),
-		};
+		const { $ } = createCheerioMock('Content');
+		(cheerio.load as any).mockReturnValueOnce($).mockReturnValueOnce($);
 
-		(cheerio.load as any).mockReturnValueOnce(() => mockCheerio).mockReturnValueOnce(() => mockCheerio);
-
-		const result = await normalizeArticles(articles);
+		const result = await normaliseArticles(articles);
 
 		expect(result).toHaveLength(2);
 		expect(global.fetch).toHaveBeenCalledTimes(2);
