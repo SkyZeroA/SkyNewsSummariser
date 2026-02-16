@@ -32,7 +32,7 @@ describe('subscribeEmail handler', () => {
 	afterEach(() => {
 		delete process.env.SUBSCRIBERS_TABLE;
 		vi.clearAllMocks();
-    });
+	});
 
 	it('returns 400 when request body is missing', async () => {
 		const res = await handler({} as any, {} as any, {} as any);
@@ -61,20 +61,20 @@ describe('subscribeEmail handler', () => {
 		expect(JSON.parse(res?.body ?? '{}').error).toBe('Internal server error');
 	});
 
-    it('successfully stores valid email in DynamoDB', async () => {
-        sendMock.mockResolvedValueOnce({}); 
+	it('successfully stores valid email in DynamoDB', async () => {
+		sendMock.mockResolvedValueOnce({});
 
-        const res = await handler({ body: JSON.stringify({ email: 'user@example.com' }) } as any, {} as any, {} as any);
-        expect(res?.statusCode).toBe(201);
-        expect(PutCommand).toHaveBeenCalledWith({
-            TableName: 'test-subscribers',
-            Item: { 
-                email: 'user@example.com',
+		const res = await handler({ body: JSON.stringify({ email: 'user@example.com' }) } as any, {} as any, {} as any);
+		expect(res?.statusCode).toBe(201);
+		expect(PutCommand).toHaveBeenCalledWith({
+			TableName: 'test-subscribers',
+			Item: {
+				email: 'user@example.com',
 				createdAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/),
-                status: 'active',
-            },
-            ConditionExpression: 'attribute_not_exists(email)',
-        });
-        expect(sendMock).toHaveBeenCalled();
-    });
+				status: 'active',
+			},
+			ConditionExpression: 'attribute_not_exists(email)',
+		});
+		expect(sendMock).toHaveBeenCalled();
+	});
 });

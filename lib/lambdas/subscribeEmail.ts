@@ -39,7 +39,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 				body: JSON.stringify({ error: 'Email is required' }),
 			};
 		}
-		
+
 		const normalizedEmail = email.trim().toLowerCase();
 
 		if (!EMAIL_REGEX.test(email)) {
