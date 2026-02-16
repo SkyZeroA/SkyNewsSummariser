@@ -1,14 +1,17 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as cheerio from 'cheerio';
-import { fetchArticleContent } from '@lib/lambdas/fetchAndNormalise.ts';
+import { fetchArticleContent } from '@lib/lambdas/fetchAndNormalise/fetchAndNormalise.ts';
 
 // Mock global fetch
 global.fetch = vi.fn();
 
 // Mock cheerio
-vi.mock('cheerio', () => ({
-	load: vi.fn(),
-}));
+vi.mock('cheerio', async () => {
+	const actual = await vi.importActual<typeof cheerio>('cheerio');
+	return {
+		load: vi.fn((html: string) => actual.load(html)),
+	};
+});
 
 describe('fetchArticleContent', () => {
 	beforeEach(() => {
@@ -20,18 +23,12 @@ describe('fetchArticleContent', () => {
 	});
 
 	it('should fetch and extract article content successfully', async () => {
-		const mockHtml = '<article><p>This is article content</p></article>';
+		const mockHtml = '<div data-component-name="ui-article-body"><p>This is article content</p></div>';
 
 		(global.fetch as any).mockResolvedValueOnce({
 			ok: true,
 			text: async () => mockHtml,
 		});
-
-		const mockCheerio = {
-			text: vi.fn(() => 'This is article content'),
-		};
-
-		(cheerio.load as any).mockReturnValueOnce(() => mockCheerio);
 
 		const result = await fetchArticleContent('https://www.skynews.com/article/test');
 
@@ -42,14 +39,8 @@ describe('fetchArticleContent', () => {
 	it('should clean up whitespace in content', async () => {
 		(global.fetch as any).mockResolvedValueOnce({
 			ok: true,
-			text: async () => '<article>Content   with\n\n   multiple   spaces</article>',
+			text: async () => '<div data-component-name="ui-article-body"><p>Content   with\n\n   multiple   spaces</p></div>',
 		});
-
-		const mockCheerio = {
-			text: vi.fn(() => 'Content   with\n\n   multiple   spaces'),
-		};
-
-		(cheerio.load as any).mockReturnValueOnce(() => mockCheerio);
 
 		const result = await fetchArticleContent('https://www.skynews.com/article/test');
 
@@ -86,14 +77,40 @@ describe('fetchArticleContent', () => {
 			text: async () => '<div>No article content</div>',
 		});
 
-		const mockCheerio = {
-			text: vi.fn(() => ''),
-		};
-
-		(cheerio.load as any).mockReturnValueOnce(() => mockCheerio);
-
 		const result = await fetchArticleContent('https://www.skynews.com/article/test');
 
 		expect(result).toBe('');
+	});
+
+	it('should filter out p tags containing "Read more from Sky News:"', async () => {
+		const mockHtml = `
+			<div data-component-name="ui-article-body">
+				<p>First paragraph of article content.</p>
+				<p><strong>Read more from Sky News:</strong> Related article link</p>
+				<p>Second paragraph of article content.</p>
+				<p><strong>  Read more from Sky News:  </strong> Another link with whitespace</p>
+				<p><strong>Important Note:</strong> This should be kept.</p>
+				<p>Third paragraph without any strong tags.</p>
+				<p><strong>Read more from Sky News: Technology</strong> Should be filtered</p>
+			</div>
+		`;
+
+		(global.fetch as any).mockResolvedValueOnce({
+			ok: true,
+			text: async () => mockHtml,
+		});
+
+		const result = await fetchArticleContent('https://www.skynews.com/article/test');
+
+		// Should contain paragraphs that were kept
+		expect(result).toContain('First paragraph of article content');
+		expect(result).toContain('Second paragraph of article content');
+		expect(result).toContain('Third paragraph without any strong tags');
+		expect(result).toContain('Important Note: This should be kept');
+
+		// Should NOT contain paragraphs with "Read more from Sky News:" in strong tags
+		expect(result).not.toContain('Related article link');
+		expect(result).not.toContain('Another link with whitespace');
+		expect(result).not.toContain('Should be filtered');
 	});
 });

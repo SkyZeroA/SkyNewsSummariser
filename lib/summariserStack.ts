@@ -1,5 +1,7 @@
-import { Stack, StackProps, RemovalPolicy, CfnOutput } from 'aws-cdk-lib';
+import { Stack, StackProps, Duration, RemovalPolicy, CfnOutput } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
+import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
+import { fileURLToPath } from 'node:url';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as lambdaNode from 'aws-cdk-lib/aws-lambda-nodejs';
@@ -14,7 +16,20 @@ export class SummariserStack extends Stack {
 	constructor(scope: Construct, id: string, props: SummariserStackProps) {
 		super(scope, id, props);
 
-		console.log('SummariserStack initialized');
+		const __filename = fileURLToPath(import.meta.url);
+		const __dirname = path.dirname(__filename);
+
+		new NodejsFunction(this, 'FetchAndNormaliseLambda', {
+			runtime: lambda.Runtime.NODEJS_22_X,
+			handler: 'handler',
+			entry: path.join(__dirname, 'lambdas/fetchAndNormalise/fetchAndNormalise.ts'),
+			depsLockFilePath: path.join(__dirname, '../pnpm-lock.yaml'),
+			timeout: Duration.minutes(5),
+			memorySize: 1024,
+			environment: {
+				CHARTBEAT_API_KEY: process.env.CHARTBEAT_API_KEY ?? '',
+			},
+		});
 
 		const subscribersTable = new dynamodb.Table(this, 'SubscribersTable', {
 			partitionKey: { name: 'email', type: dynamodb.AttributeType.STRING },
