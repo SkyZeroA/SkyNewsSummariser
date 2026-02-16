@@ -1,1 +1,6 @@
-{}
+{
+  "summariser-stack-46-subscribe": {
+    "SummariserApiEndpointD45F7373": "https://bbj40a6uf2.execute-api.eu-west-1.amazonaws.com/46-subscribe/",
+    "SummariserApiUrl": "https://bbj40a6uf2.execute-api.eu-west-1.amazonaws.com/46-subscribe/"
+  }
+}

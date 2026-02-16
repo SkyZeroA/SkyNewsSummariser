@@ -2,6 +2,7 @@
 
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import SubscribeForm from "@/components/SubscribeForm";
 
 export default function Home() {
   return (
@@ -35,6 +36,11 @@ export default function Home() {
               development, with a town hall meeting scheduled next week to discuss
               preservation options.
             </p>
+          </div>
+          <div className="mt-8">
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-3 text-center">Want this delivered daily?</h2>
+            <p className="text-gray-700 dark:text-gray-300 mb-4 text-center">Enter your email below to receive a summary of yesterdays news in your inbox every morning.</p>
+            <SubscribeForm />
           </div>
         </article>
       </main>

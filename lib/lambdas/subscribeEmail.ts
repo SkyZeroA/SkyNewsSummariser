@@ -1,10 +1,11 @@
 import { APIGatewayProxyHandler } from 'aws-lambda';
-import { ConditionalCheckFailedException, DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
 
 const TABLE_NAME = process.env.SUBSCRIBERS_TABLE!;
 
-const client = new DynamoDBClient({ region: process.env.region });
+// Use default AWS region from Lambda environment; avoid undefined custom var
+const client = new DynamoDBClient({});
 const db = DynamoDBDocumentClient.from(client);
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -14,6 +15,11 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 		if (!event.body) {
 			return {
 				statusCode: 400,
+				headers: {
+					'Access-Control-Allow-Origin': '*',
+					'Access-Control-Allow-Headers': 'Content-Type',
+					'Access-Control-Allow-Methods': 'POST,OPTIONS',
+				},
 				body: JSON.stringify({ error: 'Missing request body' }),
 			};
 		}
@@ -23,6 +29,11 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 		if (!email || typeof email !== 'string') {
 			return {
 				statusCode: 400,
+				headers: {
+					'Access-Control-Allow-Origin': '*',
+					'Access-Control-Allow-Headers': 'Content-Type',
+					'Access-Control-Allow-Methods': 'POST,OPTIONS',
+				},
 				body: JSON.stringify({ error: 'Email is required' }),
 			};
 		}
@@ -30,6 +41,11 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 		if (!EMAIL_REGEX.test(email)) {
 			return {
 				statusCode: 400,
+				headers: {
+					'Access-Control-Allow-Origin': '*',
+					'Access-Control-Allow-Headers': 'Content-Type',
+					'Access-Control-Allow-Methods': 'POST,OPTIONS',
+				},
 				body: JSON.stringify({ error: 'Invalid email format' }),
 			};
 		}
@@ -51,14 +67,29 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
 		return {
 			statusCode: 201,
+			headers: {
+				'Access-Control-Allow-Origin': '*',
+				'Access-Control-Allow-Headers': 'Content-Type',
+				'Access-Control-Allow-Methods': 'POST,OPTIONS',
+			},
 			body: JSON.stringify({
 				message: 'Subscription successful',
 			}),
 		};
 	} catch (error) {
-		if (error === ConditionalCheckFailedException) {
+		const isConditionalCheckFailed =
+			typeof error === 'object' &&
+			error !== null &&
+			'name' in error &&
+			(error as { name?: string }).name === 'ConditionalCheckFailedException';
+		if (isConditionalCheckFailed) {
 			return {
 				statusCode: 409,
+				headers: {
+					'Access-Control-Allow-Origin': '*',
+					'Access-Control-Allow-Headers': 'Content-Type',
+					'Access-Control-Allow-Methods': 'POST,OPTIONS',
+				},
 				body: JSON.stringify({
 					error: 'Email already subscribed',
 				}),
@@ -69,6 +100,11 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
 		return {
 			statusCode: 500,
+			headers: {
+				'Access-Control-Allow-Origin': '*',
+				'Access-Control-Allow-Headers': 'Content-Type',
+				'Access-Control-Allow-Methods': 'POST,OPTIONS',
+			},
 			body: JSON.stringify({
 				error: 'Internal server error',
 			}),

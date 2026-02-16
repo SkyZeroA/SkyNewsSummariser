@@ -17,6 +17,18 @@ phases:
       - echo "Deploying to ${STAGE}..."
       - pnpm run deploy
 
+# This will be used when frontend is built in the same pipeline, to write the API URL to .env.local for the frontend to use at runtime. For now, it just logs the API URL for verification.
   post_build:
     commands:
       - echo "Deployment completed successfully for ${STAGE}"
+      - echo "Writing NEXT_PUBLIC_API_URL to frontend/.env.local from outputs.json"
+      - |
+        API_URL=$(node -e '
+          const p = require("./outputs.json");
+          const k = Object.keys(p)[0];
+          const v = (p[k] && (p[k].SummariserApiUrl || p[k].SummariserApiEndpointD45F7373)) || "";
+          process.stdout.write(String(v).replace(/\/$/, ""));
+        ')
+        mkdir -p frontend
+        echo "NEXT_PUBLIC_API_URL=${API_URL}" > frontend/.env.local
+        echo "Wrote NEXT_PUBLIC_API_URL=${API_URL}"

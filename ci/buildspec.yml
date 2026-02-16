@@ -37,3 +37,14 @@ phases:
         else
           echo "Not promoting - branch is ${BRANCH} or build failed."
         fi
+      - echo "Writing NEXT_PUBLIC_API_URL to frontend/.env from outputs.json"
+      - |
+        API_URL=$(node -e '
+          const p = require("./outputs.json");
+          const k = Object.keys(p)[0];
+          const v = (p[k] && (p[k].SummariserApiUrl || p[k].SummariserApiEndpointD45F7373)) || "";
+          process.stdout.write(String(v).replace(/\/$/, ""));
+        ')
+        mkdir -p frontend
+        echo "NEXT_PUBLIC_API_URL=${API_URL}" > frontend/.env
+        echo "Wrote NEXT_PUBLIC_API_URL=${API_URL}"
