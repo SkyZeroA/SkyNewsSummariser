@@ -37,17 +37,19 @@ export const fetchFromChartBeat = async (apiKey: string, previousDate: string): 
 		}
 
 		// Format response into json and check for pages array - contains links to individual articles
-		const data = await response.json();
-		if (!Array.isArray(data.pages)) {
+		const data: unknown = await response.json();
+
+		// Type guard to check if data has the expected structure
+		if (typeof data !== 'object' || data === null || !('pages' in data) || !Array.isArray(data.pages)) {
 			throw new TypeError('Invalid ChartBeat response: missing pages array');
 		}
 
 		return data.pages.map((page: unknown) => {
 			const p = page as Record<string, unknown>;
 			return {
-				title: p.title || 'Untitled',
-				url: p.link || p.url || '',
-				visitors: p.visitors || p.pageviews || 0,
+				title: (p.title as string) || 'Untitled',
+				url: (p.link as string) || (p.url as string) || '',
+				visitors: (p.visitors as number) || (p.pageviews as number) || 0,
 			};
 		});
 	} catch (error) {
