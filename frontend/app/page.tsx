@@ -1,13 +1,40 @@
 "use client";
 
-import { useState } from "react";
-import { Button, Card, CardBody, Input } from "@heroui/react";
+import { useState, useEffect } from "react";
+import { Button, Card, CardBody, Input, Link } from "@heroui/react";
+import { ComprehensiveSummary } from "@/types/summary";
 
 export default function Home() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [approvedSummary, setApprovedSummary] = useState<ComprehensiveSummary | null>(null);
+  const [isFetchingSummary, setIsFetchingSummary] = useState(true);
+
+  // Fetch approved summary on mount
+  useEffect(() => {
+    const fetchApprovedSummary = async () => {
+      try {
+        setIsFetchingSummary(true);
+        const response = await fetch("/api/summaries?status=approved");
+
+        if (response.ok) {
+          const data = await response.json();
+          // Get the most recent approved summary
+          if (data.summaries.length > 0) {
+            setApprovedSummary(data.summaries[0]);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching approved summary:", error);
+      } finally {
+        setIsFetchingSummary(false);
+      }
+    };
+
+    fetchApprovedSummary();
+  }, []);
 
   // Clear messages when user starts typing
   const handleEmailChange = (value: string) => {
@@ -99,36 +126,49 @@ export default function Home() {
           Summary
         </h1>
         <div className="space-y-4">
-          <div>
-            <h2 className="text-xl font-semibold mb-3">Yesterdays News</h2>
-            <ul className="space-y-3 text-gray-700 dark:text-gray-300 list-disc list-inside">
-              <li className="animate-slideUp" style={{ animationDelay: '0.1s', animationFillMode: 'both' }}>
-                The NHS is under severe winter pressure as a mutated "super flu" drives record hospital admissions,
-                with doctors warning the health service is "on the brink" of being overwhelmed by the surge in cases.
-              </li>
-              <li className="animate-slideUp" style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
-                The Bank of England unexpectedly pauses its October, increasing expectations that the Bank of England will
-                cut interest rates soon after the end of the year, with economists now predicting a 0.25% reduction in February.
-              </li>
-              <li className="animate-slideUp" style={{ animationDelay: '0.3s', animationFillMode: 'both' }}>
-                Police are investigating after learning bags of stolen items were stolen from a UK museum,
-                including irreplaceable ancient artifacts dating back thousands of years, with the museum's security
-                procedures now under review.
-              </li>
-              <li className="animate-slideUp" style={{ animationDelay: '0.4s', animationFillMode: 'both' }}>
-                A major UK retailer has announced plans to close 50 stores nationwide, citing rising global tensions
-                and increased online activity.
-              </li>
-              <li className="animate-slideUp" style={{ animationDelay: '0.5s', animationFillMode: 'both' }}>
-                A National UK firm has been fined £5m delayed its financial results due to an ongoing accounting probe while
-                the company's shares plunged 13% offering some relief to the sector.
-              </li>
-              <li className="animate-slideUp" style={{ animationDelay: '0.6s', animationFillMode: 'both' }}>
-                Transport officials are urging the rollout of a major new national rail timetable this weekend,
-                despite warnings of "friendly disruption" on some routes.
-              </li>
-            </ul>
-          </div>
+          <h2 className="text-xl font-semibold mb-3">Yesterday's News</h2>
+
+          {isFetchingSummary && (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          )}
+
+          {!isFetchingSummary && approvedSummary && (
+            <div className="space-y-4">
+              <div className="text-gray-700 dark:text-gray-300 whitespace-pre-line leading-relaxed animate-slideUp">
+                {approvedSummary.summaryText}
+              </div>
+
+              {/* Source Articles Links */}
+              {approvedSummary.sourceArticles.length > 0 && (
+                <div className="pt-4 border-t border-gray-200 dark:border-gray-700 animate-slideUp" style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
+                  <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                    Source Articles:
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {approvedSummary.sourceArticles.map((article, index) => (
+                      <Link
+                        key={index}
+                        href={article.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline transition-colors duration-300"
+                      >
+                        {article.title} →
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {!isFetchingSummary && !approvedSummary && (
+            <p className="text-gray-600 dark:text-gray-400 py-4">
+              No summary available yet. Check back later!
+            </p>
+          )}
         </div>
       </section>
 
