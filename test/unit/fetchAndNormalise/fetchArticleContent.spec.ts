@@ -68,11 +68,16 @@ describe('fetchArticleContent', () => {
 	});
 
 	it('should return empty string on network error', async () => {
+		const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
 		(global.fetch as any).mockRejectedValueOnce(new Error('Network timeout'));
 
 		const result = await fetchArticleContent('https://www.skynews.com/article/test');
 
 		expect(result).toBe('');
+		expect(consoleErrorSpy).toHaveBeenCalled();
+
+		consoleErrorSpy.mockRestore();
 	});
 
 	it('should return empty string when no content selectors match', async () => {
