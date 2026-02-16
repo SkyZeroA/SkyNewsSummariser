@@ -13,6 +13,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const handler: APIGatewayProxyHandler = async (event) => {
 	try {
 		if (!event.body) {
+			console.warn('Subscribe request missing body');
 			return {
 				statusCode: 400,
 				headers: {
@@ -27,6 +28,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 		const { email } = JSON.parse(event.body);
 
 		if (!email || typeof email !== 'string') {
+			console.warn('Subscribe request missing email');
 			return {
 				statusCode: 400,
 				headers: {
@@ -37,8 +39,11 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 				body: JSON.stringify({ error: 'Email is required' }),
 			};
 		}
+		
+		const normalizedEmail = email.trim().toLowerCase();
 
 		if (!EMAIL_REGEX.test(email)) {
+			console.warn('Subscribe request with invalid email format:', email);
 			return {
 				statusCode: 400,
 				headers: {
@@ -49,8 +54,6 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 				body: JSON.stringify({ error: 'Invalid email format' }),
 			};
 		}
-
-		const normalizedEmail = email.toLowerCase().trim();
 
 		await db.send(
 			new PutCommand({
