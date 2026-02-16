@@ -13,8 +13,7 @@ phases:
       - export STAGE=$(echo $PR_ORIGIN | sed 's/main/test/')
       - echo "Tearing down resources for ${STAGE}"
       
-      - corepack enable
-      - pnpm install aws-cdk --global
+      - npm install -g aws-cdk
 
   build:
     commands:
