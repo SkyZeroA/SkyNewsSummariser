@@ -14,13 +14,12 @@ phases:
       - echo "Tearing down resources for ${STAGE}"
       
       - corepack enable
-      - pnpm run ci
-      - pnpm build
+      - pnpm install aws-cdk --global
 
   build:
     commands:
       - echo "Starting teardown for ${STAGE}..."
-      - pnpm run teardown
+      - cdk destroy --all --force --context stage=${STAGE}
       
   post_build:
     commands:
