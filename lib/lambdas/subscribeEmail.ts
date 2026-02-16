@@ -78,10 +78,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 		};
 	} catch (error) {
 		const isConditionalCheckFailed =
-			typeof error === 'object' &&
-			error !== null &&
-			'name' in error &&
-			(error as { name?: string }).name === 'ConditionalCheckFailedException';
+			typeof error === 'object' && error !== null && 'name' in error && (error as { name?: string }).name === 'ConditionalCheckFailedException';
 		if (isConditionalCheckFailed) {
 			return {
 				statusCode: 409,

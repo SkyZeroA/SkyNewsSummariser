@@ -21,3 +21,5 @@ coverage/
 cdk.context.json
 
 next-env.d.ts
+
+frontend/.env
