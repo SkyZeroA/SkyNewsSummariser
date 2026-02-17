@@ -1,44 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ComprehensiveSummary } from "@/types/summary";
 
-// Mock data for comprehensive summaries - in production, this would come from a database
-const MOCK_COMPREHENSIVE_SUMMARIES: ComprehensiveSummary[] = [
-  {
-    id: "1",
-    summaryText: `Yesterday's top news stories covered a range of significant developments across politics, technology, and society.
-
-World leaders reached a historic climate agreement at the Global Climate Summit in Geneva, with commitments to reduce carbon emissions by 50% by 2030 and achieve net-zero by 2050. Over 150 countries have signed the accord, marking a significant step forward in global climate action.
-
-In the technology sector, a major company unveiled its latest AI assistant featuring advanced natural language processing and real-time translation capabilities. The assistant can understand context, learn user preferences, and integrate seamlessly with smart home devices. Industry experts predict this could revolutionize how we interact with technology.
-
-On the local front, a grassroots campaign successfully saved a 100-year-old theatre from demolition. The community raised £2 million in just six months to purchase and restore the building. The theatre will reopen next year with modern renovations while preserving its historic charm.
-
-Economic news was positive, with the latest report showing GDP growth of 3.2% in Q4, surpassing analyst predictions of 2.5%. Strong consumer spending and business investment drove the growth, while unemployment fell to a 10-year low. Economists remain optimistic about continued growth in the coming year.`,
-    sourceArticles: [
-      {
-        title: "Breaking: Major Climate Agreement Reached at Global Summit",
-        url: "https://news.sky.com/story/climate-agreement-2024",
-      },
-      {
-        title: "Tech Innovation: New AI Assistant Unveiled by Leading Company",
-        url: "https://news.sky.com/story/ai-assistant-2024",
-      },
-      {
-        title: "Local Community Saves Historic Theatre from Demolition",
-        url: "https://news.sky.com/story/theatre-saved-2024",
-      },
-      {
-        title: "Economic Growth Exceeds Expectations in Q4 Report",
-        url: "https://news.sky.com/story/economy-q4-2024",
-      },
-    ],
-    status: "pending",
-    createdAt: "2026-02-16T10:30:00Z",
-    updatedAt: "2026-02-16T10:30:00Z",
-  },
-  {
-    id: "2",
-    summaryText: `Yesterday's news highlighted several important stories from across the UK and around the world.
+// Mock data for the daily summary - in production, this would come from a database
+// There is only one summary per day
+let DAILY_SUMMARY: ComprehensiveSummary = {
+  id: "daily-2026-02-17",
+  summaryText: `Yesterday's news highlighted several important stories from across the UK and around the world.
 
 The NHS is under severe winter pressure as a mutated "super flu" drives record hospital admissions, with doctors warning the health service is "on the brink" of being overwhelmed by the surge in cases.
 
@@ -51,39 +18,38 @@ A major UK retailer has announced plans to close 50 stores nationwide, citing ri
 A National UK firm has been fined £5m and delayed its financial results due to an ongoing accounting probe, while the company's shares plunged 13%.
 
 Transport officials are managing the rollout of a major new national rail timetable this weekend, despite warnings of potential disruption on some routes.`,
-    sourceArticles: [
-      {
-        title: "NHS Under Pressure from Super Flu Outbreak",
-        url: "https://news.sky.com/story/nhs-super-flu-2024",
-      },
-      {
-        title: "Bank of England Holds Interest Rates Steady",
-        url: "https://news.sky.com/story/bank-of-england-rates-2024",
-      },
-      {
-        title: "Museum Theft Investigation Underway",
-        url: "https://news.sky.com/story/museum-theft-2024",
-      },
-      {
-        title: "Major Retailer to Close 50 Stores",
-        url: "https://news.sky.com/story/retailer-closures-2024",
-      },
-      {
-        title: "UK Firm Fined £5m in Accounting Probe",
-        url: "https://news.sky.com/story/firm-fined-2024",
-      },
-      {
-        title: "New Rail Timetable Rollout This Weekend",
-        url: "https://news.sky.com/story/rail-timetable-2024",
-      },
-    ],
-    status: "approved",
-    createdAt: "2026-02-15T10:30:00Z",
-    updatedAt: "2026-02-15T14:20:00Z",
-  },
-];
+  sourceArticles: [
+    {
+      title: "NHS Under Pressure from Super Flu Outbreak",
+      url: "https://news.sky.com/story/nhs-super-flu-2024",
+    },
+    {
+      title: "Bank of England Holds Interest Rates Steady",
+      url: "https://news.sky.com/story/bank-of-england-rates-2024",
+    },
+    {
+      title: "Museum Theft Investigation Underway",
+      url: "https://news.sky.com/story/museum-theft-2024",
+    },
+    {
+      title: "Major Retailer to Close 50 Stores",
+      url: "https://news.sky.com/story/retailer-closures-2024",
+    },
+    {
+      title: "UK Firm Fined £5m in Accounting Probe",
+      url: "https://news.sky.com/story/firm-fined-2024",
+    },
+    {
+      title: "New Rail Timetable Rollout This Weekend",
+      url: "https://news.sky.com/story/rail-timetable-2024",
+    },
+  ],
+  status: "pending",
+  createdAt: "2026-02-17T10:30:00Z",
+  updatedAt: "2026-02-17T14:20:00Z",
+};
 
-// GET endpoint to fetch all comprehensive summaries
+// GET endpoint to fetch the daily summary
 export const GET = (request: NextRequest) => {
   try {
     // Check authorization via cookies
@@ -99,21 +65,108 @@ export const GET = (request: NextRequest) => {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
 
-    // Filter summaries by status if provided
-    let filteredSummaries = MOCK_COMPREHENSIVE_SUMMARIES;
-    if (status && (status === "pending" || status === "approved" || status === "rejected")) {
-      filteredSummaries = MOCK_COMPREHENSIVE_SUMMARIES.filter((s) => s.status === status);
+    // Return the daily summary if it matches the requested status
+    if (status && DAILY_SUMMARY.status !== status) {
+      return NextResponse.json(
+        { summary: null },
+        { status: 200 }
+      );
     }
 
     return NextResponse.json(
+      { summary: DAILY_SUMMARY },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Error fetching summary:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+};
+
+// PATCH endpoint to update the daily summary
+export const PATCH = async (request: NextRequest) => {
+  try {
+    // Check authorization via cookies
+    const authToken = request.cookies.get("authToken")?.value;
+    if (!authToken) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    const { summaryText } = body;
+
+    if (!summaryText) {
+      return NextResponse.json(
+        { error: "Summary text is required" },
+        { status: 400 }
+      );
+    }
+
+    // Update the summary
+    DAILY_SUMMARY = {
+      ...DAILY_SUMMARY,
+      summaryText,
+      updatedAt: new Date().toISOString(),
+    };
+
+    return NextResponse.json(
+      { summary: DAILY_SUMMARY },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Error updating summary:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+};
+
+// POST endpoint to publish (approve) the daily summary
+export const POST = async (request: NextRequest) => {
+  try {
+    // Check authorization via cookies
+    const authToken = request.cookies.get("authToken")?.value;
+    if (!authToken) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    const { action } = body;
+
+    if (action !== "approve") {
+      return NextResponse.json(
+        { error: "Invalid action" },
+        { status: 400 }
+      );
+    }
+
+    // Approve the summary
+    DAILY_SUMMARY = {
+      ...DAILY_SUMMARY,
+      status: "approved",
+      updatedAt: new Date().toISOString(),
+    };
+
+    return NextResponse.json(
       {
-        summaries: filteredSummaries,
-        count: filteredSummaries.length,
+        success: true,
+        summary: DAILY_SUMMARY,
+        message: "Summary published successfully",
       },
       { status: 200 }
     );
   } catch (error) {
-    console.error("Error fetching summaries:", error);
+    console.error("Error publishing summary:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

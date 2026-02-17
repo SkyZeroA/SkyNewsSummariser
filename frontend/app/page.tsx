@@ -21,9 +21,9 @@ export default function Home() {
 
         if (response.ok) {
           const data = await response.json();
-          // Get the most recent approved summary
-          if (data.summaries.length > 0) {
-            setApprovedSummary(data.summaries[0]);
+          // Get the daily summary if it's approved
+          if (data.summary) {
+            setApprovedSummary(data.summary);
           }
         }
       } catch (error) {

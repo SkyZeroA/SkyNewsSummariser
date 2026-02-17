@@ -49,11 +49,10 @@ export default function AdminDashboard() {
 
       if (response.ok) {
         const data = await response.json();
-        // Get the first pending summary (there should only be one comprehensive summary at a time)
-        if (data.summaries.length > 0) {
-          const [pendingSummary] = data.summaries;
-          setSummary(pendingSummary);
-          setEditedSummary(pendingSummary.summaryText);
+        // Get the daily summary if it's pending
+        if (data.summary) {
+          setSummary(data.summary);
+          setEditedSummary(data.summary.summaryText);
         }
       } else {
         console.error("Failed to fetch summary");
@@ -74,7 +73,7 @@ export default function AdminDashboard() {
     try {
       setIsSaving(true);
       // Important: include cookies in request
-      const response = await fetch(`/api/summaries/${summary.id}`, {
+      const response = await fetch("/api/summaries", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -86,8 +85,8 @@ export default function AdminDashboard() {
       });
 
       if (response.ok) {
-        const updatedSummary = await response.json();
-        setSummary(updatedSummary);
+        const data = await response.json();
+        setSummary(data.summary);
       }
     } catch (error) {
       console.error("Error updating summary:", error);
@@ -105,7 +104,7 @@ export default function AdminDashboard() {
     try {
       setIsSaving(true);
       // Important: include cookies in request
-      const response = await fetch(`/api/summaries/${summary.id}`, {
+      const response = await fetch("/api/summaries", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
