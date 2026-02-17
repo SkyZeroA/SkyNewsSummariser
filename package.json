@@ -6,7 +6,7 @@
 		"summariser": "bin/summariser.ts"
 	},
 	"scripts": {
-		"ci": "pnpm install --frozen-lockfile",
+		"ci": "pnpm install --frozen-lockfile && pnpm --dir frontend install --frozen-lockfile",
 		"build": "tsc",
 		"watch": "tsc -w",
 		"test": "vitest run",
@@ -22,7 +22,7 @@
 		"synth": "pnpm run build && cdk synth --all --context stage=${STAGE}",
 		"synth-branch": "STAGE=$(git rev-parse --abbrev-ref HEAD | tr '[:upper:]' '[:lower:]') pnpm run synth",
 		"deploy-cdk": "cdk deploy --all --context stage=${STAGE} --context appVersion=${NEW_VERSION} --method=direct --require-approval never --outputs-file outputs.json",
-		"deploy": "echo {} > outputs.json && pnpm run build && pnpm run test && pnpm run deploy-cdk",
+		"deploy": "echo {} > outputs.json && pnpm --dir frontend build && pnpm run build && pnpm run test && pnpm run deploy-cdk",
 		"deploy-branch": "AWS_SDK_LOAD_CONFIG=1 STAGE=$(git rev-parse --abbrev-ref HEAD | tr '[:upper:]' '[:lower:]') pnpm run deploy",
 		"teardown": "cdk destroy --all --force --context stage=${STAGE}",
 		"teardown-branch": "STAGE=$(git rev-parse --abbrev-ref HEAD | tr '[:upper:]' '[:lower:]') pnpm run teardown",
