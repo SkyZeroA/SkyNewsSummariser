@@ -148,11 +148,6 @@ export default function Header() {
     }
   };
 
-  const menuItems = [
-    { name: "News", href: "/news" },
-    { name: "Summaries", href: "/summaries" },
-  ];
-
   return (
     <Navbar
       isBordered
@@ -171,20 +166,6 @@ export default function Header() {
             Sky News Summariser
           </Link>
         </NavbarBrand>
-      </NavbarContent>
-
-      <NavbarContent className="hidden sm:flex gap-6" justify="center">
-        {menuItems.map((item, index) => (
-          <NavbarItem key={item.name} className="animate-fadeIn" style={{ animationDelay: `${0.1 + index * 0.1}s`, animationFillMode: 'both' }}>
-            <Link
-              color="foreground"
-              href={item.href}
-              className="hover:text-blue-600 transition-all duration-300 hover:scale-105"
-            >
-              {item.name}
-            </Link>
-          </NavbarItem>
-        ))}
       </NavbarContent>
 
       <NavbarContent justify="end">
@@ -254,19 +235,6 @@ export default function Header() {
       </NavbarContent>
 
       <NavbarMenu>
-        {menuItems.map((item, index) => (
-          <NavbarMenuItem key={`${item.name}-${index}`} className="animate-slideUp" style={{ animationDelay: `${index * 0.1}s`, animationFillMode: 'both' }}>
-            <Link
-              className="w-full transition-all duration-300 hover:translate-x-2"
-              color="foreground"
-              href={item.href}
-              size="lg"
-            >
-              {item.name}
-            </Link>
-          </NavbarMenuItem>
-        ))}
-
         {/* Admin Login/Logout for Mobile */}
         {isLoggedIn && (
           <NavbarMenuItem>
