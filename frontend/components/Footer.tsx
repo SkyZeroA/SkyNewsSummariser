@@ -12,7 +12,7 @@ export default function Footer() {
         <div className="flex flex-col items-center gap-6 mb-8 animate-fadeIn">
           {/* Brand Section */}
           <div className="text-center">
-            <h2 className="font-bold text-2xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4 transition-all duration-300 hover:scale-105">
+            <h2 className="font-bold text-2xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
               Sky News Summariser
             </h2>
             <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 max-w-md animate-slideUp" style={{ animationDelay: '0.1s', animationFillMode: 'both' }}>

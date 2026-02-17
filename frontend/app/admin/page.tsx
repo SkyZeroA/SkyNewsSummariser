@@ -128,35 +128,7 @@ export default function AdminDashboard() {
     }
   };
 
-  // Reject summary
-  const handleReject = async () => {
-    if (!summary) {
-      return;
-    }
 
-    try {
-      setIsSaving(true);
-      // Important: include cookies in request
-      const response = await fetch(`/api/summaries/${summary.id}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({ action: "reject" }),
-      });
-
-      if (response.ok) {
-        // Clear the summary after rejection
-        setSummary(null);
-        setEditedSummary("");
-      }
-    } catch (error) {
-      console.error("Error rejecting summary:", error);
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -259,23 +231,13 @@ export default function AdminDashboard() {
           {/* Action Buttons */}
           <div className="flex gap-4 justify-end animate-fadeIn" style={{ animationDelay: '0.5s', animationFillMode: 'both' }}>
             <Button
-              color="danger"
-              size="lg"
-              variant="flat"
-              className="font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg px-8"
-              onPress={handleReject}
-              isLoading={isSaving}
-            >
-              Reject
-            </Button>
-            <Button
               color="success"
               size="lg"
               className="font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg px-8"
               onPress={handleApprove}
               isLoading={isSaving}
             >
-              Approve & Publish
+              Publish
             </Button>
           </div>
         </div>
