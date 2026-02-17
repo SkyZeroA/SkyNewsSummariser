@@ -3,6 +3,8 @@ version: 0.2
 env:
   shell: bash
   git-credential-helper: yes
+  parameter-store:
+    GH_TOKEN: /pipeline/githubAccessToken
 
 phases:
   install:
@@ -13,12 +15,13 @@ phases:
       - export STAGE=$(echo $PR_ORIGIN | sed 's/main/test/')
       - echo "Tearing down resources for ${STAGE}"
       
-      - npm install -g aws-cdk
+      - corepack enable
 
   build:
     commands:
+      - pnpm run ci
       - echo "Starting teardown for ${STAGE}..."
-      - cdk destroy --all --force --context stage=${STAGE}
+      - pnpm run teardown
       
   post_build:
     commands:
