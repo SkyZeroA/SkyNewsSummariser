@@ -86,9 +86,9 @@ Transport officials are managing the rollout of a major new national rail timeta
 // GET endpoint to fetch all comprehensive summaries
 export const GET = (request: NextRequest) => {
   try {
-    // Check authorization
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    // Check authorization via cookies
+    const authToken = request.cookies.get("authToken")?.value;
+    if (!authToken) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }

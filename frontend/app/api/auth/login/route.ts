@@ -53,20 +53,47 @@ export const POST = async (request: NextRequest) => {
       );
     }
 
-    // Successful login - return user data (excluding password)
-    return NextResponse.json(
+    // Generate token (in a real app, you would generate a JWT token here)
+    const token = `fake-jwt-token-${Date.now()}`;
+
+    // Prepare user data (excluding password)
+    const userData = {
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    };
+
+    // Create response with user data
+    const response = NextResponse.json(
       {
         success: true,
-        user: {
-          email: user.email,
-          name: user.name,
-          role: user.role,
-        },
-        // In a real app, you would generate a JWT token here
-        token: `fake-jwt-token-${Date.now()}`,
+        user: userData,
       },
       { status: 200 }
     );
+
+    // Set HTTP-only cookies for authentication
+    // AuthToken cookie - HTTP-only, secure, sameSite
+    response.cookies.set("authToken", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      // 7 days
+      maxAge: 60 * 60 * 24 * 7,
+      path: "/",
+    });
+
+    // User cookie - not HTTP-only so client can read user info for display
+    response.cookies.set("user", JSON.stringify(userData), {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      // 7 days
+      maxAge: 60 * 60 * 24 * 7,
+      path: "/",
+    });
+
+    return response;
   } catch (error) {
     console.error("Login error:", error);
     return NextResponse.json(

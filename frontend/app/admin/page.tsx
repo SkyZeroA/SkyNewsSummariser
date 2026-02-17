@@ -14,14 +14,23 @@ export default function AdminDashboard() {
 
   // Check authorization on mount
   useEffect(() => {
-    const checkAuth = () => {
-      const authToken = localStorage.getItem("authToken");
+    const checkAuth = async () => {
+      try {
+        // Verify authentication via API (which checks cookies)
+        // Important: include cookies in request
+        const response = await fetch("/api/auth/verify", {
+          credentials: "include",
+        });
 
-      if (authToken) {
-        // Token found, user is authorized - fetch summaries
-        fetchSummaries();
-      } else {
-        // No token found, redirect to login
+        if (response.ok) {
+          // User is authenticated - fetch summaries
+          fetchSummaries();
+        } else {
+          // Not authenticated, redirect to login
+          router.push("/login");
+        }
+      } catch (error) {
+        console.error("Auth check failed:", error);
         router.push("/login");
       }
     };
@@ -33,11 +42,9 @@ export default function AdminDashboard() {
   const fetchSummaries = async () => {
     try {
       setIsLoading(true);
-      const authToken = localStorage.getItem("authToken");
+      // Important: include cookies in request
       const response = await fetch("/api/summaries?status=pending", {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
+        credentials: "include",
       });
 
       if (response.ok) {
@@ -66,11 +73,13 @@ export default function AdminDashboard() {
 
     try {
       setIsSaving(true);
+      // Important: include cookies in request
       const response = await fetch(`/api/summaries/${summary.id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({
           summaryText: editedSummary,
         }),
@@ -95,11 +104,13 @@ export default function AdminDashboard() {
 
     try {
       setIsSaving(true);
+      // Important: include cookies in request
       const response = await fetch(`/api/summaries/${summary.id}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({ action: "approve" }),
       });
 
@@ -125,11 +136,13 @@ export default function AdminDashboard() {
 
     try {
       setIsSaving(true);
+      // Important: include cookies in request
       const response = await fetch(`/api/summaries/${summary.id}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({ action: "reject" }),
       });
 

@@ -8,21 +8,20 @@ export default function AdminLoginPage() {
 
   const handleLogin = async (email: string, password: string) => {
     // Call the authentication API
+    // Important: include cookies in request
     const response = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email, password }),
+      credentials: 'include',
     });
 
     const data = await response.json();
 
     if (response.ok) {
-      // Store token/session
-      localStorage.setItem('authToken', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-
+      // Cookies are set automatically by the server
       // Dispatch custom event to notify header of login state change
-      globalThis.dispatchEvent(new Event('storage'));
+      globalThis.dispatchEvent(new Event('auth-change'));
 
       // Redirect to admin dashboard
       router.push('/admin');

@@ -37,6 +37,34 @@ export default function Header() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [fontSize, setFontSize] = useState<"small" | "medium" | "large">("medium");
 
+  // Check authentication status
+  const checkAuthStatus = async () => {
+    try {
+      // Important: include cookies in request
+      const response = await fetch("/api/auth/verify", {
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.authenticated && data.user) {
+          setIsLoggedIn(true);
+          setUserName(data.user.name || "");
+        } else {
+          setIsLoggedIn(false);
+          setUserName("");
+        }
+      } else {
+        setIsLoggedIn(false);
+        setUserName("");
+      }
+    } catch (error) {
+      console.error("Failed to check auth status:", error);
+      setIsLoggedIn(false);
+      setUserName("");
+    }
+  };
+
   // Sync with localStorage and DOM after mount to avoid hydration mismatch
   useEffect(() => {
     setMounted(true);
@@ -57,43 +85,18 @@ export default function Header() {
       if (savedFontSize) {
         setFontSize(savedFontSize);
       }
-
-      // Check if user is logged in
-      const authToken = localStorage.getItem("authToken");
-      const userStr = localStorage.getItem("user");
-
-      if (authToken && userStr) {
-        setIsLoggedIn(true);
-        try {
-          const user = JSON.parse(userStr);
-          setUserName(user.name || "");
-        } catch (error) {
-          console.error("Failed to parse user data:", error);
-        }
-      }
     }
 
-    // Listen for storage changes (login/logout events)
-    const handleStorageChange = () => {
-      const authToken = localStorage.getItem("authToken");
-      const userStr = localStorage.getItem("user");
+    // Check authentication status
+    checkAuthStatus();
 
-      if (authToken && userStr) {
-        setIsLoggedIn(true);
-        try {
-          const user = JSON.parse(userStr);
-          setUserName(user.name || "");
-        } catch (error) {
-          console.error("Failed to parse user data:", error);
-        }
-      } else {
-        setIsLoggedIn(false);
-        setUserName("");
-      }
+    // Listen for auth changes (login/logout events)
+    const handleAuthChange = () => {
+      checkAuthStatus();
     };
 
-    globalThis.addEventListener("storage", handleStorageChange);
-    return () => globalThis.removeEventListener("storage", handleStorageChange);
+    globalThis.addEventListener("auth-change", handleAuthChange);
+    return () => globalThis.removeEventListener("auth-change", handleAuthChange);
   }, []);
 
   // Apply dark mode when it changes (but not on initial mount since blocking script handles that)
@@ -125,12 +128,24 @@ export default function Header() {
   };
 
   // Handle logout
-  const handleLogout = () => {
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("user");
-    setIsLoggedIn(false);
-    setUserName("");
-    router.push("/");
+  const handleLogout = async () => {
+    try {
+      // Important: include cookies in request
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        setIsLoggedIn(false);
+        setUserName("");
+        router.push("/");
+      } else {
+        console.error("Logout failed");
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
   };
 
   const menuItems = [
