@@ -104,19 +104,7 @@ export default function Home() {
     },
   ];
 
-  // Sample data for most read articles
-  const mostReadArticles = [
-    "UK 'rapidly developing' plans to respond for war, says defence minister",
-    "Trump hints US could defend Ukraine meeting this week in Oval Office discussion",
-    "Man found guilty of savage pass bottle train attack",
-    "People are discovering 'daily' farm asylum bubble says whistleblower",
-    "Christine tree chopped down hours after lights switch on",
-    "Interest rates cut chances and value of pound impacted after inflation rises",
-    "What is 'spoofing'? How the oil tanker seized by US tried to evade sanctions",
-    "Inside one of the most controversial darts in land of anger and confusion",
-    "Friday's national newspaper front pages",
-    "More bad news for chancellor as UK economy shrinks again",
-  ];
+
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
@@ -253,32 +241,7 @@ export default function Home() {
         </form>
       </section>
 
-      {/* Most Read Section */}
-      <section className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8 animate-fadeIn" style={{ animationDelay: '0.8s', animationFillMode: 'both' }}>
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 uppercase tracking-wide">
-          Most Read
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {mostReadArticles.map((article, index) => (
-            <div
-              key={index}
-              className="flex items-start gap-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-all duration-300 cursor-pointer hover:scale-102 hover:shadow-md animate-slideUp"
-              style={{ animationDelay: `${0.9 + index * 0.05}s`, animationFillMode: 'both' }}
-            >
-              <div className="flex-shrink-0">
-                <span className="text-2xl font-bold text-blue-600 dark:text-blue-400 transition-transform duration-300 hover:scale-110 inline-block">
-                  {index + 1}
-                </span>
-              </div>
-              <div className="flex-1">
-                <p className="text-sm text-gray-900 dark:text-white">
-                  {article}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+
     </div>
   );
 }
