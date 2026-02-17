@@ -23,8 +23,8 @@ export default function AdminDashboard() {
         });
 
         if (response.ok) {
-          // User is authenticated - fetch summaries
-          fetchSummaries();
+          // User is authenticated - fetch summary
+          fetchSummary();
         } else {
           // Not authenticated, redirect to login
           router.push("/login");
@@ -39,7 +39,7 @@ export default function AdminDashboard() {
   }, [router]);
 
   // Fetch the pending comprehensive summary from API
-  const fetchSummaries = async () => {
+  const fetchSummary = async () => {
     try {
       setIsLoading(true);
       // Important: include cookies in request
@@ -56,10 +56,10 @@ export default function AdminDashboard() {
           setEditedSummary(pendingSummary.summaryText);
         }
       } else {
-        console.error("Failed to fetch summaries");
+        console.error("Failed to fetch summary");
       }
     } catch (error) {
-      console.error("Error fetching summaries:", error);
+      console.error("Error fetching summary:", error);
     } finally {
       setIsLoading(false);
     }
@@ -163,7 +163,7 @@ export default function AdminDashboard() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center animate-fadeIn">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading summaries...</p>
+          <p className="text-gray-600 dark:text-gray-400">Loading summary...</p>
         </div>
       </div>
     );
