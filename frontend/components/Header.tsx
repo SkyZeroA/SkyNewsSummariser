@@ -236,6 +236,16 @@ export default function Header() {
                 <span className="text-sm text-gray-700 dark:text-gray-300">
                   Welcome, <span className="font-semibold">{userName}</span>
                 </span>
+                <Link href="/admin" className="text-sm transition-all duration-300 hover:scale-105">
+                  <Button
+                    color="primary"
+                    variant="flat"
+                    size="sm"
+                    className="transition-all duration-300 hover:scale-105"
+                  >
+                    Dashboard
+                  </Button>
+                </Link>
                 <Button
                   color="danger"
                   variant="flat"
@@ -267,6 +277,18 @@ export default function Header() {
                 {userName}
               </p>
             </div>
+          </NavbarMenuItem>
+        )}
+        {isLoggedIn && (
+          <NavbarMenuItem>
+            <Link
+              className="w-full"
+              color="primary"
+              href="/admin"
+              size="lg"
+            >
+              Admin Dashboard
+            </Link>
           </NavbarMenuItem>
         )}
         <NavbarMenuItem>
