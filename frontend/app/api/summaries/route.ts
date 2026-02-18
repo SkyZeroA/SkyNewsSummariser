@@ -153,7 +153,7 @@ export const POST = async (request: NextRequest) => {
     // Approve the summary
     DAILY_SUMMARY = {
       ...DAILY_SUMMARY,
-      status: "approved",
+      status: "pending",
       updatedAt: new Date().toISOString(),
     };
 
