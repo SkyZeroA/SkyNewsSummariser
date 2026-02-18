@@ -154,78 +154,83 @@ export default function AdminDashboard() {
 
       {summary ? (
         <div className="space-y-6">
-          {/* Main Summary Editor */}
-          <Card className="overflow-hidden animate-slideUp" style={{ animationDelay: '0.1s', animationFillMode: 'both' }}>
-            <CardHeader className="px-6 pt-6 pb-4 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Comprehensive Summary
-              </h2>
-            </CardHeader>
-            <CardBody className="px-6 py-6">
-              <div className="flex flex-col gap-6">
-                <div className="animate-fadeIn" style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
-                  <Textarea
-                    label="Summary Text"
-                    placeholder="Edit the comprehensive summary..."
-                    value={editedSummary}
-                    onValueChange={setEditedSummary}
-                    variant="bordered"
-                    minRows={20}
-                    classNames={{
-                      input: "text-gray-900 dark:text-white text-base leading-relaxed",
-                      label: "text-gray-700 dark:text-gray-300 text-lg font-semibold",
-                      inputWrapper: "transition-all duration-300 hover:border-blue-400 dark:hover:border-blue-500",
-                    }}
-                  />
-                </div>
-
-                {editedSummary !== summary.summaryText && (
-                  <Button
-                    color="primary"
-                    variant="flat"
-                    size="md"
-                    onPress={handleUpdateSummary}
-                    isLoading={isSaving}
-                    className="animate-slideUp transition-all duration-300 hover:scale-105 self-start"
-                  >
-                    Save Changes
-                  </Button>
-                )}
-              </div>
-            </CardBody>
-          </Card>
-
-          {/* Source Articles */}
-          <Card className="overflow-hidden animate-slideUp" style={{ animationDelay: '0.3s', animationFillMode: 'both' }}>
-            <CardHeader className="px-6 pt-6 pb-4 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                Source Articles ({summary.sourceArticles.length})
-              </h2>
-            </CardHeader>
-            <CardBody className="px-6 py-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {summary.sourceArticles.map((article, index) => (
-                  <div
-                    key={index}
-                    className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-300 animate-fadeIn"
-                    style={{ animationDelay: `${0.4 + index * 0.05}s`, animationFillMode: 'both' }}
-                  >
-                    <h3 className="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">
-                      {article.title}
-                    </h3>
-                    <Link
-                      href={article.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-blue-600 dark:text-blue-400 hover:underline transition-colors duration-300"
-                    >
-                      View Article →
-                    </Link>
+          {/* Two Column Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            {/* Main Summary Editor */}
+            <Card className="overflow-hidden animate-slideUp h-full flex flex-col" style={{ animationDelay: '0.1s', animationFillMode: 'both' }}>
+              <CardHeader className="px-6 pt-6 pb-4 border-b border-gray-200 dark:border-gray-700">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  Comprehensive Summary
+                </h2>
+              </CardHeader>
+              <CardBody className="px-6 py-6 flex-1 flex flex-col">
+                <div className="flex flex-col gap-6 flex-1">
+                  <div className="animate-fadeIn flex-1 flex flex-col" style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
+                    <Textarea
+                      label="Summary Text"
+                      placeholder="Edit the comprehensive summary..."
+                      value={editedSummary}
+                      onValueChange={setEditedSummary}
+                      variant="bordered"
+                      minRows={0}
+                      maxRows={20}
+                      classNames={{
+                        base: "flex-1",
+                        input: "text-gray-900 dark:text-white text-base leading-relaxed overflow-hidden resize-none",
+                        label: "text-gray-700 dark:text-gray-300 text-lg font-semibold",
+                        inputWrapper: "transition-all duration-300 hover:border-blue-400 dark:hover:border-blue-500 h-full min-h-[600px]",
+                      }}
+                    />
                   </div>
-                ))}
-              </div>
-            </CardBody>
-          </Card>
+
+                  {editedSummary !== summary.summaryText && (
+                    <Button
+                      color="primary"
+                      variant="flat"
+                      size="md"
+                      onPress={handleUpdateSummary}
+                      isLoading={isSaving}
+                      className="animate-slideUp transition-all duration-300 hover:scale-105 self-start"
+                    >
+                      Save Changes
+                    </Button>
+                  )}
+                </div>
+              </CardBody>
+            </Card>
+
+            {/* Source Articles */}
+            <Card className="overflow-hidden animate-slideUp h-full flex flex-col" style={{ animationDelay: '0.3s', animationFillMode: 'both' }}>
+              <CardHeader className="px-6 pt-6 pb-4 border-b border-gray-200 dark:border-gray-700">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                  Source Articles ({summary.sourceArticles.length})
+                </h2>
+              </CardHeader>
+              <CardBody className="px-6 py-6 flex-1 overflow-y-auto">
+                <div className="space-y-4">
+                  {summary.sourceArticles.map((article, index) => (
+                    <div
+                      key={index}
+                      className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-300 animate-fadeIn"
+                      style={{ animationDelay: `${0.4 + index * 0.05}s`, animationFillMode: 'both' }}
+                    >
+                      <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+                        {article.title}
+                      </h3>
+                      <Link
+                        href={article.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 dark:text-blue-400 hover:underline transition-colors duration-300"
+                      >
+                        View Article →
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              </CardBody>
+            </Card>
+          </div>
 
           {/* Action Buttons */}
           <div className="flex gap-4 justify-center animate-fadeIn" style={{ animationDelay: '0.5s', animationFillMode: 'both' }}>
