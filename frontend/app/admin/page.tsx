@@ -228,7 +228,7 @@ export default function AdminDashboard() {
           </Card>
 
           {/* Action Buttons */}
-          <div className="flex gap-4 justify-end animate-fadeIn" style={{ animationDelay: '0.5s', animationFillMode: 'both' }}>
+          <div className="flex gap-4 justify-center animate-fadeIn" style={{ animationDelay: '0.5s', animationFillMode: 'both' }}>
             <Button
               color="success"
               size="lg"

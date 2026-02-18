@@ -26,6 +26,7 @@ export const POST = async (request: NextRequest) => {
   try {
     const body = await request.json();
     const { email, password } = body;
+    // Note: Password encryption should be implemented before production
 
     // Validate input
     if (!email || !password) {

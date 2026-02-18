@@ -21,7 +21,15 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
-                const savedTheme = localStorage.getItem('theme');
+                // Helper to get cookie value
+                function getCookie(name) {
+                  const value = '; ' + document.cookie;
+                  const parts = value.split('; ' + name + '=');
+                  if (parts.length === 2) return parts.pop().split(';').shift();
+                  return null;
+                }
+
+                const savedTheme = getCookie('theme');
                 const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
                 if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
                   document.documentElement.classList.add('dark');

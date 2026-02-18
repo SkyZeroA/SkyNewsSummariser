@@ -26,6 +26,29 @@ const applyFontSize = (size: "small" | "medium" | "large") => {
   document.documentElement.classList.add(`text-size-${size}`);
 };
 
+// Helper function to get cookie value
+const getCookie = (name: string): string | null => {
+  if (typeof document === "undefined") {
+    return null;
+  }
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) {
+    return parts.pop()?.split(";").shift() || null;
+  }
+  return null;
+};
+
+// Helper function to set cookie
+const setCookie = (name: string, value: string, days = 365) => {
+  if (typeof document === "undefined") {
+    return;
+  }
+  const expires = new Date();
+  expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
+};
+
 export default function Header() {
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -65,7 +88,7 @@ export default function Header() {
     }
   };
 
-  // Sync with localStorage and DOM after mount to avoid hydration mismatch
+  // Sync with cookies and DOM after mount to avoid hydration mismatch
   useEffect(() => {
     setMounted(true);
 
@@ -75,16 +98,14 @@ export default function Header() {
       setIsDarkMode(isDark);
     }
 
-    // Sync font size from localStorage
-    if (typeof localStorage !== "undefined") {
-      const savedFontSize = localStorage.getItem("fontSize") as
-        | "small"
-        | "medium"
-        | "large"
-        | null;
-      if (savedFontSize) {
-        setFontSize(savedFontSize);
-      }
+    // Sync font size from cookies
+    const savedFontSize = getCookie("fontSize") as
+      | "small"
+      | "medium"
+      | "large"
+      | null;
+    if (savedFontSize) {
+      setFontSize(savedFontSize);
     }
 
     // Check authentication status
@@ -117,14 +138,14 @@ export default function Header() {
   const toggleDarkMode = () => {
     const newDarkMode = !isDarkMode;
     setIsDarkMode(newDarkMode);
-    localStorage.setItem("theme", newDarkMode ? "dark" : "light");
+    setCookie("theme", newDarkMode ? "dark" : "light");
   };
 
   // Change font size
   const changeFontSize = (size: "small" | "medium" | "large") => {
     setFontSize(size);
     applyFontSize(size);
-    localStorage.setItem("fontSize", size);
+    setCookie("fontSize", size);
   };
 
   // Handle logout
