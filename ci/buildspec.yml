@@ -6,6 +6,7 @@ env:
   parameter-store:
     GH_TOKEN: /pipeline/githubAccessToken
     CHARTBEAT_API_KEY: /summariser/chartbeat-api-key
+    HUGGINGFACE_API_KEY: /summariser/huggingface-api-key
 
 phases:
   install:
