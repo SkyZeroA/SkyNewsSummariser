@@ -14,10 +14,7 @@ interface Event {
 }
 
 const hasSummaryText = (value: unknown): value is { summary_text: string } =>
-	typeof value === 'object' &&
-	value !== null &&
-	'summary_text' in value &&
-	typeof (value as { summary_text?: unknown }).summary_text === 'string';
+	typeof value === 'object' && value !== null && 'summary_text' in value && typeof (value as { summary_text?: unknown }).summary_text === 'string';
 
 const summariseText = async (text: string, apiKey: string): Promise<string> => {
 	const response = await fetch(HUGGINGFACE_API_URL, {
