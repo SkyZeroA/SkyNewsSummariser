@@ -1,104 +1,106 @@
-import { Stack, StackProps, Duration, RemovalPolicy } from 'aws-cdk-lib';
+import { Stack, StackProps, Duration } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
-import { Bucket, BlockPublicAccess } from 'aws-cdk-lib/aws-s3';
-import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
-import { S3BucketOrigin } from 'aws-cdk-lib/aws-cloudfront-origins';
-import { PolicyStatement, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
-import {
-	AllowedMethods,
-	Distribution,
-	Function as CloudFrontFunction,
-	FunctionCode,
-	FunctionEventType,
-	ViewerProtocolPolicy,
-} from 'aws-cdk-lib/aws-cloudfront';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as path from 'node:path';
+import { LambdaIntegration, RestApi } from 'aws-cdk-lib/aws-apigateway';
+import { Table } from 'aws-cdk-lib/aws-dynamodb';
+
+export interface SummariserStackProps extends StackProps {
+	stage: string;
+}
 
 export class SummariserStack extends Stack {
-	readonly siteBucket: Bucket;
+	public readonly apiUrl: string;
 
-	constructor(scope: Construct, id: string, props: StackProps) {
+	constructor(scope: Construct, id: string, props: SummariserStackProps) {
 		super(scope, id, props);
 
-		const distPath = path.resolve('frontend/out');
-
-		// Create and deploy a bucket to host the static website
-		this.siteBucket = new Bucket(this, 'SiteBucket', {
-			publicReadAccess: false,
-			blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
-			removalPolicy: RemovalPolicy.DESTROY,
-			autoDeleteObjects: true,
-			enforceSSL: true,
-		});
-
-		new BucketDeployment(this, 'DeployWithInvalidation', {
-			sources: [Source.asset(distPath)],
-			destinationBucket: this.siteBucket,
-			destinationKeyPrefix: '/',
-		});
-
-		// Function to block access to non-public facing paths in the S3 bucket
-		// Must be updated when the website is updated to allow new assets etc
-
-		// Maybe put all relevant paths in a config file in the bucket and have the function read from that instead of hardcoding them here
-		const blockNonPublicPaths = new CloudFrontFunction(this, 'BlockNonPublicPaths', {
-			code: FunctionCode.fromInline(`
-				function handler(event) {
-					var request = event.request;
-					var uri = request.uri;
-					var allowedPrefixes = ['/_next/'];
-					var allowedFiles = ['/index.html', '/favicon.ico'];
-
-					if (uri === '/' || allowedFiles.indexOf(uri) !== -1) {
-						return request;
-					}
-
-					for (var i = 0; i < allowedPrefixes.length; i++) {
-						if (uri.indexOf(allowedPrefixes[i]) === 0) {
-							return request;
-						}
-					}
-
-					return {
-				    	statusCode: 403,
-				    	statusDescription: 'Forbidden',
-				    	headers: {
-				      		'content-type': { value: 'text/plain' }
-				    	},
-				    	body: 'Forbidden'
-				  	};
-				}
-			`),
-		});
-
-		// Create a CloudFront distribution to serve the static website
-		const distribution = new Distribution(this, 'Distribution', {
-			defaultBehavior: {
-				origin: S3BucketOrigin.withOriginAccessControl(this.siteBucket),
-				allowedMethods: AllowedMethods.ALLOW_GET_HEAD,
-				viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-				functionAssociations: [
-					{
-						function: blockNonPublicPaths,
-						eventType: FunctionEventType.VIEWER_REQUEST,
-					},
-				],
+		// Create Lambda functions for authentication
+		const loginLambda = new NodejsFunction(this, 'AuthLoginLambda', {
+			runtime: lambda.Runtime.NODEJS_22_X,
+			handler: 'handler',
+			entry: path.resolve('lib/lambdas/authentication/login.ts'),
+			depsLockFilePath: path.resolve('pnpm-lock.yaml'),
+			timeout: Duration.minutes(1),
+			memorySize: 512,
+			environment: {
+				JWT_SECRET: process.env.JWT_SECRET ?? '',
 			},
-			defaultRootObject: 'index.html',
 		});
 
-		this.siteBucket.addToResourcePolicy(
-			new PolicyStatement({
-				actions: ['s3:GetObject'],
-				resources: [this.siteBucket.arnForObjects('*')],
-				principals: [new ServicePrincipal('cloudfront.amazonaws.com')],
-				conditions: {
-					StringEquals: {
-						'AWS:SourceArn': `arn:aws:cloudfront::${this.account}:distribution/${distribution.distributionId}`,
-					},
-				},
+		const logoutLambda = new NodejsFunction(this, 'AuthLogoutLambda', {
+			runtime: lambda.Runtime.NODEJS_22_X,
+			handler: 'handler',
+			entry: path.resolve('lib/lambdas/authentication/logout.ts'),
+			depsLockFilePath: path.resolve('pnpm-lock.yaml'),
+			timeout: Duration.minutes(1),
+			memorySize: 512,
+		});
+
+		const verifyLambda = new NodejsFunction(this, 'AuthVerifyLambda', {
+			runtime: lambda.Runtime.NODEJS_22_X,
+			handler: 'handler',
+			entry: path.resolve('lib/lambdas/authentication/verify.ts'),
+			depsLockFilePath: path.resolve('pnpm-lock.yaml'),
+			timeout: Duration.minutes(1),
+			memorySize: 512,
+			environment: {
+				JWT_SECRET: process.env.JWT_SECRET ?? '',
+			},
+		});
+
+		const authApi = new RestApi(this, 'AuthRestApi', {
+			restApiName: `auth-api-${props.stage}`,
+			deployOptions: {
+				stageName: props.stage,
+			},
+		});
+
+		const authResource = authApi.root.addResource('auth');
+		const loginResource = authResource.addResource('login');
+		const logoutResource = authResource.addResource('logout');
+		const verifyResource = authResource.addResource('verify');
+
+		loginResource.addMethod(
+			'POST',
+			new LambdaIntegration(loginLambda, {
+				proxy: true,
+			})
+		);
+		loginResource.addMethod(
+			'OPTIONS',
+			new LambdaIntegration(loginLambda, {
+				proxy: true,
+			})
+		);
+
+		const adminsTable = Table.fromTableName(this, 'ImportedAdminsTable', 'admins');
+		adminsTable.grantReadData(loginLambda);
+
+		logoutResource.addMethod(
+			'POST',
+			new LambdaIntegration(logoutLambda, {
+				proxy: true,
+			})
+		);
+		logoutResource.addMethod(
+			'OPTIONS',
+			new LambdaIntegration(logoutLambda, {
+				proxy: true,
+			})
+		);
+
+		verifyResource.addMethod(
+			'GET',
+			new LambdaIntegration(verifyLambda, {
+				proxy: true,
+			})
+		);
+		verifyResource.addMethod(
+			'OPTIONS',
+			new LambdaIntegration(verifyLambda, {
+				proxy: true,
 			})
 		);
 
@@ -113,5 +115,7 @@ export class SummariserStack extends Stack {
 				CHARTBEAT_API_KEY: process.env.CHARTBEAT_API_KEY ?? '',
 			},
 		});
+
+		this.apiUrl = authApi.url;
 	}
 }

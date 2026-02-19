@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardBody, CardHeader, Button, Textarea, Link } from "@heroui/react";
 import { ComprehensiveSummary } from "@/types/summary";
+import { useConfig } from "@/app/providers";
 
 export default function AdminDashboard() {
   const router = useRouter();
+  const { apiUrl } = useConfig();
   const [summary, setSummary] = useState<ComprehensiveSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -18,20 +20,24 @@ export default function AdminDashboard() {
       try {
         // Verify authentication via API (which checks cookies)
         // Important: include cookies in request
-        const response = await fetch("/api/auth/verify", {
-          credentials: "include",
-        });
-
-        if (response.ok) {
-          // User is authenticated - fetch summary
-          fetchSummary();
-        } else {
-          // Not authenticated, redirect to login
-          router.push("/login");
+        if (!apiUrl) {
+          console.error("API URL not available");
+          return;
         }
+          const response = await fetch(`${apiUrl}auth/verify`, {
+            credentials: "include",
+          });
+
+          if (response.ok) {
+            // User is authenticated - fetch summary
+            fetchSummary();
+          } else {
+            // Not authenticated, redirect to login
+            router.push("/login.html");
+          }
       } catch (error) {
         console.error("Auth check failed:", error);
-        router.push("/login");
+        router.push("/login.html");
       }
     };
 

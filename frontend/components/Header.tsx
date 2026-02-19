@@ -15,6 +15,7 @@ import {
 } from "@heroui/react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useConfig } from "@/app/providers";
 
 // Apply font size to document
 const applyFontSize = (size: "small" | "medium" | "large") => {
@@ -51,6 +52,7 @@ const setCookie = (name: string, value: string, days = 365) => {
 
 export default function Header() {
   const router = useRouter();
+  const { apiUrl } = useConfig();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -63,8 +65,12 @@ export default function Header() {
   // Check authentication status
   const checkAuthStatus = async () => {
     try {
+      if (!apiUrl) {
+        console.error("API URL not available");
+        return;
+      }
       // Important: include cookies in request
-      const response = await fetch("/api/auth/verify", {
+      const response = await fetch(`${apiUrl}auth/verify`, {
         credentials: "include",
       });
 
@@ -90,6 +96,7 @@ export default function Header() {
 
   // Sync with cookies and DOM after mount to avoid hydration mismatch
   useEffect(() => {
+    if (!apiUrl) {return;}
     setMounted(true);
 
     // Sync dark mode from DOM (set by blocking script in layout)
@@ -118,7 +125,7 @@ export default function Header() {
 
     globalThis.addEventListener("auth-change", handleAuthChange);
     return () => globalThis.removeEventListener("auth-change", handleAuthChange);
-  }, []);
+  }, [apiUrl]);
 
   // Apply dark mode when it changes (but not on initial mount since blocking script handles that)
   useEffect(() => {
@@ -151,8 +158,12 @@ export default function Header() {
   // Handle logout
   const handleLogout = async () => {
     try {
+      if (!apiUrl) {
+        console.error("API URL not available");
+        return;
+      }
       // Important: include cookies in request
-      const response = await fetch("/api/auth/logout", {
+      const response = await fetch(`${apiUrl}auth/logout`, {
         method: "POST",
         credentials: "include",
       });
@@ -236,7 +247,7 @@ export default function Header() {
                 <span className="text-sm text-gray-700 dark:text-gray-300">
                   Welcome, <span className="font-semibold">{userName}</span>
                 </span>
-                <Link href="/admin" className="text-sm transition-all duration-300 hover:scale-105">
+                <Link href="/admin.html" className="text-sm transition-all duration-300 hover:scale-105">
                   <Button
                     color="primary"
                     variant="flat"
@@ -257,7 +268,7 @@ export default function Header() {
                 </Button>
               </div>
             ) : (
-              <Link href="/login" className="text-sm transition-all duration-300 hover:scale-105">
+              <Link href="/login.html" className="text-sm transition-all duration-300 hover:scale-105">
                 Admin Login
               </Link>
             )
@@ -284,7 +295,7 @@ export default function Header() {
             <Link
               className="w-full"
               color="primary"
-              href="/admin"
+              href="/admin.html"
               size="lg"
             >
               Admin Dashboard
@@ -306,7 +317,7 @@ export default function Header() {
             <Link
               className="w-full"
               color="primary"
-              href="/login"
+              href="/login.html"
               size="lg"
             >
               Admin Login
