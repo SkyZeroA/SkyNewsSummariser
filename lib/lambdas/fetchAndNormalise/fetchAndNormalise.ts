@@ -3,7 +3,6 @@ import * as cheerio from 'cheerio';
 import { buildUrl, getPath } from '@lib/lambdas/fetchAndNormalise/helpers.ts';
 import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 
-
 export interface ChartBeatArticle {
 	title: string;
 	url: string;
@@ -12,6 +11,7 @@ export interface ChartBeatArticle {
 export interface normalisedArticle {
 	title: string;
 	content: string;
+	url: string;
 }
 
 export interface FetchAndNormaliseResult {
@@ -23,7 +23,7 @@ const DEFAULT_EXCLUDE_PATHS = ['/', '/uk', '/watch-live', 'home', '/live'];
 const TARGET_ARTICLE_COUNT = 10;
 const LIMIT_INCREMENT = 5;
 const MAX_LIMIT = 60;
-const MAX_ARTICLE_WORDS = 700;
+const MAX_ARTICLE_WORDS = 500;
 
 // Fetches the most popular articles from Chartbeat live endpoint
 export const fetchFromChartBeat = async (apiKey: string, limit: number): Promise<ChartBeatArticle[]> => {
@@ -91,9 +91,8 @@ export const fetchArticleContent = async (url: string): Promise<string> => {
 	}
 };
 
-// Normalises the articles to a standard format
+// Normalises the raw articles from ChartBeat into a consistent format with content
 export const normaliseArticles = async (articles: ChartBeatArticle[]): Promise<normalisedArticle[]> => {
-	// Fetch content for all articles in parallel
 	const normalisedPromises = articles.map(async (article) => {
 		const content = await fetchArticleContent(article.url);
 		const wordCount = content.trim().split(/\s+/).filter(Boolean).length;
@@ -105,6 +104,7 @@ export const normaliseArticles = async (articles: ChartBeatArticle[]): Promise<n
 		return {
 			title: article.title,
 			content,
+			url: article.url,
 		};
 	});
 	const normalised = await Promise.all(normalisedPromises);
@@ -149,15 +149,16 @@ export const handler: Handler<unknown, FetchAndNormaliseResult> = async () => {
 		const lambdaName = process.env.SUMMARISE_LAMBDA_NAME;
 		if (lambdaName) {
 			const lambdaClient = new LambdaClient({});
+			// Only send title, content, and url to the summarise lambda
+			const articlesPayload = finalArticles.map(({ title, content, url }) => ({ title, content, url }));
 			await lambdaClient.send(
 				new InvokeCommand({
 					FunctionName: lambdaName,
 					InvocationType: 'Event',
-					Payload: Buffer.from(JSON.stringify({ articles: finalArticles })),
+					Payload: Buffer.from(JSON.stringify({ articles: articlesPayload })),
 				})
 			);
 		}
-
 		return { articles: finalArticles, count: finalArticles.length };
 	} catch (error) {
 		console.error('Error in fetchAndNormalise lambda:', error);
