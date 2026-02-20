@@ -184,8 +184,8 @@ describe('handler', () => {
 		const fetchCalls = (global.fetch as any).mock.calls;
 		const chartbeatCalls = fetchCalls.filter((call: any[]) => call[0].includes('api.chartbeat.com'));
 		expect(chartbeatCalls).toHaveLength(2);
-		expect(chartbeatCalls[0][0]).toContain('limit=5');
-		expect(chartbeatCalls[1][0]).toContain('limit=10');
+		expect(chartbeatCalls[0][0]).toContain('limit=30');
+		expect(chartbeatCalls[1][0]).toContain('limit=35');
 	});
 
 	it('should filter out articles with empty content and retry', async () => {

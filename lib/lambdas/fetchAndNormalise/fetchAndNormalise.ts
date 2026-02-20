@@ -21,6 +21,7 @@ export interface FetchAndNormaliseResult {
 
 const DEFAULT_EXCLUDE_PATHS = ['/', '/uk', '/watch-live', 'home', '/live'];
 const TARGET_ARTICLE_COUNT = 10;
+const LIMIT_START = 30;
 const LIMIT_INCREMENT = 5;
 const MAX_LIMIT = 60;
 const MAX_ARTICLE_WORDS = 500;
@@ -122,7 +123,7 @@ export const handler: Handler<unknown, FetchAndNormaliseResult> = async () => {
 
 	try {
 		let articlesWithContent: normalisedArticle[] = [];
-		let limit = LIMIT_INCREMENT;
+		let limit = LIMIT_START;
 
 		// Keep fetching with increasing limit until we have enough articles with content
 		while (articlesWithContent.length < TARGET_ARTICLE_COUNT && limit <= MAX_LIMIT) {
