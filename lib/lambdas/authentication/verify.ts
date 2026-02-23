@@ -1,6 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { verify } from 'jsonwebtoken';
-import { buildCorsHeaders, handlePreflight } from '@lib/lambdas/authentication/utils.ts';
+import { buildCorsHeaders, handlePreflight } from '@lib/lambdas/utils.ts';
 
 // eslint-disable require-await
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
