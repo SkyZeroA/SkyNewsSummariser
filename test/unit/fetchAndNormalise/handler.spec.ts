@@ -27,13 +27,25 @@ const createCheerioMock = (textValue: string) => {
 };
 
 describe('handler', () => {
+	let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+	let consoleLogSpy: ReturnType<typeof vi.spyOn>;
+	let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
+
 	beforeEach(() => {
 		vi.clearAllMocks();
 		process.env.CHARTBEAT_API_KEY = 'test-api-key-12345';
+		// Suppress console output during tests to avoid cluttering test output
+		consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+		consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+		consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 	});
 
 	afterEach(() => {
 		delete process.env.CHARTBEAT_API_KEY;
+		vi.clearAllMocks();
+		consoleErrorSpy.mockRestore();
+		consoleLogSpy.mockRestore();
+		consoleWarnSpy.mockRestore();
 	});
 
 	it('should fetch and normalise articles successfully', async () => {

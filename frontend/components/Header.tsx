@@ -14,6 +14,8 @@ import {
   ButtonGroup,
 } from "@heroui/react";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useConfig } from "@/app/providers";
 
 // Apply font size to document
 const applyFontSize = (size: "small" | "medium" | "large") => {
@@ -25,157 +27,303 @@ const applyFontSize = (size: "small" | "medium" | "large") => {
   document.documentElement.classList.add(`text-size-${size}`);
 };
 
+// Helper function to get cookie value
+const getCookie = (name: string): string | null => {
+  if (typeof document === "undefined") {
+    return null;
+  }
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) {
+    return parts.pop()?.split(";").shift() || null;
+  }
+  return null;
+};
+
+// Helper function to set cookie
+const setCookie = (name: string, value: string, days = 365) => {
+  if (typeof document === "undefined") {
+    return;
+  }
+  const expires = new Date();
+  expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
+};
+
 export default function Header() {
+  const router = useRouter();
+  const { apiUrl } = useConfig();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userName, setUserName] = useState<string>("");
+
+  // Initialize with default value to avoid hydration mismatch
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [fontSize, setFontSize] = useState<"small" | "medium" | "large">(
-    "medium",
-  );
+  const [fontSize, setFontSize] = useState<"small" | "medium" | "large">("medium");
 
-  // Initialize dark mode from localStorage or system preference
+  // Check authentication status
+  const checkAuthStatus = async () => {
+    try {
+      if (!apiUrl) {
+        console.error("API URL not available");
+        return;
+      }
+      // Important: include cookies in request
+      const response = await fetch(`${apiUrl}auth/verify`, {
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.authenticated && data.user) {
+          setIsLoggedIn(true);
+          setUserName(data.user.name || "");
+        } else {
+          setIsLoggedIn(false);
+          setUserName("");
+        }
+      } else {
+        setIsLoggedIn(false);
+        setUserName("");
+      }
+    } catch (error) {
+      console.error("Failed to check auth status:", error);
+      setIsLoggedIn(false);
+      setUserName("");
+    }
+  };
+
+  // Sync with cookies and DOM after mount to avoid hydration mismatch
   useEffect(() => {
-    const savedTheme = localStorage.getItem("theme");
-    const prefersDark = globalThis.matchMedia(
-      "(prefers-color-scheme: dark)",
-    ).matches;
+    if (!apiUrl) {return;}
+    setMounted(true);
 
-    if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
-      setIsDarkMode(true);
-      document.documentElement.classList.add("dark");
-    } else {
-      setIsDarkMode(false);
-      document.documentElement.classList.remove("dark");
+    // Sync dark mode from DOM (set by blocking script in layout)
+    if (typeof document !== "undefined") {
+      const isDark = document.documentElement.classList.contains("dark");
+      setIsDarkMode(isDark);
     }
 
-    // Initialize font size from localStorage
-    const savedFontSize = localStorage.getItem("fontSize") as
+    // Sync font size from cookies
+    const savedFontSize = getCookie("fontSize") as
       | "small"
       | "medium"
       | "large"
       | null;
     if (savedFontSize) {
       setFontSize(savedFontSize);
-      applyFontSize(savedFontSize);
     }
-  }, []);
+
+    // Check authentication status
+    checkAuthStatus();
+
+    // Listen for auth changes (login/logout events)
+    const handleAuthChange = () => {
+      checkAuthStatus();
+    };
+
+    globalThis.addEventListener("auth-change", handleAuthChange);
+    return () => globalThis.removeEventListener("auth-change", handleAuthChange);
+  }, [apiUrl]);
+
+  // Apply dark mode when it changes (but not on initial mount since blocking script handles that)
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.classList.toggle("dark", isDarkMode);
+    }
+  }, [isDarkMode]);
+
+  // Apply font size when it changes
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      applyFontSize(fontSize);
+    }
+  }, [fontSize]);
 
   // Toggle dark mode
   const toggleDarkMode = () => {
     const newDarkMode = !isDarkMode;
     setIsDarkMode(newDarkMode);
-
-    if (newDarkMode) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
+    setCookie("theme", newDarkMode ? "dark" : "light");
   };
 
   // Change font size
   const changeFontSize = (size: "small" | "medium" | "large") => {
     setFontSize(size);
     applyFontSize(size);
-    localStorage.setItem("fontSize", size);
+    setCookie("fontSize", size);
   };
 
-  const menuItems = [
-    { name: "News", href: "/news" },
-    { name: "Summaries", href: "/summaries" },
-  ];
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      if (!apiUrl) {
+        console.error("API URL not available");
+        return;
+      }
+      // Important: include cookies in request
+      const response = await fetch(`${apiUrl}auth/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        setIsLoggedIn(false);
+        setUserName("");
+        router.push("/");
+      } else {
+        console.error("Logout failed");
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
 
   return (
     <Navbar
       isBordered
       isMenuOpen={isMenuOpen}
       onMenuOpenChange={setIsMenuOpen}
-      className="bg-white dark:bg-gray-900"
+      className="bg-white dark:bg-gray-900 animate-fadeIn"
       maxWidth="xl"
     >
       <NavbarContent>
         <NavbarMenuToggle
           aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-          className="sm:hidden text-gray-900 dark:text-gray-100"
+          className="sm:hidden text-gray-900 dark:text-gray-100 transition-transform duration-300 hover:scale-110"
         />
         <NavbarBrand>
-          <p className="font-bold text-2xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <Link href="/" className="font-bold text-2xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:opacity-80 transition-all duration-300 hover:scale-105 cursor-pointer">
             Sky News Summariser
-          </p>
+          </Link>
         </NavbarBrand>
       </NavbarContent>
 
-      <NavbarContent className="hidden sm:flex gap-6" justify="center">
-        {menuItems.map((item) => (
-          <NavbarItem key={item.name}>
-            <Link
-              color="foreground"
-              href={item.href}
-              className="hover:text-blue-600 transition-colors"
-            >
-              {item.name}
-            </Link>
-          </NavbarItem>
-        ))}
-      </NavbarContent>
-
       <NavbarContent justify="end">
-        <NavbarItem className="hidden sm:flex">
+        <NavbarItem className="hidden sm:flex animate-fadeIn" style={{ animationDelay: '0.3s', animationFillMode: 'both' }}>
           <ButtonGroup size="sm" variant="flat">
             <Button
               color={fontSize === "small" ? "primary" : "default"}
               onPress={() => changeFontSize("small")}
-              className="min-w-unit-8 px-2"
+              className="min-w-unit-8 px-2 transition-all duration-300 hover:scale-110"
             >
               <span className="text-xs !text-xs">A</span>
             </Button>
             <Button
               color={fontSize === "medium" ? "primary" : "default"}
               onPress={() => changeFontSize("medium")}
-              className="min-w-unit-10 px-2"
+              className="min-w-unit-10 px-2 transition-all duration-300 hover:scale-110"
             >
               <span className="text-sm !text-sm">A</span>
             </Button>
             <Button
               color={fontSize === "large" ? "primary" : "default"}
               onPress={() => changeFontSize("large")}
-              className="min-w-unit-12 px-2"
+              className="min-w-unit-12 px-2 transition-all duration-300 hover:scale-110"
             >
               <span className="text-base !text-base">A</span>
             </Button>
           </ButtonGroup>
         </NavbarItem>
-        <NavbarItem>
-          <Switch
-            isSelected={isDarkMode}
-            onValueChange={toggleDarkMode}
-            size="sm"
-            color="primary"
-            startContent={<span className="text-xs">☀️</span>}
-            endContent={<span className="text-xs">🌙</span>}
-            aria-label="Toggle dark mode"
-          />
+        <NavbarItem className="animate-fadeIn" style={{ animationDelay: '0.4s', animationFillMode: 'both' }}>
+          {mounted && (
+            <Switch
+              isSelected={isDarkMode}
+              onValueChange={toggleDarkMode}
+              size="sm"
+              color="primary"
+              startContent={<span className="text-xs">☀️</span>}
+              endContent={<span className="text-xs">🌙</span>}
+              aria-label="Toggle dark mode"
+              className="transition-all duration-300 hover:scale-105"
+            />
+          )}
         </NavbarItem>
-        <NavbarItem>
-          <Link href="/login" className="text-sm">
-            Login
-          </Link>
+        <NavbarItem className="animate-fadeIn" style={{ animationDelay: '0.5s', animationFillMode: 'both' }}>
+          {mounted && (
+            isLoggedIn ? (
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  Welcome, <span className="font-semibold">{userName}</span>
+                </span>
+                <Link href="/admin.html" className="text-sm transition-all duration-300 hover:scale-105">
+                  <Button
+                    color="primary"
+                    variant="flat"
+                    size="sm"
+                    className="transition-all duration-300 hover:scale-105"
+                  >
+                    Dashboard
+                  </Button>
+                </Link>
+                <Button
+                  color="danger"
+                  variant="flat"
+                  size="sm"
+                  onPress={handleLogout}
+                  className="transition-all duration-300 hover:scale-105"
+                >
+                  Logout
+                </Button>
+              </div>
+            ) : (
+              <Link href="/login.html" className="text-sm transition-all duration-300 hover:scale-105">
+                Admin Login
+              </Link>
+            )
+          )}
         </NavbarItem>
       </NavbarContent>
 
       <NavbarMenu>
-        {menuItems.map((item, index) => (
-          <NavbarMenuItem key={`${item.name}-${index}`}>
+        {/* Admin Login/Logout for Mobile */}
+        {isLoggedIn && (
+          <NavbarMenuItem>
+            <div className="w-full py-2">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                Logged in as
+              </p>
+              <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                {userName}
+              </p>
+            </div>
+          </NavbarMenuItem>
+        )}
+        {isLoggedIn && (
+          <NavbarMenuItem>
             <Link
               className="w-full"
-              color="foreground"
-              href={item.href}
+              color="primary"
+              href="/admin.html"
               size="lg"
             >
-              {item.name}
+              Admin Dashboard
             </Link>
           </NavbarMenuItem>
-        ))}
+        )}
+        <NavbarMenuItem>
+          {isLoggedIn ? (
+            <Button
+              className="w-full"
+              color="danger"
+              variant="flat"
+              size="lg"
+              onPress={handleLogout}
+            >
+              Logout
+            </Button>
+          ) : (
+            <Link
+              className="w-full"
+              color="primary"
+              href="/login.html"
+              size="lg"
+            >
+              Admin Login
+            </Link>
+          )}
+        </NavbarMenuItem>
 
         {/* Font Size Selector for Mobile */}
         <NavbarMenuItem>

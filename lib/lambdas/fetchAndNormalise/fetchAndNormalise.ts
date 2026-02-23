@@ -1,6 +1,6 @@
 import { Handler } from 'aws-lambda';
 import * as cheerio from 'cheerio';
-import { buildUrl, getPath } from '@lib/lambdas/fetchAndNormalise/helpers.ts';
+import { buildUrl, getPath } from '@lib/lambdas/fetchAndNormalise/utils.ts';
 import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 
 export interface ChartBeatArticle {
