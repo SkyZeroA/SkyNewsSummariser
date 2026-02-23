@@ -61,8 +61,8 @@ export const handler: Handler<Event, void> = async (event) => {
 		id: `article-${(idx + 1).toString().padStart(3, '0')}`,
 	}));
 
-	// Summarise each article and build combinedSummary array
-	const combinedSummary: { text: string; articleId: string; url: string }[] = [];
+	// Summarise each article and combine into one summary string
+	const summaries: string[] = [];
 	for (const article of articlesWithId) {
 		let summary = '';
 		try {
@@ -73,24 +73,26 @@ export const handler: Handler<Event, void> = async (event) => {
 		// Clean up punctuation in summary
 		summary = summary.replaceAll(/\s+\./g, '.');
 		summary = summary.replaceAll(/\.([A-Z])/g, '. $1');
-		combinedSummary.push({
-			text: summary,
-			articleId: article.id,
-			url: article.url,
-		});
+		if (summary.trim()) {
+			summaries.push(summary.trim());
+		}
 	}
 
-	// Build articles array for output
-	const articlesOut = articlesWithId.map(({ id, title, url }) => ({
-		id,
+	let summaryText = summaries.join(' ');
+	// Normalise whitespace and fix spacing around full stops after concatenation
+	summaryText = summaryText.replaceAll(/\s+/g, ' ').trim();
+	summaryText = summaryText.replaceAll(/\s+\./g, '.');
+	summaryText = summaryText.replaceAll(/\.([A-Z])/g, '. $1');
+
+	const sourceArticles = articlesWithId.map(({ title, url }) => ({
 		title,
 		url,
 	}));
 
 	// Final output object
 	const output = {
-		combinedSummary,
-		articles: articlesOut,
+		summaryText,
+		sourceArticles,
 	};
 
 	// Write JSON to S3
@@ -106,6 +108,15 @@ export const handler: Handler<Event, void> = async (event) => {
 			})
 		);
 		console.log(`Summary written to s3://${bucketName}/${key}`);
+		const latestKey = 'summary-latest.json';
+		await s3.send(
+			new PutObjectCommand({
+				Bucket: bucketName,
+				Key: latestKey,
+				Body: JSON.stringify(output, null, 2),
+				ContentType: 'application/json',
+			})
+		);
 	} catch (error) {
 		console.error('Failed to write summary to S3:', error);
 		throw error;

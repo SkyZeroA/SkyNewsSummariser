@@ -44,20 +44,22 @@ describe('summariseArticles.handler', () => {
 
 		await handler(event as any, {} as any, vi.fn() as any);
 
-		expect(PutObjectCommand).toHaveBeenCalledTimes(1);
-		const callArg = (PutObjectCommand as any).mock.calls[0][0];
-		expect(callArg.Bucket).toBe('test-bucket');
-		expect(callArg.ContentType).toBe('application/json');
-		const body = JSON.parse(callArg.Body);
-		expect(body.combinedSummary.length).toBe(2);
-		expect(body.combinedSummary[0]).toMatchObject({
-			text: expect.any(String),
-			articleId: 'article-001',
-			url: 'http://a.com/1',
-		});
-		expect(body.articles.length).toBe(2);
-		expect(body.articles[0]).toMatchObject({
-			id: 'article-001',
+		expect(PutObjectCommand).toHaveBeenCalledTimes(2);
+
+		const firstCallArg = (PutObjectCommand as any).mock.calls[0][0];
+		expect(firstCallArg.Bucket).toBe('test-bucket');
+		expect(firstCallArg.ContentType).toBe('application/json');
+		expect(firstCallArg.Key).toMatch(/^summary-.*\.json$/);
+
+		const secondCallArg = (PutObjectCommand as any).mock.calls[1][0];
+		expect(secondCallArg.Bucket).toBe('test-bucket');
+		expect(secondCallArg.ContentType).toBe('application/json');
+		expect(secondCallArg.Key).toBe('summary-latest.json');
+
+		const body = JSON.parse(firstCallArg.Body);
+		expect(body.summaryText).toEqual(expect.any(String));
+		expect(body.sourceArticles).toHaveLength(2);
+		expect(body.sourceArticles[0]).toMatchObject({
 			title: 'Title 1',
 			url: 'http://a.com/1',
 		});
@@ -92,6 +94,10 @@ describe('summariseArticles.handler', () => {
 		await handler(event as any, {} as any, vi.fn() as any);
 		expect(PutObjectCommand).toHaveBeenCalled();
 		const body = JSON.parse((PutObjectCommand as any).mock.calls[0][0].Body);
-		expect(body.combinedSummary[0].text).toBe('');
+		expect(body.summaryText).toBe('');
+		expect(body.sourceArticles[0]).toMatchObject({
+			title: 'Title 1',
+			url: 'http://a.com/1',
+		});
 	});
 });
