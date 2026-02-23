@@ -5,12 +5,17 @@ import { fetchFromChartBeat } from '@lib/lambdas/fetchAndNormalise/fetchAndNorma
 global.fetch = vi.fn();
 
 describe('fetchFromChartBeat', () => {
+	let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+
 	beforeEach(() => {
 		vi.clearAllMocks();
+		// Suppress console.error during tests to avoid cluttering test output
+		consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 	});
 
 	afterEach(() => {
 		vi.clearAllMocks();
+		consoleErrorSpy.mockRestore();
 	});
 
 	it('should fetch articles from ChartBeat API successfully', async () => {

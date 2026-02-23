@@ -1,8 +1,18 @@
-import { describe, it, expect } from 'vitest';
-import { buildUrl, getPath } from '@lib/lambdas/fetchAndNormalise/helpers.ts';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { buildUrl, getPath } from '@lib/lambdas/fetchAndNormalise/utils.ts';
 
 describe('buildUrl', () => {
 	const host = 'news.sky.com';
+	let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+
+	beforeEach(() => {
+		// Suppress console output during tests to avoid cluttering test output
+		consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+	});
+
+	afterEach(() => {
+		consoleErrorSpy.mockRestore();
+	});
 
 	it('should return empty string when rawValue is empty', () => {
 		expect(buildUrl('', host, '/article')).toBe('');
@@ -41,6 +51,16 @@ describe('buildUrl', () => {
 
 describe('getPath', () => {
 	const host = 'news.sky.com';
+	let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+
+	beforeEach(() => {
+		// Suppress console output during tests to avoid cluttering test output
+		consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+	});
+
+	afterEach(() => {
+		consoleErrorSpy.mockRestore();
+	});
 
 	it('should return empty string when value is empty', () => {
 		expect(getPath('', host)).toBe('');

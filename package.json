@@ -6,7 +6,7 @@
 		"summariser": "bin/summariser.ts"
 	},
 	"scripts": {
-		"ci": "pnpm install --frozen-lockfile",
+		"ci": "pnpm install --frozen-lockfile && pnpm --dir frontend install --frozen-lockfile",
 		"build": "tsc",
 		"watch": "tsc -w",
 		"test": "vitest run",
@@ -22,7 +22,7 @@
 		"synth": "pnpm run build && cdk synth --all --context stage=${STAGE}",
 		"synth-branch": "STAGE=$(git rev-parse --abbrev-ref HEAD | tr '[:upper:]' '[:lower:]') pnpm run synth",
 		"deploy-cdk": "cdk deploy --all --context stage=${STAGE} --context appVersion=${NEW_VERSION} --method=direct --require-approval never --outputs-file outputs.json",
-		"deploy": "echo {} > outputs.json && pnpm run build && pnpm run test && pnpm run deploy-cdk",
+		"deploy": "echo {} > outputs.json && pnpm --dir frontend build && pnpm run build && pnpm run test && pnpm run deploy-cdk",
 		"deploy-branch": "AWS_SDK_LOAD_CONFIG=1 STAGE=$(git rev-parse --abbrev-ref HEAD | tr '[:upper:]' '[:lower:]') pnpm run deploy",
 		"teardown": "cdk destroy --all --force --context stage=${STAGE}",
 		"teardown-branch": "STAGE=$(git rev-parse --abbrev-ref HEAD | tr '[:upper:]' '[:lower:]') pnpm run teardown",
@@ -39,7 +39,9 @@
 	},
 	"devDependencies": {
 		"@sky-uk/automation-pipeline": "^1.0.12",
+		"@types/bcrypt": "^6.0.0",
 		"@types/jest": "^30.0.0",
+		"@types/jsonwebtoken": "^9.0.10",
 		"@types/node": "^25.0.10",
 		"@vitest/coverage-v8": "3.2.4",
 		"aws-cdk": "^2.1103.0",
@@ -58,11 +60,15 @@
 	"packageManager": "pnpm@10.23.0+sha512.21c4e5698002ade97e4efe8b8b4a89a8de3c85a37919f957e7a0f30f38fbc5bbdd05980ffe29179b2fb6e6e691242e098d945d1601772cad0fef5fb6411e2a4b",
 	"dependencies": {
 		"@aws-sdk/client-bedrock-runtime": "^3.738.0",
+		"@aws-sdk/client-dynamodb": "^3.993.0",
 		"@aws-sdk/client-s3": "^3.738.0",
 		"@aws-sdk/client-sfn": "^3.738.0",
+		"@aws-sdk/lib-dynamodb": "^3.993.0",
 		"@types/aws-lambda": "^8.10.158",
 		"aws-cdk-lib": "^2.236.0",
+		"bcryptjs": "^3.0.3",
 		"cheerio": "^1.2.0",
-		"constructs": "^10.4.5"
+		"constructs": "^10.4.5",
+		"jsonwebtoken": "^9.0.3"
 	}
 }

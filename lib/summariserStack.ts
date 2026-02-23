@@ -3,25 +3,119 @@ import { Construct } from 'constructs';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { LambdaIntegration, RestApi } from 'aws-cdk-lib/aws-apigateway';
+import { Table } from 'aws-cdk-lib/aws-dynamodb';
+
+export interface SummariserStackProps extends StackProps {
+	stage: string;
+}
 
 export class SummariserStack extends Stack {
-	constructor(scope: Construct, id: string, props: StackProps) {
+	public readonly apiUrl: string;
+
+	constructor(scope: Construct, id: string, props: SummariserStackProps) {
 		super(scope, id, props);
 
-		const __filename = fileURLToPath(import.meta.url);
-		const __dirname = path.dirname(__filename);
+		// Create Lambda functions for authentication
+		const loginLambda = new NodejsFunction(this, 'AuthLoginLambda', {
+			runtime: lambda.Runtime.NODEJS_22_X,
+			handler: 'handler',
+			entry: path.resolve('lib/lambdas/authentication/login.ts'),
+			depsLockFilePath: path.resolve('pnpm-lock.yaml'),
+			timeout: Duration.minutes(1),
+			memorySize: 512,
+			environment: {
+				JWT_SECRET: process.env.JWT_SECRET ?? '',
+			},
+		});
+
+		const logoutLambda = new NodejsFunction(this, 'AuthLogoutLambda', {
+			runtime: lambda.Runtime.NODEJS_22_X,
+			handler: 'handler',
+			entry: path.resolve('lib/lambdas/authentication/logout.ts'),
+			depsLockFilePath: path.resolve('pnpm-lock.yaml'),
+			timeout: Duration.minutes(1),
+			memorySize: 512,
+		});
+
+		const verifyLambda = new NodejsFunction(this, 'AuthVerifyLambda', {
+			runtime: lambda.Runtime.NODEJS_22_X,
+			handler: 'handler',
+			entry: path.resolve('lib/lambdas/authentication/verify.ts'),
+			depsLockFilePath: path.resolve('pnpm-lock.yaml'),
+			timeout: Duration.minutes(1),
+			memorySize: 512,
+			environment: {
+				JWT_SECRET: process.env.JWT_SECRET ?? '',
+			},
+		});
+
+		const authApi = new RestApi(this, 'AuthRestApi', {
+			restApiName: `auth-api-${props.stage}`,
+			deployOptions: {
+				stageName: props.stage,
+			},
+		});
+
+		const authResource = authApi.root.addResource('auth');
+		const loginResource = authResource.addResource('login');
+		const logoutResource = authResource.addResource('logout');
+		const verifyResource = authResource.addResource('verify');
+
+		loginResource.addMethod(
+			'POST',
+			new LambdaIntegration(loginLambda, {
+				proxy: true,
+			})
+		);
+		loginResource.addMethod(
+			'OPTIONS',
+			new LambdaIntegration(loginLambda, {
+				proxy: true,
+			})
+		);
+
+		const adminsTable = Table.fromTableName(this, 'ImportedAdminsTable', 'admins');
+		adminsTable.grantReadData(loginLambda);
+
+		logoutResource.addMethod(
+			'POST',
+			new LambdaIntegration(logoutLambda, {
+				proxy: true,
+			})
+		);
+		logoutResource.addMethod(
+			'OPTIONS',
+			new LambdaIntegration(logoutLambda, {
+				proxy: true,
+			})
+		);
+
+		verifyResource.addMethod(
+			'GET',
+			new LambdaIntegration(verifyLambda, {
+				proxy: true,
+			})
+		);
+		verifyResource.addMethod(
+			'OPTIONS',
+			new LambdaIntegration(verifyLambda, {
+				proxy: true,
+			})
+		);
 
 		new NodejsFunction(this, 'FetchAndNormaliseLambda', {
 			runtime: lambda.Runtime.NODEJS_22_X,
 			handler: 'handler',
-			entry: path.join(__dirname, 'lambdas/fetchAndNormalise/fetchAndNormalise.ts'),
-			depsLockFilePath: path.join(__dirname, '../pnpm-lock.yaml'),
+			entry: path.resolve('lib/lambdas/fetchAndNormalise/fetchAndNormalise.ts'),
+			depsLockFilePath: path.resolve('pnpm-lock.yaml'),
 			timeout: Duration.minutes(5),
 			memorySize: 1024,
 			environment: {
 				CHARTBEAT_API_KEY: process.env.CHARTBEAT_API_KEY ?? '',
 			},
 		});
+
+		this.apiUrl = authApi.url;
 	}
 }

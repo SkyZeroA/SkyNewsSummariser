@@ -2,14 +2,20 @@
 
 import LoginForm from "@/components/LoginForm";
 import { useRouter } from "next/navigation";
+import { useConfig } from "@/app/providers";
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const { apiUrl } = useConfig();
 
   const handleLogin = async (email: string, password: string) => {
     // Call the authentication API
     // Important: include cookies in request
-    const response = await fetch('/api/auth/login', {
+    if (!apiUrl) {
+      console.error("API URL not available");
+      return;
+    }
+    const response = await fetch(`${apiUrl}auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
@@ -24,7 +30,7 @@ export default function AdminLoginPage() {
       globalThis.dispatchEvent(new Event('auth-change'));
 
       // Redirect to admin dashboard
-      router.push('/admin');
+      router.push('/admin.html');
     } else {
       // Throw error with message from API
       throw new Error(data.error || 'Invalid credentials');

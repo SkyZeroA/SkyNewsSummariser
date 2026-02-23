@@ -27,12 +27,20 @@ const createCheerioMock = (textValue: string) => {
 };
 
 describe('normaliseArticles', () => {
+	let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+	let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
+
 	beforeEach(() => {
 		vi.clearAllMocks();
+		// Suppress console output during tests to avoid cluttering test output
+		consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+		consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 	});
 
 	afterEach(() => {
 		vi.clearAllMocks();
+		consoleErrorSpy.mockRestore();
+		consoleWarnSpy.mockRestore();
 	});
 
 	it('should handle empty articles array', async () => {
