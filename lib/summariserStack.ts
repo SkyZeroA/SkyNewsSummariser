@@ -149,6 +149,20 @@ export class SummariserStack extends Stack {
 			},
 		});
 
+		const sendEmailLambda = new NodejsFunction(this, 'SendSummaryEmailLambda', {
+			runtime: lambda.Runtime.NODEJS_22_X,
+			handler: 'handler',
+			entry: path.resolve('lib/lambdas/sendEmail/sendEmail.ts'),
+			depsLockFilePath: path.resolve('pnpm-lock.yaml'),
+			timeout: Duration.minutes(5),
+			memorySize: 1024,
+			environment: {
+				SUBSCRIBERS_TABLE: subscribersTable.tableName,
+				APP_PASSWORD: process.env.APP_PASSWORD ?? '',
+			},
+		});
+		subscribersTable.grantReadData(sendEmailLambda);
+
 		this.apiUrl = restApi.url;
 	}
 }
