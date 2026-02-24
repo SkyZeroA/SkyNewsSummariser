@@ -20,6 +20,7 @@ phases:
   build:
     commands:
       - pnpm run ci
+      - pnpm run --dir frontend build
       - echo "Starting teardown for ${STAGE}..."
       - pnpm run teardown
       
