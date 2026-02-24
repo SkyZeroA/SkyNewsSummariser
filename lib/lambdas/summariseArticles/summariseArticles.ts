@@ -97,7 +97,7 @@ export const handler: Handler<Event, void> = async (event) => {
 
 	// Write JSON to S3
 	const s3 = new S3Client({});
-	const key = `summary-${new Date().toISOString()}.json`;
+	const key = `summaries/draft-summary-${new Date().toISOString()}.json`;
 	try {
 		await s3.send(
 			new PutObjectCommand({
@@ -108,7 +108,7 @@ export const handler: Handler<Event, void> = async (event) => {
 			})
 		);
 		console.log(`Summary written to s3://${bucketName}/${key}`);
-		const latestKey = 'summary-latest.json';
+		const latestKey = 'draft-summary.json';
 		await s3.send(
 			new PutObjectCommand({
 				Bucket: bucketName,

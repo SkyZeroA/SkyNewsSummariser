@@ -1,0 +1,171 @@
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { verify } from 'jsonwebtoken';
+import { Readable } from 'node:stream';
+import { buildCorsHeaders, handlePreflight } from '@lib/lambdas/authentication/utils.ts';
+
+const SUMMARY_KEY = 'draft-summary.json';
+
+const getAuthToken = (event: APIGatewayProxyEvent): string | null => {
+	const rawCookie = event.headers.cookie || event.headers.Cookie;
+	if (!rawCookie) {
+		return null;
+	}
+
+	for (const part of rawCookie.split(';')) {
+		const cookie = part.trim();
+		if (cookie.startsWith('authToken=')) {
+			const [, token] = cookie.split('=');
+			return token ?? null;
+		}
+	}
+
+	return null;
+};
+
+const streamToString = async (body: unknown): Promise<string> => {
+	if (!body) {
+		return '';
+	}
+
+	const maybeTransform = body as { transformToString?: () => Promise<string> };
+	if (typeof maybeTransform.transformToString === 'function') {
+		return maybeTransform.transformToString();
+	}
+
+	if (typeof body === 'string') {
+		return body;
+	}
+
+	if (body instanceof Uint8Array) {
+		return new TextDecoder().decode(body);
+	}
+
+	if (body instanceof Readable) {
+		const chunks: Buffer[] = [];
+		for await (const chunk of body) {
+			chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+		}
+		return Buffer.concat(chunks).toString('utf8');
+	}
+
+	throw new Error('Unsupported S3 response body type');
+};
+
+export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+	if (event.httpMethod === 'OPTIONS') {
+		return handlePreflight(event);
+	}
+
+	const corsHeaders = buildCorsHeaders(event);
+	if (!corsHeaders) {
+		return { statusCode: 403, body: 'Forbidden' };
+	}
+
+	const jwtSecret = process.env.JWT_SECRET;
+	if (!jwtSecret) {
+		return {
+			statusCode: 500,
+			headers: {
+				...corsHeaders,
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({ error: 'Server misconfigured: JWT_SECRET is missing' }),
+		};
+	}
+
+	const bucketName = process.env.SUMMARY_BUCKET_NAME;
+	if (!bucketName) {
+		return {
+			statusCode: 500,
+			headers: {
+				...corsHeaders,
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({ error: 'Server misconfigured: SUMMARY_BUCKET_NAME is missing' }),
+		};
+	}
+
+	const authToken = getAuthToken(event);
+	if (!authToken) {
+		return {
+			statusCode: 401,
+			headers: {
+				...corsHeaders,
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({ authenticated: false }),
+		};
+	}
+
+	try {
+		verify(authToken, jwtSecret);
+	} catch {
+		return {
+			statusCode: 401,
+			headers: {
+				...corsHeaders,
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({ authenticated: false }),
+		};
+	}
+
+	const s3 = new S3Client({});
+	try {
+		const response = await s3.send(
+			new GetObjectCommand({
+				Bucket: bucketName,
+				Key: SUMMARY_KEY,
+			})
+		);
+
+		const text = await streamToString(response.Body);
+		const parsed = text ? (JSON.parse(text) as { summaryText?: string; sourceArticles?: { title: string; url: string }[] }) : null;
+
+		const lastModified = response.LastModified?.toISOString() ?? new Date().toISOString();
+		const etag = response.ETag?.replaceAll('"', '') ?? 'draft';
+
+		return {
+			statusCode: 200,
+			headers: {
+				...corsHeaders,
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({
+				summary: parsed
+					? {
+							id: etag,
+							summaryText: parsed.summaryText ?? '',
+							sourceArticles: parsed.sourceArticles ?? [],
+							status: 'pending',
+							createdAt: lastModified,
+							updatedAt: lastModified,
+						}
+					: null,
+			}),
+		};
+	} catch (error) {
+		const maybeError = error as { name?: string; $metadata?: { httpStatusCode?: number } };
+		if (maybeError?.name === 'NoSuchKey' || maybeError?.$metadata?.httpStatusCode === 404) {
+			return {
+				statusCode: 200,
+				headers: {
+					...corsHeaders,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ summary: null }),
+			};
+		}
+
+		console.error('Failed to read draft summary from S3:', error);
+		return {
+			statusCode: 500,
+			headers: {
+				...corsHeaders,
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({ error: 'Internal server error' }),
+		};
+	}
+};

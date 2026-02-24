@@ -21,8 +21,9 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 		if (rawCookie) {
 			const cookies = rawCookie.split(';');
 			for (const cookie of cookies) {
-				if (cookie.startsWith('authToken=')) {
-					[, authToken] = cookie.split('=');
+				const trimmed = cookie.trim();
+				if (trimmed.startsWith('authToken=')) {
+					[, authToken] = trimmed.split('=');
 				}
 			}
 		}

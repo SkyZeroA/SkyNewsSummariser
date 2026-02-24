@@ -109,11 +109,24 @@ export class SummariserStack extends Stack {
 			// Default settings; consider lifecycle/retention if needed
 		});
 
+		const getDraftSummaryLambda = new NodejsFunction(this, 'GetDraftSummaryLambda', {
+			runtime: lambda.Runtime.NODEJS_22_X,
+			handler: 'handler',
+			entry: path.resolve('lib/lambdas/summary/getDraftSummary.ts'),
+			depsLockFilePath: path.resolve('pnpm-lock.yaml'),
+			timeout: Duration.minutes(1),
+			memorySize: 512,
+			environment: {
+				JWT_SECRET: process.env.JWT_SECRET ?? '',
+				SUMMARY_BUCKET_NAME: summaryBucket.bucketName,
+			},
+		});
+
 		const summariseLambda = new NodejsFunction(this, 'SummariseArticlesLambda', {
 			runtime: lambda.Runtime.NODEJS_22_X,
 			handler: 'handler',
-			entry: path.join(__dirname, 'lambdas/summariseArticles/summariseArticles.ts'),
-			depsLockFilePath: path.join(__dirname, '../pnpm-lock.yaml'),
+			entry: path.resolve('lib/lambdas/summariseArticles/summariseArticles.ts'),
+			depsLockFilePath: path.resolve('pnpm-lock.yaml'),
 			timeout: Duration.minutes(5),
 			memorySize: 1024,
 			environment: {
@@ -125,8 +138,8 @@ export class SummariserStack extends Stack {
 		const fetchLambda = new NodejsFunction(this, 'FetchAndNormaliseLambda', {
 			runtime: lambda.Runtime.NODEJS_22_X,
 			handler: 'handler',
-			entry: path.join(__dirname, 'lambdas/fetchAndNormalise/fetchAndNormalise.ts'),
-			depsLockFilePath: path.join(__dirname, '../pnpm-lock.yaml'),
+			entry: path.resolve('lib/lambdas/fetchAndNormalise/fetchAndNormalise.ts'),
+			depsLockFilePath: path.resolve('pnpm-lock.yaml'),
 			timeout: Duration.minutes(5),
 			memorySize: 1024,
 			environment: {
@@ -140,6 +153,24 @@ export class SummariserStack extends Stack {
 
 		// Allow summarise lambda to write to the summary bucket
 		summaryBucket.grantWrite(summariseLambda);
+
+		// Allow API lambdas to read/update the latest draft summary
+		summaryBucket.grantRead(getDraftSummaryLambda);
+
+		// Summary endpoints
+		const draftSummaryResource = authApi.root.addResource('draft-summary');
+		draftSummaryResource.addMethod(
+			'GET',
+			new LambdaIntegration(getDraftSummaryLambda, {
+				proxy: true,
+			})
+		);
+		draftSummaryResource.addMethod(
+			'OPTIONS',
+			new LambdaIntegration(getDraftSummaryLambda, {
+				proxy: true,
+			})
+		);
 
 		this.apiUrl = authApi.url;
 	}

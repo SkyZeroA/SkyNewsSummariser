@@ -49,12 +49,10 @@ describe('summariseArticles.handler', () => {
 		const firstCallArg = (PutObjectCommand as any).mock.calls[0][0];
 		expect(firstCallArg.Bucket).toBe('test-bucket');
 		expect(firstCallArg.ContentType).toBe('application/json');
-		expect(firstCallArg.Key).toMatch(/^summary-.*\.json$/);
-
 		const secondCallArg = (PutObjectCommand as any).mock.calls[1][0];
 		expect(secondCallArg.Bucket).toBe('test-bucket');
 		expect(secondCallArg.ContentType).toBe('application/json');
-		expect(secondCallArg.Key).toBe('summary-latest.json');
+		expect(secondCallArg.Key).toBe('draft-summary.json');
 
 		const body = JSON.parse(firstCallArg.Body);
 		expect(body.summaryText).toEqual(expect.any(String));

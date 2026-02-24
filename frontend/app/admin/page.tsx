@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardBody, CardHeader, Button, Textarea, Link } from "@heroui/react";
 import { ComprehensiveSummary } from "@/types/summary";
@@ -9,47 +9,27 @@ import { useConfig } from "@/app/providers";
 export default function AdminDashboard() {
   const router = useRouter();
   const { apiUrl } = useConfig();
+
+  const apiBaseUrl = (() => {
+    if (!apiUrl) {
+      return null;
+    }
+    return apiUrl.endsWith("/") ? apiUrl : `${apiUrl}/`;
+  })();
   const [summary, setSummary] = useState<ComprehensiveSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
   const [editedSummary, setEditedSummary] = useState("");
 
-  // Check authorization on mount
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        // Verify authentication via API (which checks cookies)
-        // Important: include cookies in request
-        if (!apiUrl) {
-          console.error("API URL not available");
-          return;
-        }
-          const response = await fetch(`${apiUrl}auth/verify`, {
-            credentials: "include",
-          });
-
-          if (response.ok) {
-            // User is authenticated - fetch summary
-            fetchSummary();
-          } else {
-            // Not authenticated, redirect to login
-            router.push("/login.html");
-          }
-      } catch (error) {
-        console.error("Auth check failed:", error);
-        router.push("/login.html");
-      }
-    };
-
-    checkAuth();
-  }, [router]);
-
   // Fetch the pending comprehensive summary from API
-  const fetchSummary = async () => {
+  const fetchSummary = useCallback(async () => {
     try {
       setIsLoading(true);
+      if (!apiBaseUrl) {
+        console.error("API URL not available");
+        return;
+      }
       // Important: include cookies in request
-      const response = await fetch("/api/summaries?status=pending", {
+      const response = await fetch(`${apiBaseUrl}draft-summary`, {
         credentials: "include",
       });
 
@@ -68,72 +48,37 @@ export default function AdminDashboard() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [apiBaseUrl]);
 
-  // Update summary content
-  const handleUpdateSummary = async () => {
-    if (!summary) {
-      return;
-    }
+  // Check authorization on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        // Verify authentication via API (which checks cookies)
+        // Important: include cookies in request
+        if (!apiBaseUrl) {
+          console.error("API URL not available");
+          return;
+        }
+          const response = await fetch(`${apiBaseUrl}auth/verify`, {
+            credentials: "include",
+          });
 
-    try {
-      setIsSaving(true);
-      // Important: include cookies in request
-      const response = await fetch("/api/summaries", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          summaryText: editedSummary,
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setSummary(data.summary);
+          if (response.ok) {
+            // User is authenticated - fetch summary
+            fetchSummary();
+          } else {
+            // Not authenticated, redirect to login
+            router.push("/login.html");
+          }
+      } catch (error) {
+        console.error("Auth check failed:", error);
+        router.push("/login.html");
       }
-    } catch (error) {
-      console.error("Error updating summary:", error);
-    } finally {
-      setIsSaving(false);
-    }
-  };
+    };
 
-  // Approve summary and publish to website
-  const handleApprove = async () => {
-    if (!summary) {
-      return;
-    }
-
-    try {
-      setIsSaving(true);
-      // Important: include cookies in request
-      const response = await fetch("/api/summaries", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({ action: "approve" }),
-      });
-
-      if (response.ok) {
-        // Clear the summary after approval
-        setSummary(null);
-        setEditedSummary("");
-        // Optionally redirect to home page to see the published summary
-        router.push("/");
-      }
-    } catch (error) {
-      console.error("Error approving summary:", error);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-
+    checkAuth();
+  }, [router, apiBaseUrl, fetchSummary]);
 
   if (isLoading) {
     return (
@@ -194,8 +139,6 @@ export default function AdminDashboard() {
                       color="primary"
                       variant="flat"
                       size="md"
-                      onPress={handleUpdateSummary}
-                      isLoading={isSaving}
                       className="animate-slideUp transition-all duration-300 hover:scale-105 self-start"
                     >
                       Save Changes
@@ -243,10 +186,7 @@ export default function AdminDashboard() {
             <Button
               color="success"
               size="lg"
-              className="font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg px-8"
-              onPress={handleApprove}
-              isLoading={isSaving}
-            >
+              className="font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg px-8"            >
               Publish
             </Button>
           </div>
