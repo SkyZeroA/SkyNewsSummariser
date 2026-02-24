@@ -13,14 +13,17 @@ const streamToString = async (body: unknown): Promise<string> => {
 
 	const maybeTransform = body as { transformToString?: () => Promise<string> };
 	if (typeof maybeTransform.transformToString === 'function') {
+		console.log('S3 response body has transformToString method, using it to get string');
 		return maybeTransform.transformToString();
 	}
 
 	if (typeof body === 'string') {
+		console.log('S3 response body is a string');
 		return body;
 	}
 
 	if (body instanceof Uint8Array) {
+		console.log('S3 response body is a Uint8Array');
 		return new TextDecoder().decode(body);
 	}
 
@@ -29,6 +32,7 @@ const streamToString = async (body: unknown): Promise<string> => {
 		for await (const chunk of body) {
 			chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
 		}
+		console.log('S3 response body is a stream, read chunks:', chunks.length);
 		return Buffer.concat(chunks).toString('utf8');
 	}
 
