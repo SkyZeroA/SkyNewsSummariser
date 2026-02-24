@@ -146,7 +146,6 @@ export const handler: Handler<unknown, FetchAndNormaliseResult> = async () => {
 
 		const finalArticles = articlesWithContent.slice(0, TARGET_ARTICLE_COUNT);
 
-		// Optionally invoke summarise lambda if configured
 		const lambdaName = process.env.SUMMARISE_LAMBDA_NAME;
 		if (lambdaName) {
 			const lambdaClient = new LambdaClient({});

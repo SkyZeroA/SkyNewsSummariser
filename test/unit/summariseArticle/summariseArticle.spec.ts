@@ -27,7 +27,7 @@ describe('summariseArticles.handler', () => {
 
 	it('writes correct JSON to S3 for valid articles', async () => {
 		process.env.HUGGINGFACE_API_KEY = 'fake-key';
-		process.env.SUMMARY_BUCKET_NAME = 'test-bucket';
+		process.env.DRAFT_SUMMARY_BUCKET_NAME = 'test-bucket';
 		const mockSend = vi.fn();
 		(S3Client as any).mockImplementation(() => ({ send: mockSend }));
 		(global.fetch as any).mockResolvedValue({
@@ -65,16 +65,16 @@ describe('summariseArticles.handler', () => {
 
 	it('handles missing env vars', async () => {
 		delete process.env.HUGGINGFACE_API_KEY;
-		delete process.env.SUMMARY_BUCKET_NAME;
+		delete process.env.DRAFT_SUMMARY_BUCKET_NAME;
 		const event = { articles: [] };
 		await expect(handler(event as any, {} as any, vi.fn() as any)).rejects.toThrow('HUGGINGFACE_API_KEY environment variable is required.');
 		process.env.HUGGINGFACE_API_KEY = 'x';
-		await expect(handler(event as any, {} as any, vi.fn() as any)).rejects.toThrow('SUMMARY_BUCKET_NAME environment variable is required.');
+		await expect(handler(event as any, {} as any, vi.fn() as any)).rejects.toThrow('DRAFT_SUMMARY_BUCKET_NAME environment variable is required.');
 	});
 
 	it('returns early if no articles', async () => {
 		process.env.HUGGINGFACE_API_KEY = 'fake-key';
-		process.env.SUMMARY_BUCKET_NAME = 'test-bucket';
+		process.env.DRAFT_SUMMARY_BUCKET_NAME = 'test-bucket';
 		const result = await handler({ articles: [] } as any, {} as any, vi.fn() as any);
 		expect(result).toBeUndefined();
 		expect(PutObjectCommand).not.toHaveBeenCalled();
@@ -82,7 +82,7 @@ describe('summariseArticles.handler', () => {
 
 	it('handles fetch/summariseText errors gracefully', async () => {
 		process.env.HUGGINGFACE_API_KEY = 'fake-key';
-		process.env.SUMMARY_BUCKET_NAME = 'test-bucket';
+		process.env.DRAFT_SUMMARY_BUCKET_NAME = 'test-bucket';
 		(global.fetch as any).mockResolvedValue({ ok: false, status: 500, statusText: 'fail', json: async () => ({}) });
 		const mockSend = vi.fn();
 		(S3Client as any).mockImplementation(() => ({ send: mockSend }));

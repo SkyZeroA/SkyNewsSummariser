@@ -9,13 +9,6 @@ import { useConfig } from "@/app/providers";
 export default function AdminDashboard() {
   const router = useRouter();
   const { apiUrl } = useConfig();
-
-  const apiBaseUrl = (() => {
-    if (!apiUrl) {
-      return null;
-    }
-    return apiUrl.endsWith("/") ? apiUrl : `${apiUrl}/`;
-  })();
   const [summary, setSummary] = useState<ComprehensiveSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [editedSummary, setEditedSummary] = useState("");
@@ -24,12 +17,12 @@ export default function AdminDashboard() {
   const fetchSummary = useCallback(async () => {
     try {
       setIsLoading(true);
-      if (!apiBaseUrl) {
+      if (!apiUrl) {
         console.error("API URL not available");
         return;
       }
       // Important: include cookies in request
-      const response = await fetch(`${apiBaseUrl}draft-summary`, {
+      const response = await fetch(`${apiUrl}draft-summary`, {
         credentials: "include",
       });
 
@@ -48,7 +41,7 @@ export default function AdminDashboard() {
     } finally {
       setIsLoading(false);
     }
-  }, [apiBaseUrl]);
+  }, [apiUrl]);
 
   // Check authorization on mount
   useEffect(() => {
@@ -56,11 +49,11 @@ export default function AdminDashboard() {
       try {
         // Verify authentication via API (which checks cookies)
         // Important: include cookies in request
-        if (!apiBaseUrl) {
+        if (!apiUrl) {
           console.error("API URL not available");
           return;
         }
-          const response = await fetch(`${apiBaseUrl}auth/verify`, {
+          const response = await fetch(`${apiUrl}auth/verify`, {
             credentials: "include",
           });
 
@@ -78,7 +71,7 @@ export default function AdminDashboard() {
     };
 
     checkAuth();
-  }, [router, apiBaseUrl, fetchSummary]);
+  }, [router, apiUrl, fetchSummary]);
 
   if (isLoading) {
     return (

@@ -118,7 +118,7 @@ export class SummariserStack extends Stack {
 			memorySize: 512,
 			environment: {
 				JWT_SECRET: process.env.JWT_SECRET ?? '',
-				SUMMARY_BUCKET_NAME: summaryBucket.bucketName,
+				DRAFT_SUMMARY_BUCKET_NAME: summaryBucket.bucketName,
 			},
 		});
 
@@ -131,7 +131,7 @@ export class SummariserStack extends Stack {
 			memorySize: 1024,
 			environment: {
 				HUGGINGFACE_API_KEY: process.env.HUGGINGFACE_API_KEY ?? '',
-				SUMMARY_BUCKET_NAME: summaryBucket.bucketName,
+				DRAFT_SUMMARY_BUCKET_NAME: summaryBucket.bucketName,
 			},
 		});
 

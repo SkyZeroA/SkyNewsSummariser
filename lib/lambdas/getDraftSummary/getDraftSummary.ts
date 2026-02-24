@@ -2,26 +2,9 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { verify } from 'jsonwebtoken';
 import { Readable } from 'node:stream';
-import { buildCorsHeaders, handlePreflight } from '@lib/lambdas/authentication/utils.ts';
+import { buildCorsHeaders, getAuthToken, handlePreflight } from '@lib/lambdas/utils.ts';
 
 const SUMMARY_KEY = 'draft-summary.json';
-
-const getAuthToken = (event: APIGatewayProxyEvent): string | null => {
-	const rawCookie = event.headers.cookie || event.headers.Cookie;
-	if (!rawCookie) {
-		return null;
-	}
-
-	for (const part of rawCookie.split(';')) {
-		const cookie = part.trim();
-		if (cookie.startsWith('authToken=')) {
-			const [, token] = cookie.split('=');
-			return token ?? null;
-		}
-	}
-
-	return null;
-};
 
 const streamToString = async (body: unknown): Promise<string> => {
 	if (!body) {
@@ -74,7 +57,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 		};
 	}
 
-	const bucketName = process.env.SUMMARY_BUCKET_NAME;
+	const bucketName = process.env.DRAFT_SUMMARY_BUCKET_NAME;
 	if (!bucketName) {
 		return {
 			statusCode: 500,
@@ -82,7 +65,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 				...corsHeaders,
 				'Content-Type': 'application/json',
 			},
-			body: JSON.stringify({ error: 'Server misconfigured: SUMMARY_BUCKET_NAME is missing' }),
+			body: JSON.stringify({ error: 'Server misconfigured: DRAFT_SUMMARY_BUCKET_NAME is missing' }),
 		};
 	}
 
@@ -98,21 +81,12 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 		};
 	}
 
+	const s3 = new S3Client({});
+	let jwtVerified = false;
 	try {
 		verify(authToken, jwtSecret);
-	} catch {
-		return {
-			statusCode: 401,
-			headers: {
-				...corsHeaders,
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify({ authenticated: false }),
-		};
-	}
+		jwtVerified = true;
 
-	const s3 = new S3Client({});
-	try {
 		const response = await s3.send(
 			new GetObjectCommand({
 				Bucket: bucketName,
@@ -146,8 +120,21 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 			}),
 		};
 	} catch (error) {
+		if (!jwtVerified) {
+			return {
+				statusCode: 401,
+				headers: {
+					...corsHeaders,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ authenticated: false }),
+			};
+		}
+
 		const maybeError = error as { name?: string; $metadata?: { httpStatusCode?: number } };
-		if (maybeError?.name === 'NoSuchKey' || maybeError?.$metadata?.httpStatusCode === 404) {
+		const errorName = maybeError?.name;
+
+		if (errorName === 'NoSuchKey' || maybeError?.$metadata?.httpStatusCode === 404) {
 			return {
 				statusCode: 200,
 				headers: {

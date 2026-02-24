@@ -20,12 +20,12 @@ describe('getDraftSummary handler', () => {
 		s3Mock.reset();
 		vi.clearAllMocks();
 		process.env.JWT_SECRET = 'test-secret';
-		process.env.SUMMARY_BUCKET_NAME = 'test-bucket';
+		process.env.DRAFT_SUMMARY_BUCKET_NAME = 'test-bucket';
 	});
 
 	afterEach(() => {
 		delete process.env.JWT_SECRET;
-		delete process.env.SUMMARY_BUCKET_NAME;
+		delete process.env.DRAFT_SUMMARY_BUCKET_NAME;
 	});
 
 	const baseEvent = (overrides: Record<string, unknown> = {}) =>
@@ -59,13 +59,13 @@ describe('getDraftSummary handler', () => {
 		expect(JSON.parse(response.body).error).toContain('JWT_SECRET');
 	});
 
-	it('returns 500 with CORS when SUMMARY_BUCKET_NAME missing', async () => {
-		delete process.env.SUMMARY_BUCKET_NAME;
+	it('returns 500 with CORS when DRAFT_SUMMARY_BUCKET_NAME missing', async () => {
+		delete process.env.DRAFT_SUMMARY_BUCKET_NAME;
 
 		const response = await handler(baseEvent());
 		expect(response.statusCode).toBe(500);
 		expect(response.headers?.['Access-Control-Allow-Origin']).toBe(allowedOrigin);
-		expect(JSON.parse(response.body).error).toContain('SUMMARY_BUCKET_NAME');
+		expect(JSON.parse(response.body).error).toContain('DRAFT_SUMMARY_BUCKET_NAME');
 	});
 
 	it('returns 401 when authToken cookie missing', async () => {

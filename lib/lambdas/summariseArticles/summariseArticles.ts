@@ -41,12 +41,12 @@ const summariseText = async (text: string, apiKey: string): Promise<string> => {
 
 export const handler: Handler<Event, void> = async (event) => {
 	const apiKey = process.env.HUGGINGFACE_API_KEY;
-	const bucketName = process.env.SUMMARY_BUCKET_NAME;
+	const bucketName = process.env.DRAFT_SUMMARY_BUCKET_NAME;
 	if (!apiKey) {
 		throw new Error('HUGGINGFACE_API_KEY environment variable is required.');
 	}
 	if (!bucketName) {
-		throw new Error('SUMMARY_BUCKET_NAME environment variable is required.');
+		throw new Error('DRAFT_SUMMARY_BUCKET_NAME environment variable is required.');
 	}
 
 	const articles = event.articles || [];
@@ -55,15 +55,9 @@ export const handler: Handler<Event, void> = async (event) => {
 		return;
 	}
 
-	// Assign an ID to each article
-	const articlesWithId = articles.map((article, idx) => ({
-		...article,
-		id: `article-${(idx + 1).toString().padStart(3, '0')}`,
-	}));
-
 	// Summarise each article and combine into one summary string
 	const summaries: string[] = [];
-	for (const article of articlesWithId) {
+	for (const article of articles) {
 		let summary = '';
 		try {
 			summary = await summariseText(article.content, apiKey);
@@ -84,7 +78,7 @@ export const handler: Handler<Event, void> = async (event) => {
 	summaryText = summaryText.replaceAll(/\s+\./g, '.');
 	summaryText = summaryText.replaceAll(/\.([A-Z])/g, '. $1');
 
-	const sourceArticles = articlesWithId.map(({ title, url }) => ({
+	const sourceArticles = articles.map(({ title, url }) => ({
 		title,
 		url,
 	}));
