@@ -1,39 +1,18 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { verify } from 'jsonwebtoken';
-import { Readable } from 'node:stream';
 import { buildCorsHeaders, getAuthToken, handlePreflight } from '@lib/lambdas/utils.ts';
 
 const SUMMARY_KEY = 'draft-summary.json';
 
-const streamToString = async (body: unknown): Promise<string> => {
+const streamToString = (body: unknown): Promise<string> => {
 	if (!body) {
-		return '';
+		return Promise.resolve('');
 	}
 
 	const maybeTransform = body as { transformToString?: () => Promise<string> };
 	if (typeof maybeTransform.transformToString === 'function') {
-		console.log('S3 response body has transformToString method, using it to get string');
 		return maybeTransform.transformToString();
-	}
-
-	if (typeof body === 'string') {
-		console.log('S3 response body is a string');
-		return body;
-	}
-
-	if (body instanceof Uint8Array) {
-		console.log('S3 response body is a Uint8Array');
-		return new TextDecoder().decode(body);
-	}
-
-	if (body instanceof Readable) {
-		const chunks: Buffer[] = [];
-		for await (const chunk of body) {
-			chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-		}
-		console.log('S3 response body is a stream, read chunks:', chunks.length);
-		return Buffer.concat(chunks).toString('utf8');
 	}
 
 	throw new Error('Unsupported S3 response body type');
