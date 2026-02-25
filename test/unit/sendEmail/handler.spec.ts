@@ -6,7 +6,7 @@ const { mockSend, mockSendMail } = vi.hoisted(() => {
 	// Set environment variables even before mocks are processed
 	process.env.SUBSCRIBERS_TABLE = 'test-subscribers-table';
 	process.env.APP_PASSWORD = 'test-app-password';
-	
+
 	return {
 		mockSend: vi.fn(),
 		mockSendMail: vi.fn(),
@@ -68,7 +68,7 @@ describe('handler', () => {
 		const mockSubscribers = [
 			{ email: 'user1@example.com', status: 'active' },
 			{ email: 'user2@example.com', status: 'active' },
-            { email: 'user4@example.com', status: 'inactive' },
+			{ email: 'user4@example.com', status: 'inactive' },
 		];
 
 		mockSend.mockResolvedValue({
@@ -177,9 +177,7 @@ describe('handler', () => {
 			Items: [{ email: 'user1@example.com' }, { email: 'user2@example.com' }],
 		});
 
-		mockSendMail
-			.mockResolvedValueOnce({ messageId: 'success-id' })
-			.mockRejectedValueOnce(new Error('SMTP Error'));
+		mockSendMail.mockResolvedValueOnce({ messageId: 'success-id' }).mockRejectedValueOnce(new Error('SMTP Error'));
 
 		const event = {
 			summaryText: 'Test',
