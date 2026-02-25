@@ -53,6 +53,7 @@ const analyzeStructure = async (url) => {
 	return headerData;
 };
 
+//****************************************************/
 // Collect all headers with their data from all blogs
 const headerDataMap = {};
 
@@ -81,6 +82,7 @@ Object.entries(headerDataMap).forEach(([headerText, items]) => {
 		console.log(`   ${idx + 1}. "${item.text}"`);
 		console.log(`      Link: ${item.link}`);
 		console.log(`      Post ID: ${item.postId}`);
+		console.log(`      Title: ${item.title || 'N/A'}`);
 		console.log('');
 	});
 
