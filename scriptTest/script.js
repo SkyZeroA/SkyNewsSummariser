@@ -1,17 +1,26 @@
 import * as cheerio from 'cheerio';
 
-// REMEMBER:Change URL everyday!
-const LIVE_BLOG_URL = 'https://news.sky.com/story/politics-latest-mandelson-starmer-labour-farage-badenoch-12593360';
+// Test URLs for different blog types
+const TEST_URLS = {
+	politics_uk: 'https://news.sky.com/story/politics-latest-mandelson-starmer-labour-farage-badenoch-12593360',
+	ukraine_war: 'https://news.sky.com/story/russia-ukraine-war-latest-putin-sky-news-live-blog-12541713',
+	trump_us: 'https://news.sky.com/story/trump-latest-epstein-victims-to-speak-ahead-of-trumps-state-of-the-union-address-13511578',
+	iran: 'https://news.sky.com/story/iran-latest-protests-live-13492391',
+	weather: 'https://news.sky.com/story/storm-chandra-latest-more-weather-warnings-kick-in-as-heavy-wind-rain-and-snow-forecast-13499467',
+	entertainment: 'https://news.sky.com/story/baftas-2026-latest-updates-hollywood-stars-prepare-for-uks-biggest-night-in-film-with-one-battle-after-another-leading-nominations-13508649'
+};
 
-const analyzeStructure = async () => {
-	const response = await fetch(LIVE_BLOG_URL);
+const analyzeStructure = async (url, blogName) => {
+	console.log(`\n${'='.repeat(80)}`);
+	console.log(`TESTING: ${blogName}`);
+	console.log(`URL: ${url}`);
+	console.log('='.repeat(80));
+
+	const response = await fetch(url);
 	const html = await response.text();
 	const $ = cheerio.load(html);
 
-	console.log('='.repeat(80));
-	console.log('ANALYZING LIVE BLOG STRUCTURE');
-	console.log('='.repeat(80));
-	console.log('');
+	console.log('\n--- KEY POINTS SECTION ---');
 
 	// Find all h5 headers in the key points section
 	const headers = $('h5');
@@ -19,7 +28,7 @@ const analyzeStructure = async () => {
 
 	headers.each((i, header) => {
 		const headerText = $(header).text().trim();
-		console.log(`\nHeader ${i + 1}: "${headerText}"`);
+		console.log(`\nHeader>>>> ${i + 1}: "${headerText}"`);
 		console.log('-'.repeat(80));
 
 		// Find the ul that follows this h5
@@ -50,13 +59,11 @@ const analyzeStructure = async () => {
 	});
 
 	// Now let's find posts by their IDs
-	console.log(`\n\n${'='.repeat(80)}`);
-	console.log('ANALYZING POST STRUCTURE');
-	console.log('='.repeat(80));
+	console.log(`\n\n--- POST STRUCTURE ---`);
 
 	// Look for posts with data-ncpost-id attribute
 	const posts = $('[data-ncpost-id]');
-	console.log(`\nFound ${posts.length} posts with data-ncpost-id attribute\n`);
+	console.log(`Found ${posts.length} posts with data-ncpost-id attribute\n`);
 
 	posts.slice(0, 3).each((i, post) => {
 		const postId = $(post).attr('data-ncpost-id');
@@ -68,7 +75,15 @@ const analyzeStructure = async () => {
 		console.log(`  Title: ${title.slice(0, 60)}...`);
 		console.log(`  Content: ${content.slice(0, 100)}...`);
 	});
+
+	console.log(`\n${'='.repeat(80)}\n`);
 };
 
-await analyzeStructure();
+// Test all URLs
+ console.log('\n🚀 TESTING ALL SKY NEWS LIVE BLOGS 🚀\n');
+
+for (const [key, url] of Object.entries(TEST_URLS)) {
+	await analyzeStructure(url, key.toUpperCase().replace('_', ' '));
+}
+
 
