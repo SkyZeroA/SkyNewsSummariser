@@ -82,7 +82,6 @@ Object.entries(headerDataMap).forEach(([headerText, items]) => {
 		console.log(`   ${idx + 1}. "${item.text}"`);
 		console.log(`      Link: ${item.link}`);
 		console.log(`      Post ID: ${item.postId}`);
-		console.log(`      Title: ${item.title || 'N/A'}`);
 		console.log('');
 	});
 
@@ -90,5 +89,7 @@ Object.entries(headerDataMap).forEach(([headerText, items]) => {
 });
 
 console.log('');
+
+//******************************************************/
 
 
