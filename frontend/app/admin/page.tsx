@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardBody, CardHeader, Button, Textarea, Link } from "@heroui/react";
 import { ComprehensiveSummary } from "@/types/summary";
@@ -11,8 +11,37 @@ export default function AdminDashboard() {
   const { apiUrl } = useConfig();
   const [summary, setSummary] = useState<ComprehensiveSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
   const [editedSummary, setEditedSummary] = useState("");
+
+  // Fetch the pending comprehensive summary from API
+  const fetchSummary = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      if (!apiUrl) {
+        console.error("API URL not available");
+        return;
+      }
+      // Important: include cookies in request
+      const response = await fetch(`${apiUrl}draft-summary`, {
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Get the daily summary if it's pending
+        if (data.summary) {
+          setSummary(data.summary);
+          setEditedSummary(data.summary.summaryText);
+        }
+      } else {
+        console.error("Failed to fetch summary");
+      }
+    } catch (error) {
+      console.error("Error fetching summary:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [apiUrl]);
 
   // Check authorization on mount
   useEffect(() => {
@@ -42,98 +71,7 @@ export default function AdminDashboard() {
     };
 
     checkAuth();
-  }, [router]);
-
-  // Fetch the pending comprehensive summary from API
-  const fetchSummary = async () => {
-    try {
-      setIsLoading(true);
-      // Important: include cookies in request
-      const response = await fetch("/api/summaries?status=pending", {
-        credentials: "include",
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        // Get the daily summary if it's pending
-        if (data.summary) {
-          setSummary(data.summary);
-          setEditedSummary(data.summary.summaryText);
-        }
-      } else {
-        console.error("Failed to fetch summary");
-      }
-    } catch (error) {
-      console.error("Error fetching summary:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Update summary content
-  const handleUpdateSummary = async () => {
-    if (!summary) {
-      return;
-    }
-
-    try {
-      setIsSaving(true);
-      // Important: include cookies in request
-      const response = await fetch("/api/summaries", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          summaryText: editedSummary,
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setSummary(data.summary);
-      }
-    } catch (error) {
-      console.error("Error updating summary:", error);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  // Approve summary and publish to website
-  const handleApprove = async () => {
-    if (!summary) {
-      return;
-    }
-
-    try {
-      setIsSaving(true);
-      // Important: include cookies in request
-      const response = await fetch("/api/summaries", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({ action: "approve" }),
-      });
-
-      if (response.ok) {
-        // Clear the summary after approval
-        setSummary(null);
-        setEditedSummary("");
-        // Optionally redirect to home page to see the published summary
-        router.push("/");
-      }
-    } catch (error) {
-      console.error("Error approving summary:", error);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-
+  }, [router, apiUrl, fetchSummary]);
 
   if (isLoading) {
     return (
@@ -194,8 +132,6 @@ export default function AdminDashboard() {
                       color="primary"
                       variant="flat"
                       size="md"
-                      onPress={handleUpdateSummary}
-                      isLoading={isSaving}
                       className="animate-slideUp transition-all duration-300 hover:scale-105 self-start"
                     >
                       Save Changes
@@ -243,10 +179,7 @@ export default function AdminDashboard() {
             <Button
               color="success"
               size="lg"
-              className="font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg px-8"
-              onPress={handleApprove}
-              isLoading={isSaving}
-            >
+              className="font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg px-8"            >
               Publish
             </Button>
           </div>
