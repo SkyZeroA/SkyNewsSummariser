@@ -19,6 +19,11 @@ phases:
       - echo "Branch is ${BRANCH}, Stage is ${STAGE}"
 
       - corepack enable
+
+      # Use a repo-local pnpm store so CodeBuild caching can persist it
+      # (works with S3 cache when enabled on the CodeBuild project).
+      - pnpm config set store-dir .pnpm-store
+
       - pnpm run ci
       - pnpm run build
       - pnpm run format
@@ -40,3 +45,8 @@ phases:
         else
           echo "Not promoting - branch is ${BRANCH} or build failed."
         fi
+
+cache:
+  paths:
+    - '.pnpm-store/**/*'
+    - 'frontend/.next/cache/**/*'
