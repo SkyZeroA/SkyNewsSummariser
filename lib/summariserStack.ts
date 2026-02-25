@@ -219,6 +219,6 @@ export class SummariserStack extends Stack {
 			})
 		);
 
-		this.apiUrl = authApi.url;
+		this.apiUrl = restApi.url;
 	}
 }
