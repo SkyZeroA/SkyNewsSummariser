@@ -60,8 +60,10 @@
 	"packageManager": "pnpm@10.23.0+sha512.21c4e5698002ade97e4efe8b8b4a89a8de3c85a37919f957e7a0f30f38fbc5bbdd05980ffe29179b2fb6e6e691242e098d945d1601772cad0fef5fb6411e2a4b",
 	"dependencies": {
 		"@aws-sdk/client-bedrock-runtime": "^3.738.0",
+		"@aws-sdk/client-lambda": "^3.738.0",
 		"@aws-sdk/client-dynamodb": "^3.993.0",
 		"@aws-sdk/client-s3": "^3.738.0",
+		"@aws-sdk/client-ssm": "^3.738.0",
 		"@aws-sdk/client-sfn": "^3.738.0",
 		"@aws-sdk/lib-dynamodb": "^3.993.0",
 		"@types/aws-lambda": "^8.10.158",
@@ -69,6 +71,7 @@
 		"bcryptjs": "^3.0.3",
 		"cheerio": "^1.2.0",
 		"constructs": "^10.4.5",
+		"@huggingface/inference": "^3.1.0",
 		"jsonwebtoken": "^9.0.3"
 	}
 }

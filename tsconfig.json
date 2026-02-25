@@ -32,5 +32,5 @@
 		"typeRoots": ["./node_modules/@types"],
 		"skipLibCheck": true
 	},
-	"exclude": ["node_modules", "frontend"]
+	"exclude": ["node_modules", "frontend", "cdk.out"]
 }
