@@ -1,23 +1,23 @@
-interface Article {
+interface SourceArticle {
 	title: string;
-	summary: string;
 	url: string;
 }
 
 interface Summary {
-	articles?: unknown[];
-	date?: string;
+	summaryText?: string;
+	sourceArticles?: unknown[];
 }
 
 export const formatEmailHtml = (summary: unknown): string => {
 	const summaryData = summary as Summary;
-	const allArticles = summaryData.articles || [];
-	// Filter articles to only include those with title, url, and summary
-	const articles = allArticles.filter((article: unknown): article is Article => {
-		const a = article as Partial<Article>;
-		return Boolean(a.title && a.url && a.summary);
+	const summaryText = summaryData.summaryText || '';
+	const allArticles = summaryData.sourceArticles || [];
+	// Filter articles to only include those with title and url
+	const articles = allArticles.filter((article: unknown): article is SourceArticle => {
+		const a = article as Partial<SourceArticle>;
+		return Boolean(a.title && a.url);
 	});
-	const date = summaryData.date || new Date().toISOString().split('T')[0];
+	const [date] = new Date().toISOString().split('T');
 
 	let html = `
 <!DOCTYPE html>
@@ -38,13 +38,22 @@ export const formatEmailHtml = (summary: unknown): string => {
 <body>
 	<h1>Sky News Daily Summary</h1>
 	<p><strong>Date:</strong> ${date}</p>
+	
+	${
+		summaryText
+			? `<div style="margin: 20px 0; padding: 15px; background-color: #f5f5f5; border-left: 4px solid #0078d4;">
+		<p style="margin: 0; white-space: pre-wrap;">${summaryText}</p>
+	</div>`
+			: ''
+	}
+	
+	${articles.length > 0 ? `<h2 style="margin-top: 30px;">Source Articles</h2>` : ''}
 	${articles
 		.map(
-			(article: Article) => `
+			(article: SourceArticle) => `
 		<div class="article">
-			<h2>${article.title}</h2>
-			<p class="summary">${article.summary}</p>
-			<p><a href="${article.url}">Read more</a></p>
+			<h3 style="font-size: 16px; margin: 10px 0;">${article.title}</h3>
+			<p><a href="${article.url}">Read article</a></p>
 		</div>
 	`
 		)
@@ -63,24 +72,32 @@ export const formatEmailHtml = (summary: unknown): string => {
 // Format the summary as plain text email
 export const formatEmailText = (summary: unknown): string => {
 	const summaryData = summary as Summary;
-	const allArticles = summaryData.articles || [];
-	// Filter articles to only include those with title, url, and summary
-	const articles = allArticles.filter((article: unknown): article is Article => {
-		const a = article as Partial<Article>;
-		return Boolean(a.title && a.url && a.summary);
+	const summaryText = summaryData.summaryText || '';
+	const allArticles = summaryData.sourceArticles || [];
+	// Filter articles to only include those with title and url
+	const articles = allArticles.filter((article: unknown): article is SourceArticle => {
+		const a = article as Partial<SourceArticle>;
+		return Boolean(a.title && a.url);
 	});
-	const date = summaryData.date || new Date().toISOString().split('T')[0];
+	const [date] = new Date().toISOString().split('T');
 
 	let text = `Sky News Daily Summary\n\n`;
 	text += `Date: ${date}\n\n`;
 	text += `${'='.repeat(50)}\n\n`;
 
-	articles.forEach((article: Article, index: number) => {
-		text += `${index + 1}. ${article.title}\n\n`;
-		text += `${article.summary}\n\n`;
-		text += `Read more: ${article.url}\n\n`;
+	if (summaryText) {
+		text += `${summaryText}\n\n`;
+		text += `${'='.repeat(50)}\n\n`;
+	}
+
+	if (articles.length > 0) {
+		text += `Source Articles:\n\n`;
+		articles.forEach((article: SourceArticle, index: number) => {
+			text += `${index + 1}. ${article.title}\n`;
+			text += `   ${article.url}\n\n`;
+		});
 		text += `${'-'.repeat(50)}\n\n`;
-	});
+	}
 
 	text += `You are receiving this email because you subscribed to Sky News Summariser.\n`;
 	text += `© ${new Date().getFullYear()} Sky News Summariser. All rights reserved.\n`;

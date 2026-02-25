@@ -34,7 +34,6 @@ export const sendSummaryEmail = async ({
 	smtpUser,
 	smtpPass,
 }: SendSummaryOptions): Promise<{ successful: string[]; failed: { email: string; error: unknown }[] }> => {
-	console.log('Creating transporter with:', { smtpHost, smtpPort, smtpUser });
 	const transporter = nodemailer.createTransport({
 		host: smtpHost,
 		port: smtpPort,
@@ -48,23 +47,18 @@ export const sendSummaryEmail = async ({
 	const html = formatEmailHtml(summary);
 	const text = formatEmailText(summary);
 
-	console.log('Prepared email content. Sending to recipients:', recipients);
-
 	const results = await Promise.all(
 		recipients.map(async (email) => {
 			try {
-				console.log(`Sending email to: ${email}`);
-				const info = await transporter.sendMail({
+				await transporter.sendMail({
 					from: smtpUser,
 					to: email,
 					subject: 'Sky News Daily Summary',
 					html,
 					text,
 				});
-				console.log(`Email sent to ${email}:`, info);
 				return { email, success: true };
 			} catch (error) {
-				console.error(`Failed to send email to ${email}:`, error);
 				return { email, success: false, error };
 			}
 		})
@@ -73,7 +67,6 @@ export const sendSummaryEmail = async ({
 	const successful = results.filter((r) => r.success).map((r) => r.email);
 	const failed = results.filter((r) => !r.success).map((r) => ({ email: r.email, error: r.error }));
 
-	console.log('Email sending results:', { successful, failed });
 	return {
 		successful,
 		failed,
@@ -83,7 +76,7 @@ export const sendSummaryEmail = async ({
 export const handler: Handler = async (event) => {
 	try {
 		// Extract summary from event
-		const summary = event.summary || event;
+		const summary = event.summaryText || event;
 
 		if (!summary) {
 			return {
@@ -100,7 +93,6 @@ export const handler: Handler = async (event) => {
 				body: JSON.stringify({ error: 'SMTP configuration error: APP_PASSWORD not set' }),
 			};
 		}
-		console.log('APP_PASSWORD is set:', process.env.APP_PASSWORD ? 'Yes' : 'No');
 
 		// Get all active subscribers from DynamoDB
 		const scanCommand = new ScanCommand({
@@ -118,7 +110,6 @@ export const handler: Handler = async (event) => {
 		const subscribers = (scanResult.Items || []) as Subscriber[];
 
 		if (subscribers.length === 0) {
-			console.log('No active subscribers found');
 			return {
 				statusCode: 200,
 				body: JSON.stringify({ message: 'No active subscribers to email' }),
