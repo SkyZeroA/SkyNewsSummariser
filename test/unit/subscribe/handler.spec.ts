@@ -2,14 +2,18 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { APIGatewayProxyEvent, Context } from 'aws-lambda';
 
 // Hoist mock functions and environment setup so they're available during vi.mock() hoisting
-const { mockSend, mockBuildCorsHeaders, mockHandlePreflight } = vi.hoisted(() => {
+const { mockSend, mockBuildCorsHeaders, mockHandlePreflight, mockSendMail, mockCreateTransport } = vi.hoisted(() => {
 	// Set environment variables even before mocks are processed
 	process.env.SUBSCRIBERS_TABLE = 'test-subscribers-table';
+	process.env.APP_PASSWORD = 'test-app-password';
+	process.env.VERIFICATION_SECRET = 'test-verification-secret';
 
 	return {
 		mockSend: vi.fn(),
 		mockBuildCorsHeaders: vi.fn(),
 		mockHandlePreflight: vi.fn(),
+		mockSendMail: vi.fn(),
+		mockCreateTransport: vi.fn(),
 	};
 });
 
@@ -23,7 +27,13 @@ vi.mock('@aws-sdk/lib-dynamodb', () => ({
 			send: mockSend,
 		})),
 	},
-	PutCommand: vi.fn((params) => params),
+	UpdateCommand: vi.fn((params) => params),
+}));
+
+vi.mock('nodemailer', () => ({
+	default: {
+		createTransport: mockCreateTransport,
+	},
 }));
 
 vi.mock('@lib/lambdas/utils.ts', () => ({
@@ -42,7 +52,10 @@ describe('subscribe handler', () => {
 
 	const createMockEvent = (overrides: Partial<APIGatewayProxyEvent> = {}): APIGatewayProxyEvent => ({
 		body: null,
-		headers: {},
+		headers: {
+			host: 'api.example.com',
+			'x-forwarded-proto': 'https',
+		},
 		multiValueHeaders: {},
 		httpMethod: 'POST',
 		isBase64Encoded: false,
@@ -51,13 +64,21 @@ describe('subscribe handler', () => {
 		queryStringParameters: null,
 		multiValueQueryStringParameters: null,
 		stageVariables: null,
-		requestContext: {} as APIGatewayProxyEvent['requestContext'],
+		requestContext: {
+			stage: 'prod',
+			domainName: 'api.example.com',
+		} as unknown as APIGatewayProxyEvent['requestContext'],
 		resource: '',
 		...overrides,
 	});
 
 	beforeEach(() => {
 		vi.clearAllMocks();
+		process.env.VERIFICATION_SECRET = 'test-verification-secret';
+		mockCreateTransport.mockReturnValue({
+			sendMail: mockSendMail,
+		});
+		mockSendMail.mockResolvedValue(undefined);
 		consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 		consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 	});
@@ -181,7 +202,6 @@ describe('subscribe handler', () => {
 
 		beforeEach(() => {
 			mockBuildCorsHeaders.mockReturnValue(corsHeaders);
-			mockSend.mockResolvedValue({});
 		});
 
 		it('should successfully subscribe a new email', async () => {
@@ -192,23 +212,24 @@ describe('subscribe handler', () => {
 			const result = await handler(event, mockContext, mockCallback);
 
 			expect(result).toEqual({
-				statusCode: 201,
+				statusCode: 202,
 				headers: {
 					...corsHeaders,
 					'Content-Type': 'application/json',
 				},
-				body: JSON.stringify({ message: 'Subscription successful' }),
+				body: JSON.stringify({
+					message: 'Verification email sent. Please confirm to activate your subscription.',
+				}),
 			});
-			expect(mockSend).toHaveBeenCalledWith(
+			expect(mockCreateTransport).toHaveBeenCalled();
+			expect(mockSendMail).toHaveBeenCalledWith(
 				expect.objectContaining({
-					TableName: 'test-subscribers-table',
-					Item: expect.objectContaining({
-						email: 'test@example.com',
-						status: 'active',
-					}),
-					ConditionExpression: 'attribute_not_exists(email)',
+					to: 'test@example.com',
+					subject: expect.stringContaining('Confirm'),
+					text: expect.stringMatching(/subscribe\/verify\?token=/),
 				})
 			);
+			expect(mockSend).not.toHaveBeenCalled();
 		});
 
 		it('should normalize email (lowercase)', async () => {
@@ -219,28 +240,11 @@ describe('subscribe handler', () => {
 			const result = await handler(event, mockContext, mockCallback);
 
 			expect(result).toBeDefined();
-			expect(result!.statusCode).toBe(201);
-			expect(mockSend).toHaveBeenCalledWith(
+			expect(result!.statusCode).toBe(202);
+			expect(mockSend).not.toHaveBeenCalled();
+			expect(mockSendMail).toHaveBeenCalledWith(
 				expect.objectContaining({
-					Item: expect.objectContaining({
-						email: 'test@example.com',
-					}),
-				})
-			);
-		});
-
-		it('should include createdAt timestamp', async () => {
-			const event = createMockEvent({
-				body: JSON.stringify({ email: 'test@example.com' }),
-			});
-
-			await handler(event, mockContext, mockCallback);
-
-			expect(mockSend).toHaveBeenCalledWith(
-				expect.objectContaining({
-					Item: expect.objectContaining({
-						createdAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/),
-					}),
+					to: 'test@example.com',
 				})
 			);
 		});
@@ -256,41 +260,19 @@ describe('subscribe handler', () => {
 			mockBuildCorsHeaders.mockReturnValue(corsHeaders);
 		});
 
-		it('should return 409 when email already exists', async () => {
-			const event = createMockEvent({
-				body: JSON.stringify({ email: 'existing@example.com' }),
-			});
-			const error = new Error('ConditionalCheckFailedException');
-			(error as Error & { name: string }).name = 'ConditionalCheckFailedException';
-			mockSend.mockRejectedValue(error);
-
-			const result = await handler(event, mockContext, mockCallback);
-
-			expect(result).toEqual({
-				statusCode: 409,
-				headers: {
-					...corsHeaders,
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({ error: 'Email already subscribed' }),
-			});
-		});
-
-		it('should return 500 on DynamoDB error', async () => {
+		it('should return 500 when verification secret is missing', async () => {
+			delete process.env.VERIFICATION_SECRET;
 			const event = createMockEvent({
 				body: JSON.stringify({ email: 'test@example.com' }),
 			});
-			const error = new Error('DynamoDB error');
-			mockSend.mockRejectedValue(error);
 
 			const result = await handler(event, mockContext, mockCallback);
 
 			expect(result).toEqual({
 				statusCode: 500,
 				headers: corsHeaders,
-				body: JSON.stringify({ error: 'Internal server error' }),
+				body: JSON.stringify({ error: 'Server configuration error' }),
 			});
-			expect(consoleErrorSpy).toHaveBeenCalledWith('Subscribe error:', error);
 		});
 
 		it('should handle JSON parse errors', async () => {

@@ -64,11 +64,23 @@ export class SummariserStack extends Stack {
 			handler: 'handler',
 			depsLockFilePath: path.resolve('pnpm-lock.yaml'),
 			environment: {
-				SUBSCRIBERS_TABLE: subscribersTable.tableName,
+				APP_PASSWORD: process.env.APP_PASSWORD ?? '',
+				VERIFICATION_SECRET: process.env.VERIFICATION_SECRET ?? '',
 			},
 		});
 
-		subscribersTable.grantWriteData(subscribeLambda);
+		const verifySubscriptionLambda = new NodejsFunction(this, 'VerifySubscriptionLambda', {
+			runtime: lambda.Runtime.NODEJS_20_X,
+			entry: path.resolve('lib/lambdas/subscribe/verifySubscription.ts'),
+			handler: 'handler',
+			depsLockFilePath: path.resolve('pnpm-lock.yaml'),
+			environment: {
+				SUBSCRIBERS_TABLE: subscribersTable.tableName,
+				VERIFICATION_SECRET: process.env.VERIFICATION_SECRET ?? '',
+			},
+		});
+
+		subscribersTable.grantWriteData(verifySubscriptionLambda);
 
 		const restApi = new RestApi(this, 'RestApi', {
 			restApiName: `api-${props.stage}`,
@@ -82,6 +94,7 @@ export class SummariserStack extends Stack {
 		const logoutResource = authResource.addResource('logout');
 		const verifyResource = authResource.addResource('verify');
 		const subscribeResource = restApi.root.addResource('subscribe');
+		const subscribeVerifyResource = subscribeResource.addResource('verify');
 
 		loginResource.addMethod(
 			'POST',
@@ -134,6 +147,19 @@ export class SummariserStack extends Stack {
 		subscribeResource.addMethod(
 			'OPTIONS',
 			new LambdaIntegration(subscribeLambda, {
+				proxy: true,
+			})
+		);
+
+		subscribeVerifyResource.addMethod(
+			'GET',
+			new LambdaIntegration(verifySubscriptionLambda, {
+				proxy: true,
+			})
+		);
+		subscribeVerifyResource.addMethod(
+			'OPTIONS',
+			new LambdaIntegration(verifySubscriptionLambda, {
 				proxy: true,
 			})
 		);
