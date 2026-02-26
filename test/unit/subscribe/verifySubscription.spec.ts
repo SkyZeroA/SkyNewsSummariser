@@ -106,6 +106,7 @@ describe('verifySubscription handler', () => {
 			expect.objectContaining({
 				TableName: 'test-subscribers-table',
 				Key: { email: 'test@example.com' },
+				UpdateExpression: expect.stringContaining('#status = :active'),
 			})
 		);
 	});

@@ -1,6 +1,6 @@
 import { APIGatewayProxyHandler, APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { buildCorsHeaders, handlePreflight } from '@lib/lambdas/utils.ts';
 import crypto from 'node:crypto';
 
@@ -119,14 +119,18 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 		const now = new Date().toISOString();
 
 		await db.send(
-			new PutCommand({
+			new UpdateCommand({
 				TableName: TABLE_NAME,
-				Item: {
-					email,
-					status: 'active',
-					createdAt: now,
+				Key: { email },
+				UpdateExpression: 'SET #status = :active, verifiedAt = :now createdAt = if_not_exists(createdAt, :now)',
+				ExpressionAttributeNames: {
+					'#status': 'status',
 				},
-				ConditionExpression: 'attribute_not_exists(email)',
+				ExpressionAttributeValues: {
+					':active': 'active',
+					':now': now,
+				},
+				ConditionExpression: 'attribute_not_exists(#email)',
 			})
 		);
 
