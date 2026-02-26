@@ -8,6 +8,7 @@ env:
     CHARTBEAT_API_KEY: /summariser/chartbeat-api-key
     HUGGINGFACE_API_KEY: /summariser/huggingface-api-key
     JWT_SECRET: /summariser/jwt-secret
+    APP_PASSWORD: /summariser/app-password
 
 phases:
   install:
@@ -36,6 +37,7 @@ phases:
     commands:
       - echo "Deploying to ${STAGE}..."
       - pnpm run deploy
+      
 
   post_build:
     commands:

@@ -1,14 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button, Card, CardBody, Input, Link } from "@heroui/react";
+import { Card, CardBody, Link } from "@heroui/react";
 import { ComprehensiveSummary } from "@/types/summary";
+import SubscribeForm from "@/components/SubscribeForm";
 
 export default function Home() {
-  const [email, setEmail] = useState("");
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [approvedSummary, setApprovedSummary] = useState<ComprehensiveSummary | null>(null);
   const [isFetchingSummary, setIsFetchingSummary] = useState(true);
 
@@ -35,50 +32,6 @@ export default function Home() {
 
     fetchApprovedSummary();
   }, []);
-
-  // Clear messages when user starts typing
-  const handleEmailChange = (value: string) => {
-    setEmail(value);
-    if (error || success) {
-      setError("");
-      setSuccess("");
-    }
-  };
-
-  const handleSubscribe = async (e: { preventDefault: () => void }) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
-
-    // Basic validation
-    if (!email) {
-      setError("Please enter your email address");
-      return;
-    }
-
-    // Email validation - accepts any domain email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError("Please enter a valid email address");
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      // Simulate API call
-      // eslint-disable-next-line promise/avoid-new
-      await new Promise<void>((resolve) => {
-        setTimeout(resolve, 1000);
-      });
-      setSuccess("Successfully subscribed to news summaries!");
-      setEmail("");
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "Subscription failed");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   // Sample data for summarised articles
   const summarisedArticles = [
@@ -192,54 +145,11 @@ export default function Home() {
       </section>
 
       {/* Email Subscription Section */}
-      <section className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg shadow-lg p-8 mb-8 animate-fadeIn" style={{ animationDelay: '0.7s', animationFillMode: 'both' }}>
-        <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold mb-2">
-            Want this delivered daily?
-          </h2>
-          <p className="text-gray-700 dark:text-gray-300">
-            Enter your email address to receive a summary of yesterdays news in your inbox every morning
-          </p>
-        </div>
-
-        <form onSubmit={handleSubscribe} className="max-w-md mx-auto">
-          <div className="flex gap-2 items-start">
-            <div className="flex-1">
-              <Input
-                type="email"
-                placeholder="Enter your email address"
-                value={email}
-                onValueChange={handleEmailChange}
-                isRequired
-                variant="flat"
-                classNames={{
-                  input: "text-gray-900 dark:text-white",
-                  inputWrapper: "bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 transition-all duration-300 hover:border-blue-400 dark:hover:border-blue-500",
-                }}
-              />
-            </div>
-            <Button
-              type="submit"
-              isLoading={isLoading}
-              className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-6 py-2 rounded h-10 transition-all duration-300 hover:scale-105 hover:shadow-lg"
-            >
-              Subscribe
-            </Button>
-          </div>
-
-          {error && !success && (
-            <div className="mt-3 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-3 rounded animate-slideUp">
-              {error}
-            </div>
-          )}
-
-          {success && !error && (
-            <div className="mt-3 text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 p-3 rounded animate-slideUp">
-              {success}
-            </div>
-          )}
-        </form>
-      </section>
+      <div className="mt-8">
+        <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-3 text-center">Want this delivered daily?</h2>
+        <p className="text-gray-700 dark:text-gray-300 mb-4 text-center">Enter your email below to receive a summary of yesterdays news in your inbox every morning.</p>
+        <SubscribeForm />
+      </div>
 
 
     </div>
