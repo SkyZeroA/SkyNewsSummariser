@@ -3,6 +3,7 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { formatEmailHtml, formatEmailText } from '@lib/lambdas/sendEmail/utils.ts';
 import nodemailer from 'nodemailer';
+import { sign } from 'jsonwebtoken';
 
 const TABLE_NAME = process.env.SUBSCRIBERS_TABLE!;
 const SMTP_HOST = 'smtp.gmail.com';
@@ -19,12 +20,19 @@ export interface SendSummaryOptions {
 	smtpPort: number;
 	smtpUser: string;
 	smtpPass: string;
+	apiBaseUrl: string;
+	jwtSecret: string;
 }
 
 interface Subscriber {
 	email: string;
 	status?: string;
 }
+
+const buildUnsubscribeUrl = ({ apiBaseUrl, token }: { apiBaseUrl: string; token: string }): string => {
+	const trimmed = apiBaseUrl.endsWith('/') ? apiBaseUrl.slice(0, -1) : apiBaseUrl;
+	return `${trimmed}/unsubscribe?token=${encodeURIComponent(token)}`;
+};
 
 export const sendSummaryEmail = async ({
 	recipients,
@@ -33,6 +41,8 @@ export const sendSummaryEmail = async ({
 	smtpPort,
 	smtpUser,
 	smtpPass,
+	apiBaseUrl,
+	jwtSecret,
 }: SendSummaryOptions): Promise<{ successful: string[]; failed: { email: string; error: unknown }[] }> => {
 	const transporter = nodemailer.createTransport({
 		host: smtpHost,
@@ -44,12 +54,17 @@ export const sendSummaryEmail = async ({
 		},
 	});
 
-	const html = formatEmailHtml(summary);
-	const text = formatEmailText(summary);
-
 	const results = await Promise.all(
 		recipients.map(async (email) => {
 			try {
+				const token = sign({ email, action: 'unsubscribe' }, jwtSecret, {
+					expiresIn: '180d',
+				});
+				const unsubscribeUrl = buildUnsubscribeUrl({ apiBaseUrl, token });
+
+				const html = formatEmailHtml(summary, unsubscribeUrl);
+				const text = formatEmailText(summary, unsubscribeUrl);
+
 				await transporter.sendMail({
 					from: smtpUser,
 					to: email,
@@ -79,6 +94,22 @@ export const handler: Handler = async (event) => {
 			return {
 				statusCode: 400,
 				body: JSON.stringify({ error: 'Summary data is required' }),
+			};
+		}
+
+		// Verify JWT_SECRET and API_BASE_URL are set for unsubscribe links
+		if (!process.env.JWT_SECRET) {
+			console.error('JWT_SECRET environment variable is not set');
+			return {
+				statusCode: 500,
+				body: JSON.stringify({ error: 'Configuration error: JWT_SECRET not set' }),
+			};
+		}
+		if (!process.env.API_BASE_URL) {
+			console.error('API_BASE_URL environment variable is not set');
+			return {
+				statusCode: 500,
+				body: JSON.stringify({ error: 'Configuration error: API_BASE_URL not set' }),
 			};
 		}
 
@@ -121,6 +152,8 @@ export const handler: Handler = async (event) => {
 			smtpPort: SMTP_PORT,
 			smtpUser: SMTP_USER,
 			smtpPass: process.env.APP_PASSWORD!,
+			apiBaseUrl: process.env.API_BASE_URL,
+			jwtSecret: process.env.JWT_SECRET,
 		});
 
 		return {

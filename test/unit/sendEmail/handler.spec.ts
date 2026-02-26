@@ -6,6 +6,8 @@ const { mockSend, mockSendMail } = vi.hoisted(() => {
 	// Set environment variables even before mocks are processed
 	process.env.SUBSCRIBERS_TABLE = 'test-subscribers-table';
 	process.env.APP_PASSWORD = 'test-app-password';
+	process.env.JWT_SECRET = 'test-jwt-secret';
+	process.env.API_BASE_URL = 'https://example.execute-api.eu-west-1.amazonaws.com/dev/';
 
 	return {
 		mockSend: vi.fn(),
@@ -54,6 +56,8 @@ describe('handler', () => {
 		// Ensure environment variables are set before each test
 		process.env.SUBSCRIBERS_TABLE = 'test-subscribers-table';
 		process.env.APP_PASSWORD = 'test-app-password';
+		process.env.JWT_SECRET = 'test-jwt-secret';
+		process.env.API_BASE_URL = 'https://example.execute-api.eu-west-1.amazonaws.com/dev/';
 
 		// Suppress console output during tests
 		consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -136,6 +140,36 @@ describe('handler', () => {
 		const body = JSON.parse(result.body);
 		expect(body.error).toBe('SMTP configuration error: APP_PASSWORD not set');
 		expect(consoleErrorSpy).toHaveBeenCalledWith('APP_PASSWORD environment variable is not set');
+	});
+
+	it('should return 500 when JWT_SECRET is not set', async () => {
+		delete process.env.JWT_SECRET;
+
+		const event = {
+			summaryText: 'Test',
+		};
+
+		const result = await handler(event, mockContext, mockCallback);
+
+		expect(result.statusCode).toBe(500);
+		const body = JSON.parse(result.body);
+		expect(body.error).toBe('Configuration error: JWT_SECRET not set');
+		expect(consoleErrorSpy).toHaveBeenCalledWith('JWT_SECRET environment variable is not set');
+	});
+
+	it('should return 500 when API_BASE_URL is not set', async () => {
+		delete process.env.API_BASE_URL;
+
+		const event = {
+			summaryText: 'Test',
+		};
+
+		const result = await handler(event, mockContext, mockCallback);
+
+		expect(result.statusCode).toBe(500);
+		const body = JSON.parse(result.body);
+		expect(body.error).toBe('Configuration error: API_BASE_URL not set');
+		expect(consoleErrorSpy).toHaveBeenCalledWith('API_BASE_URL environment variable is not set');
 	});
 
 	it('should query DynamoDB with correct filter expression', async () => {

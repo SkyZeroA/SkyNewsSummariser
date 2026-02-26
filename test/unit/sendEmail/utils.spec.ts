@@ -24,6 +24,18 @@ describe('formatEmailHtml', () => {
 		expect(html).toContain('</html>');
 	});
 
+	it('should include unsubscribe link when provided', () => {
+		const summary = {
+			summaryText: 'Test',
+		};
+		const unsubscribeUrl = 'https://example.com/unsubscribe?token=abc';
+
+		const html = formatEmailHtml(summary, unsubscribeUrl);
+
+		expect(html).toContain('Unsubscribe');
+		expect(html).toContain(unsubscribeUrl);
+	});
+
 	it('should handle empty summary object', () => {
 		const summary = {};
 
@@ -98,6 +110,17 @@ describe('formatEmailText', () => {
 
 		expect(text).toContain('You are receiving this email because you subscribed to Sky News Summariser.');
 		expect(text).toContain(`© ${currentYear} Sky News Summariser. All rights reserved.`);
+	});
+
+	it('should include unsubscribe link when provided', () => {
+		const summary = {
+			summaryText: 'Test',
+		};
+		const unsubscribeUrl = 'https://example.com/unsubscribe?token=abc';
+
+		const text = formatEmailText(summary, unsubscribeUrl);
+
+		expect(text).toContain(`Unsubscribe: ${unsubscribeUrl}`);
 	});
 
 	it('should include separator lines', () => {
