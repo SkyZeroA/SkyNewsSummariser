@@ -32,7 +32,7 @@
   "FailureSnsTopic": "",
   "SendFailureSlackNotifications": "false",
   "Promote": true,
-  "S3OutputBucket": "summariser-cd-serverless-cdsourcesourcebucket9b42b-gh3wkabka2z5",
+  "S3OutputBucket": "summariser-cd-serverless-cdsourcesourcebucket9b42b-llvpbojnrgtt",
   "S3OutputArtifactName": "cd-release.zip",
   "CrossAccountRole": "",
   "TARGET_STACK_ID": "ci",
