@@ -2,12 +2,12 @@ import * as cheerio from 'cheerio';
 
 // Test URLs for different blog types
 const TEST_URLS = {
-	politics_uk: 'https://news.sky.com/story/politics-latest-mandelson-starmer-labour-farage-badenoch-12593360',
+	// Politics_uk: 'https://news.sky.com/story/politics-latest-mandelson-starmer-labour-farage-badenoch-12593360',
 	ukraine_war: 'https://news.sky.com/story/russia-ukraine-war-latest-putin-sky-news-live-blog-12541713',
-	trump_us: 'https://news.sky.com/story/trump-latest-epstein-victims-to-speak-ahead-of-trumps-state-of-the-union-address-13511578',
-	iran: 'https://news.sky.com/story/iran-latest-protests-live-13492391',
-	weather: 'https://news.sky.com/story/storm-chandra-latest-more-weather-warnings-kick-in-as-heavy-wind-rain-and-snow-forecast-13499467',
-	entertainment: 'https://news.sky.com/story/baftas-2026-latest-updates-hollywood-stars-prepare-for-uks-biggest-night-in-film-with-one-battle-after-another-leading-nominations-13508649'
+	// Trump_us: 'https://news.sky.com/story/trump-latest-epstein-victims-to-speak-ahead-of-trumps-state-of-the-union-address-13511578',
+	// Iran: 'https://news.sky.com/story/iran-latest-protests-live-13492391',
+	// Weather: 'https://news.sky.com/story/storm-chandra-latest-more-weather-warnings-kick-in-as-heavy-wind-rain-and-snow-forecast-13499467',
+	// Entertainment: 'https://news.sky.com/story/baftas-2026-latest-updates-hollywood-stars-prepare-for-uks-biggest-night-in-film-with-one-battle-after-another-leading-nominations-13508649'
 };
 
 const analyzeStructure = async (url) => {

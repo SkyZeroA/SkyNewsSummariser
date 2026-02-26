@@ -9,8 +9,12 @@ import * as cheerio from 'cheerio';
 
 // Test URLs for different blog types
 const TEST_URLS = {
-    politics_uk: 'https://news.sky.com/story/politics-latest-mandelson-starmer-labour-farage-badenoch-12593360',
-    ukraine_war: 'https://news.sky.com/story/russia-ukraine-war-latest-putin-sky-news-live-blog-12541713',
+    // Politics_uk: 'https://news.sky.com/story/politics-latest-mandelson-starmer-labour-farage-badenoch-12593360',
+    // Ukraine_war: 'https://news.sky.com/story/russia-ukraine-war-latest-putin-sky-news-live-blog-12541713',
+    trump_us: 'https://news.sky.com/story/trump-latest-epstein-victims-to-speak-ahead-of-trumps-state-of-the-union-address-13511578',
+	// Iran: 'https://news.sky.com/story/iran-latest-protests-live-13492391',
+	// Weather: 'https://news.sky.com/story/storm-chandra-latest-more-weather-warnings-kick-in-as-heavy-wind-rain-and-snow-forecast-13499467',
+	// Entertainment: 'https://news.sky.com/story/baftas-2026-latest-updates-hollywood-stars-prepare-for-uks-biggest-night-in-film-with-one-battle-after-another-leading-nominations-13508649'
 };
 
 const analyzeStructure = async (url) => {
@@ -106,22 +110,35 @@ const extractAllBlogPosts = async (url, blogName) => {
 
 //****************************************************/
 // Collect all headers with their data from all blogs
+// FILTER OUT "Top Stories" headers as posts are unrelated
 const headerDataMap = {};
+// Track all valid postIds from headers
+const allHeaderPostIds = new Set();
 
-for (const [, url] of Object.entries(TEST_URLS)) {
+for (const [blogName, url] of Object.entries(TEST_URLS)) {
 	const headerData = await analyzeStructure(url);
 
 	headerData.forEach(({ header, text, link, postId }) => {
+		// FILTER: Skip "Top Stories" headers
+		if (header.toLowerCase().includes('top stories')) {
+			console.log(`⚠️  Skipping header "${header}" - posts are unrelated`);
+			return;
+		}
+
 		if (!headerDataMap[header]) {
 			headerDataMap[header] = [];
 		}
-		headerDataMap[header].push({ text, link, postId });
+		headerDataMap[header].push({ text, link, postId, blogName });
+		// Add to valid postIds set
+		allHeaderPostIds.add(postId);
 	});
 }
 
-// Display headers with their post IDs, text, and links
+console.log(`\nCollected ${allHeaderPostIds.size} unique post IDs from headers (excluding "Top Stories")\n`);
+
+// Display headers with their post IDs, text, and links (excluding "Top Stories")
 console.log(`\n${'='.repeat(80)}`);
-console.log('HEADERS FROM ALL BLOGS');
+console.log('HEADERS FROM ALL BLOGS (excluding "Top Stories")');
 console.log(`${'='.repeat(80)}\n`);
 
 let counter = 1;
@@ -133,6 +150,7 @@ Object.entries(headerDataMap).forEach(([headerText, items]) => {
 		console.log(`   ${idx + 1}. "${item.text}"`);
 		console.log(`      Link: ${item.link}`);
 		console.log(`      Post ID: ${item.postId}`);
+		console.log(`      Blog: ${item.blogName}`);
 		console.log('');
 	});
 
@@ -147,30 +165,59 @@ console.log('');
 
 
 //****************************************************/
-// Extract ALL available blog posts from all blogs
+// Extract blog posts and FILTER to only include those matching header postIds
 console.log(`\n${'='.repeat(80)}`);
-console.log('EXTRACTING ALL AVAILABLE BLOG POSTS');
+console.log('EXTRACTING BLOG POSTS MATCHING HEADER POST IDS');
 console.log(`${'='.repeat(80)}\n`);
 
 const allPosts = [];
+const matchedPostIds = new Set();
+const unmatchedPostIds = new Set();
 
 for (const [blogName, url] of Object.entries(TEST_URLS)) {
     console.log(`Extracting posts from ${blogName}...`);
     const posts = await extractAllBlogPosts(url, blogName);
-    allPosts.push(...posts);
-    console.log(`  Found ${posts.length} posts\n`);
+
+    // FILTER: Only include posts whose postId is in the header postIds
+    const matchedPosts = posts.filter(post => {
+        if (allHeaderPostIds.has(post.postId)) {
+            matchedPostIds.add(post.postId);
+            return true;
+        }
+        unmatchedPostIds.add(post.postId);
+        return false;
+    });
+
+    allPosts.push(...matchedPosts);
+    console.log(`  Found ${posts.length} posts, ${matchedPosts.length} matched header postIds\n`);
 }
 
-console.log(`Total posts extracted: ${allPosts.length}\n`);
+console.log(`Total posts extracted: ${allPosts.length} (matched from ${allHeaderPostIds.size} header postIds)`);
+console.log(`Posts in JSON-LD but not in headers: ${unmatchedPostIds.size}\n`);
 
 //****************************************************/
-// Display ALL posts with full content
+// Show which header postIds were not found (archived posts)
+const notFoundPostIds = new Set([...allHeaderPostIds].filter(id => !matchedPostIds.has(id)));
+
+if (notFoundPostIds.size > 0) {
+    console.log(`${'='.repeat(80)}`);
+    console.log('HEADER POST IDS NOT FOUND (likely archived)');
+    console.log(`${'='.repeat(80)}\n`);
+    console.log(`${notFoundPostIds.size} post IDs from headers were not found in JSON-LD data:\n`);
+    notFoundPostIds.forEach(postId => {
+        console.log(`  - Post ID: ${postId}`);
+    });
+    console.log('');
+}
+
+//****************************************************/
+// Display MATCHED posts with full content (1-to-1 with header postIds)
 console.log(`${'='.repeat(80)}`);
-console.log('ALL BLOG POSTS WITH FULL CONTENT');
+console.log('MATCHED BLOG POSTS WITH FULL CONTENT');
 console.log(`${'='.repeat(80)}\n`);
 
 if (allPosts.length === 0) {
-    console.log('No blog posts found.\n');
+    console.log('No matching blog posts found.\n');
 } else {
     allPosts.forEach((post, idx) => {
         console.log(`\n${'='.repeat(80)}`);
