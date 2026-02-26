@@ -29,11 +29,6 @@ interface Subscriber {
 	status?: string;
 }
 
-const buildUnsubscribeUrl = ({ apiBaseUrl, token }: { apiBaseUrl: string; token: string }): string => {
-	const trimmed = apiBaseUrl.endsWith('/') ? apiBaseUrl.slice(0, -1) : apiBaseUrl;
-	return `${trimmed}/unsubscribe?token=${encodeURIComponent(token)}`;
-};
-
 export const sendSummaryEmail = async ({
 	recipients,
 	summary,
@@ -60,7 +55,7 @@ export const sendSummaryEmail = async ({
 				const token = sign({ email, action: 'unsubscribe' }, jwtSecret, {
 					expiresIn: '180d',
 				});
-				const unsubscribeUrl = buildUnsubscribeUrl({ apiBaseUrl, token });
+				const unsubscribeUrl = `${apiBaseUrl}/unsubscribe?token=${encodeURIComponent(token)}`;
 
 				const html = formatEmailHtml(summary, unsubscribeUrl);
 				const text = formatEmailText(summary, unsubscribeUrl);
