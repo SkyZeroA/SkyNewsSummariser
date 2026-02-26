@@ -2,6 +2,8 @@ version: 0.2
 
 env:
   shell: bash
+  parameter-store:
+    GH_TOKEN: /pipeline/githubAccessToken
 
 phases:
   install:
