@@ -1,6 +1,7 @@
 import { Handler } from 'aws-lambda';
 import * as cheerio from 'cheerio';
 import { buildUrl, getPath } from '@lib/lambdas/fetchAndNormalise/utils.ts';
+import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 
 export interface ChartBeatArticle {
 	title: string;
@@ -10,6 +11,7 @@ export interface ChartBeatArticle {
 export interface normalisedArticle {
 	title: string;
 	content: string;
+	url: string;
 }
 
 export interface FetchAndNormaliseResult {
@@ -19,8 +21,10 @@ export interface FetchAndNormaliseResult {
 
 const DEFAULT_EXCLUDE_PATHS = ['/', '/uk', '/watch-live', 'home', '/live'];
 const TARGET_ARTICLE_COUNT = 10;
+const LIMIT_START = 30;
 const LIMIT_INCREMENT = 5;
 const MAX_LIMIT = 60;
+const MAX_ARTICLE_WORDS = 500;
 
 // Fetches the most popular articles from Chartbeat live endpoint
 export const fetchFromChartBeat = async (apiKey: string, limit: number): Promise<ChartBeatArticle[]> => {
@@ -88,17 +92,25 @@ export const fetchArticleContent = async (url: string): Promise<string> => {
 	}
 };
 
-// Normalises the articles to a standard format
+// Normalises the raw articles from ChartBeat into a consistent format with content
 export const normaliseArticles = async (articles: ChartBeatArticle[]): Promise<normalisedArticle[]> => {
-	// Fetch content for all articles in parallel
 	const normalisedPromises = articles.map(async (article) => {
 		const content = await fetchArticleContent(article.url);
+		const wordCount = content.trim().split(/\s+/).filter(Boolean).length;
+		if (!content || wordCount > MAX_ARTICLE_WORDS) {
+			// Skip very long articles
+			console.warn(`Skipping article "${article.title}" because it has ${wordCount} words (> ${MAX_ARTICLE_WORDS})`);
+			return null;
+		}
 		return {
 			title: article.title,
 			content,
+			url: article.url,
 		};
 	});
-	return await Promise.all(normalisedPromises);
+	const normalised = await Promise.all(normalisedPromises);
+	// Filter out nulls (skipped articles)
+	return normalised.filter(Boolean) as normalisedArticle[];
 };
 
 // Lambda handler for fetching and normalizing ChartBeat articles
@@ -111,7 +123,7 @@ export const handler: Handler<unknown, FetchAndNormaliseResult> = async () => {
 
 	try {
 		let articlesWithContent: normalisedArticle[] = [];
-		let limit = LIMIT_INCREMENT;
+		let limit = LIMIT_START;
 
 		// Keep fetching with increasing limit until we have enough articles with content
 		while (articlesWithContent.length < TARGET_ARTICLE_COUNT && limit <= MAX_LIMIT) {
@@ -133,10 +145,21 @@ export const handler: Handler<unknown, FetchAndNormaliseResult> = async () => {
 		}
 
 		const finalArticles = articlesWithContent.slice(0, TARGET_ARTICLE_COUNT);
-		return {
-			articles: finalArticles,
-			count: finalArticles.length,
-		};
+
+		const lambdaName = process.env.SUMMARISE_LAMBDA_NAME;
+		if (lambdaName) {
+			const lambdaClient = new LambdaClient({});
+			// Only send title, content, and url to the summarise lambda
+			const articlesPayload = finalArticles.map(({ title, content, url }) => ({ title, content, url }));
+			await lambdaClient.send(
+				new InvokeCommand({
+					FunctionName: lambdaName,
+					InvocationType: 'Event',
+					Payload: Buffer.from(JSON.stringify({ articles: articlesPayload })),
+				})
+			);
+		}
+		return { articles: finalArticles, count: finalArticles.length };
 	} catch (error) {
 		console.error('Error in fetchAndNormalise lambda:', error);
 		throw error;

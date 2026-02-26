@@ -44,7 +44,18 @@ export class FrontendStack extends Stack {
 			destinationBucket: this.siteBucket,
 			destinationKeyPrefix: '/',
 			distribution,
-			distributionPaths: ['/*'],
+			// Avoid full-site invalidations; Next's hashed assets are cache-busted by filename.
+			// Invalidate only entrypoint HTML + runtime config.
+			distributionPaths: [
+				'/',
+				'/index.html',
+				'/config.json',
+				// Cover both possible Next export layouts
+				'/admin.html',
+				'/login.html',
+				'/admin/index.html',
+				'/login/index.html',
+			],
 		});
 
 		this.siteBucket.addToResourcePolicy(

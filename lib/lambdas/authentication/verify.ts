@@ -1,6 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { verify } from 'jsonwebtoken';
-import { buildCorsHeaders, handlePreflight } from '@lib/lambdas/authentication/utils.ts';
+import { buildCorsHeaders, getAuthToken, handlePreflight } from '@lib/lambdas/utils.ts';
 
 // eslint-disable require-await
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
@@ -14,19 +14,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 	}
 
 	try {
-		const rawCookie = event.headers.cookie || event.headers.Cookie;
-
-		let authToken: string | null = null;
-
-		if (rawCookie) {
-			const cookies = rawCookie.split(';');
-			for (const cookie of cookies) {
-				if (cookie.startsWith('authToken=')) {
-					[, authToken] = cookie.split('=');
-				}
-			}
-		}
-
+		const authToken = getAuthToken(event);
 		if (!authToken) {
 			return {
 				statusCode: 401,
