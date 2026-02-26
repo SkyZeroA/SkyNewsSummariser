@@ -7,7 +7,7 @@
   "SmokeTestsBuildSpecPath": "ci/smoke.buildspec.yml",
   "Image": "aws/codebuild/standard:7.0",
   "BuildTimeout": "60",
-  "IncludeStagingDeploy": "false",
+  "IncludeStagingDeploy": "true",
   "IncludeManualApproval": "false",
   "IncludeProdDeploy": "false",
   "ParameterARNs": "",
