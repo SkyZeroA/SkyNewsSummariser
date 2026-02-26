@@ -75,10 +75,7 @@ export const sendSummaryEmail = async ({
 
 export const handler: Handler = async (event) => {
 	try {
-		// Extract summary from event
-		const summary = event.summaryText || event;
-
-		if (!summary) {
+		if (!event) {
 			return {
 				statusCode: 400,
 				body: JSON.stringify({ error: 'Summary data is required' }),
@@ -119,7 +116,7 @@ export const handler: Handler = async (event) => {
 		// Send emails to all active subscribers
 		const { successful, failed } = await sendSummaryEmail({
 			recipients: subscribers.filter((s) => !s.status || s.status === 'active').map((s) => s.email),
-			summary,
+			summary: event,
 			smtpHost: SMTP_HOST,
 			smtpPort: SMTP_PORT,
 			smtpUser: SMTP_USER,

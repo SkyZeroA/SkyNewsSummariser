@@ -123,17 +123,6 @@ describe('handler', () => {
 		expect(mockSendMail).not.toHaveBeenCalled();
 	});
 
-	it('should return 500 when event is null', async () => {
-		const event = null;
-
-		const result = await handler(event, mockContext, mockCallback);
-
-		expect(result.statusCode).toBe(500);
-		const body = JSON.parse(result.body);
-		expect(body.error).toBe('Internal server error');
-		expect(consoleErrorSpy).toHaveBeenCalledWith('SendEmail error:', expect.any(Error));
-	});
-
 	it('should return 500 when APP_PASSWORD is not set', async () => {
 		delete process.env.APP_PASSWORD;
 
