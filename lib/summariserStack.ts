@@ -5,7 +5,7 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as path from 'node:path';
 import { LambdaIntegration, RestApi } from 'aws-cdk-lib/aws-apigateway';
 import { Table, AttributeType, BillingMode } from 'aws-cdk-lib/aws-dynamodb';
-import * as s3 from 'aws-cdk-lib/aws-s3';
+import { Bucket, BlockPublicAccess } from 'aws-cdk-lib/aws-s3';
 
 export interface SummariserStackProps extends StackProps {
 	stage: string;
@@ -138,8 +138,12 @@ export class SummariserStack extends Stack {
 			})
 		);
 
-		const summaryBucket = new s3.Bucket(this, 'SummaryBucket', {
-			// Default settings; consider lifecycle/retention if needed
+		const summaryBucket = new Bucket(this, 'SummaryBucket', {
+			publicReadAccess: false,
+			blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
+			removalPolicy: RemovalPolicy.DESTROY,
+			autoDeleteObjects: true,
+			enforceSSL: true,
 		});
 
 		const getDraftSummaryLambda = new NodejsFunction(this, 'GetDraftSummaryLambda', {
