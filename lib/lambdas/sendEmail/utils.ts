@@ -8,7 +8,7 @@ interface Summary {
 	sourceArticles?: unknown[];
 }
 
-export const formatEmailHtml = (summary: unknown): string => {
+export const formatEmailHtml = (summary: unknown, unsubscribeUrl?: string): string => {
 	const summaryData = summary as Summary;
 	const summaryText = summaryData.summaryText || '';
 	const allArticles = summaryData.sourceArticles || [];
@@ -60,6 +60,7 @@ export const formatEmailHtml = (summary: unknown): string => {
 		.join('')}
 	<div class="footer">
 		<p>You are receiving this email because you subscribed to Sky News Summariser.</p>
+		${unsubscribeUrl ? `<p><a href="${unsubscribeUrl}">Unsubscribe</a></p>` : ''}
 		<p>© ${new Date().getFullYear()} Sky News Summariser. All rights reserved.</p>
 	</div>
 </body>
@@ -70,7 +71,7 @@ export const formatEmailHtml = (summary: unknown): string => {
 };
 
 // Format the summary as plain text email
-export const formatEmailText = (summary: unknown): string => {
+export const formatEmailText = (summary: unknown, unsubscribeUrl?: string): string => {
 	const summaryData = summary as Summary;
 	const summaryText = summaryData.summaryText || '';
 	const allArticles = summaryData.sourceArticles || [];
@@ -100,6 +101,9 @@ export const formatEmailText = (summary: unknown): string => {
 	}
 
 	text += `You are receiving this email because you subscribed to Sky News Summariser.\n`;
+	if (unsubscribeUrl) {
+		text += `Unsubscribe: ${unsubscribeUrl}\n`;
+	}
 	text += `© ${new Date().getFullYear()} Sky News Summariser. All rights reserved.\n`;
 
 	return text;

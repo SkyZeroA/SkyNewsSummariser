@@ -82,6 +82,7 @@ export class SummariserStack extends Stack {
 		const logoutResource = authResource.addResource('logout');
 		const verifyResource = authResource.addResource('verify');
 		const subscribeResource = restApi.root.addResource('subscribe');
+		const unsubscribeResource = restApi.root.addResource('unsubscribe');
 
 		loginResource.addMethod(
 			'POST',
@@ -134,6 +135,33 @@ export class SummariserStack extends Stack {
 		subscribeResource.addMethod(
 			'OPTIONS',
 			new LambdaIntegration(subscribeLambda, {
+				proxy: true,
+			})
+		);
+
+		const unsubscribeLambda = new NodejsFunction(this, 'UnsubscribeLambda', {
+			runtime: lambda.Runtime.NODEJS_22_X,
+			handler: 'handler',
+			entry: path.resolve('lib/lambdas/unsubscribe/unsubscribe.ts'),
+			depsLockFilePath: path.resolve('pnpm-lock.yaml'),
+			timeout: Duration.minutes(1),
+			memorySize: 512,
+			environment: {
+				SUBSCRIBERS_TABLE: subscribersTable.tableName,
+				JWT_SECRET: process.env.JWT_SECRET ?? '',
+			},
+		});
+		subscribersTable.grantWriteData(unsubscribeLambda);
+
+		unsubscribeResource.addMethod(
+			'GET',
+			new LambdaIntegration(unsubscribeLambda, {
+				proxy: true,
+			})
+		);
+		unsubscribeResource.addMethod(
+			'OPTIONS',
+			new LambdaIntegration(unsubscribeLambda, {
 				proxy: true,
 			})
 		);
@@ -195,6 +223,8 @@ export class SummariserStack extends Stack {
 			environment: {
 				SUBSCRIBERS_TABLE: subscribersTable.tableName,
 				APP_PASSWORD: process.env.APP_PASSWORD ?? '',
+				JWT_SECRET: process.env.JWT_SECRET ?? '',
+				API_BASE_URL: restApi.url,
 			},
 		});
 		subscribersTable.grantReadData(sendEmailLambda);
