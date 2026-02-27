@@ -73,6 +73,32 @@ export default function AdminDashboard() {
     checkAuth();
   }, [router, apiUrl, fetchSummary]);
 
+    // Publish handler
+  const handlePublish = async () => {
+    if (!apiUrl || !summary) {return;}
+    try {
+      const response = await fetch(`${apiUrl}publish-summary`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          summaryText: editedSummary,
+          sourceArticles: summary.sourceArticles,
+        }),
+      });
+      if (response.ok) {
+        console.log("Summary published successfully");
+      } else {
+        const data = await response.json().catch(() => ({}));
+        console.error(data.error || "Failed to publish summary");
+      }
+    } catch (error) {
+      console.error("Error publishing summary:", error);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -82,9 +108,8 @@ export default function AdminDashboard() {
         </div>
       </div>
     );
-  }
-
-  return (
+  
+}  return (
     <div className="max-w-[1400px] mx-auto px-6 py-8">
       {/* Header */}
       <div className="mb-8 animate-fadeIn">
@@ -179,7 +204,10 @@ export default function AdminDashboard() {
             <Button
               color="success"
               size="lg"
-              className="font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg px-8"            >
+              className="font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg px-8"
+              onPress={handlePublish}
+              disabled={isLoading}
+            >
               Publish
             </Button>
           </div>
