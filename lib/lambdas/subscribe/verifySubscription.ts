@@ -1,6 +1,6 @@
 import { APIGatewayProxyHandler, APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { buildCorsHeaders, handlePreflight } from '@lib/lambdas/utils.ts';
 import crypto from 'node:crypto';
 
@@ -59,6 +59,13 @@ const verifyAndDecodeToken = (token: string, secret: string): { email: string } 
 	return { email };
 };
 
+const getErrorName = (error: unknown): string | undefined => {
+	if (!error || typeof error !== 'object') {
+		return undefined;
+	}
+	return 'name' in error && typeof (error as { name?: unknown }).name === 'string' ? (error as { name: string }).name : undefined;
+};
+
 export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
 	if (event.httpMethod === 'OPTIONS') {
 		return handlePreflight(event);
@@ -76,6 +83,18 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 	}
 
 	try {
+		if (!TABLE_NAME) {
+			console.error('SUBSCRIBERS_TABLE environment variable is not set');
+			return {
+				statusCode: 500,
+				headers: {
+					...corsHeaders,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ error: 'Server configuration error' }),
+			};
+		}
+
 		const tokenParam = event.queryStringParameters?.token;
 
 		if (!tokenParam) {
@@ -119,18 +138,15 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 		const now = new Date().toISOString();
 
 		await db.send(
-			new UpdateCommand({
+			new PutCommand({
 				TableName: TABLE_NAME,
-				Key: { email },
-				UpdateExpression: 'SET #status = :active, verifiedAt = :now createdAt = if_not_exists(createdAt, :now)',
-				ExpressionAttributeNames: {
-					'#status': 'status',
+				Item: {
+					email,
+					status: 'active',
+					createdAt: now,
+					verifiedAt: now,
 				},
-				ExpressionAttributeValues: {
-					':active': 'active',
-					':now': now,
-				},
-				ConditionExpression: 'attribute_not_exists(#email)',
+				ConditionExpression: 'attribute_not_exists(email)',
 			})
 		);
 
@@ -143,7 +159,21 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 			body: JSON.stringify({ message: 'Email verified. Subscription is now active.' }),
 		};
 	} catch (error) {
+		const errorName = getErrorName(error);
 		console.error('VerifySubscription error:', error);
+
+		// Clicking a verification link twice should not surface as a 500.
+		if (errorName === 'ConditionalCheckFailedException') {
+			return {
+				statusCode: 200,
+				headers: {
+					...corsHeaders,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ message: 'Email already verified.' }),
+			};
+		}
+
 		return {
 			statusCode: 500,
 			headers: {

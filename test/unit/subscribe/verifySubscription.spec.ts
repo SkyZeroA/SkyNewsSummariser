@@ -22,7 +22,7 @@ vi.mock('@aws-sdk/lib-dynamodb', () => ({
 			send: mockSend,
 		})),
 	},
-	UpdateCommand: vi.fn((params) => params),
+	PutCommand: vi.fn((params) => params),
 }));
 
 vi.mock('@lib/lambdas/utils.ts', () => ({
@@ -105,8 +105,13 @@ describe('verifySubscription handler', () => {
 		expect(mockSend).toHaveBeenCalledWith(
 			expect.objectContaining({
 				TableName: 'test-subscribers-table',
-				Key: { email: 'test@example.com' },
-				UpdateExpression: expect.stringContaining('#status = :active'),
+				Item: expect.objectContaining({
+					email: 'test@example.com',
+					status: 'active',
+					createdAt: expect.any(String),
+					verifiedAt: expect.any(String),
+				}),
+				ConditionExpression: 'attribute_not_exists(email)',
 			})
 		);
 	});
