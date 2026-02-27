@@ -64,7 +64,7 @@ export default function SubscribeForm({ onSubscribe }: Props) {
           throw new Error(data?.error || 'Subscription failed');
         }
       }
-      setSuccess("Subscribed successfully");
+      setSuccess("Check your email to confirm your subscription");
       setEmail("");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Subscription failed. Please try again.";

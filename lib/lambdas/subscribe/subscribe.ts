@@ -2,103 +2,130 @@ import { APIGatewayProxyHandler, APIGatewayProxyEvent, APIGatewayProxyResult } f
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { buildCorsHeaders, handlePreflight } from '@lib/lambdas/utils.ts';
+import { verifyAndDecodeToken } from '@lib/lambdas/subscribe/verificationToken.ts';
 
 const TABLE_NAME = process.env.SUBSCRIBERS_TABLE!;
 
-// Use default AWS region from Lambda environment; avoid undefined custom var
 const client = new DynamoDBClient({});
 const db = DynamoDBDocumentClient.from(client);
-
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
 	if (event.httpMethod === 'OPTIONS') {
 		return handlePreflight(event);
 	}
 
-	const corsHeaders = buildCorsHeaders(event);
-	if (!corsHeaders) {
+	// Email clients / normal browser navigations usually don’t send Origin.
+	// Only enforce the allowlist when Origin is present.
+	const origin = event.headers.origin || event.headers.Origin;
+	const corsHeaders = origin ? buildCorsHeaders(event) : {};
+	if (origin && !corsHeaders) {
 		return {
 			statusCode: 403,
 			body: 'Forbidden',
 		};
 	}
+
 	try {
-		if (!event.body) {
-			console.warn('Subscribe request missing body');
+		if (!TABLE_NAME) {
+			console.error('SUBSCRIBERS_TABLE environment variable is not set');
 			return {
-				statusCode: 400,
-				headers: corsHeaders,
-				body: JSON.stringify({ error: 'Missing request body' }),
+				statusCode: 500,
+				headers: {
+					...corsHeaders,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ error: 'Server configuration error' }),
 			};
 		}
 
-		const { email } = JSON.parse(event.body);
+		const tokenParam = event.queryStringParameters?.token;
 
-		if (!email || typeof email !== 'string') {
-			console.warn('Subscribe request missing email');
+		if (!tokenParam) {
 			return {
 				statusCode: 400,
-				headers: corsHeaders,
-				body: JSON.stringify({ error: 'Email is required' }),
+				headers: {
+					...corsHeaders,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ error: 'Missing token' }),
 			};
 		}
 
-		const normalizedEmail = email.trim().toLowerCase();
-
-		if (!EMAIL_REGEX.test(email)) {
-			console.warn('Subscribe request with invalid email format:', email);
+		if (!process.env.VERIFICATION_SECRET) {
+			console.error('VERIFICATION_SECRET environment variable is not set');
 			return {
-				statusCode: 400,
-				headers: corsHeaders,
-				body: JSON.stringify({ error: 'Invalid email format' }),
+				statusCode: 500,
+				headers: {
+					...corsHeaders,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ error: 'Server configuration error' }),
 			};
 		}
+
+		const token = tokenParam.trim();
+		const decoded = verifyAndDecodeToken(token, process.env.VERIFICATION_SECRET);
+		if (!decoded) {
+			return {
+				statusCode: 400,
+				headers: {
+					...corsHeaders,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ error: 'Invalid or expired verification link' }),
+			};
+		}
+
+		const email = decoded.email.trim().toLowerCase();
+
+		const now = new Date().toISOString();
 
 		await db.send(
 			new PutCommand({
 				TableName: TABLE_NAME,
 				Item: {
-					email: normalizedEmail,
-					createdAt: new Date().toISOString(),
+					email,
 					status: 'active',
+					createdAt: now,
+					verifiedAt: now,
 				},
-				// Prevents duplicates
 				ConditionExpression: 'attribute_not_exists(email)',
 			})
 		);
 
 		return {
-			statusCode: 201,
+			statusCode: 200,
 			headers: {
 				...corsHeaders,
 				'Content-Type': 'application/json',
 			},
-			body: JSON.stringify({
-				message: 'Subscription successful',
-			}),
+			body: JSON.stringify({ message: 'Email verified. Subscription is now active.' }),
 		};
 	} catch (error) {
-		const isConditionalCheckFailed =
-			typeof error === 'object' && error !== null && 'name' in error && (error as { name?: string }).name === 'ConditionalCheckFailedException';
-		if (isConditionalCheckFailed) {
+		const errorName =
+			error && typeof error === 'object' && 'name' in error && typeof (error as { name?: unknown }).name === 'string'
+				? (error as { name: string }).name
+				: undefined;
+		console.error('VerifySubscription error:', error);
+
+		// Clicking a verification link twice should not surface as a 500.
+		if (errorName === 'ConditionalCheckFailedException') {
 			return {
-				statusCode: 409,
+				statusCode: 200,
 				headers: {
 					...corsHeaders,
 					'Content-Type': 'application/json',
 				},
-				body: JSON.stringify({
-					error: 'Email already subscribed',
-				}),
+				body: JSON.stringify({ message: 'Email already verified.' }),
 			};
 		}
 
-		console.error('Subscribe error:', error);
-
 		return {
 			statusCode: 500,
-			headers: corsHeaders,
+			headers: {
+				...corsHeaders,
+				'Content-Type': 'application/json',
+			},
 			body: JSON.stringify({ error: 'Internal server error' }),
 		};
 	}

@@ -1,5 +1,14 @@
-import { describe, it, expect } from 'vitest';
-import { formatEmailHtml, formatEmailText } from '@lib/lambdas/sendEmail/utils.ts';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { formatEmailHtml, formatEmailText } from '@lib/lambdas/sendSummary/utils.ts';
+
+beforeEach(() => {
+	vi.useFakeTimers();
+	vi.setSystemTime(new Date('2026-02-27T06:00:00.000Z'));
+});
+
+afterEach(() => {
+	vi.useRealTimers();
+});
 
 describe('formatEmailHtml', () => {
 	it('should format email with summaryText and sourceArticles', () => {
@@ -8,6 +17,9 @@ describe('formatEmailHtml', () => {
 			sourceArticles: [
 				{ title: 'Article 1', url: 'https://news.sky.com/article1' },
 				{ title: 'Article 2', url: 'https://news.sky.com/article2' },
+				{ title: 'Missing url' },
+				{ url: 'https://news.sky.com/no-title' },
+				'not-an-object',
 			],
 		};
 
@@ -15,11 +27,14 @@ describe('formatEmailHtml', () => {
 
 		expect(html).toContain('Sky News Daily Summary');
 		expect(html).toContain('This is a test summary of the news.');
+		expect(html).toContain('Date:</strong> 2026-02-27');
 		expect(html).toContain('Source Articles');
 		expect(html).toContain('Article 1');
 		expect(html).toContain('https://news.sky.com/article1');
 		expect(html).toContain('Article 2');
 		expect(html).toContain('https://news.sky.com/article2');
+		expect(html).not.toContain('Missing url');
+		expect(html).not.toContain('no-title');
 		expect(html).toContain('<!DOCTYPE html>');
 		expect(html).toContain('</html>');
 	});
@@ -30,7 +45,7 @@ describe('formatEmailHtml', () => {
 		const html = formatEmailHtml(summary);
 
 		expect(html).toContain('Sky News Daily Summary');
-		expect(html).toContain('Date:');
+		expect(html).toContain('Date:</strong> 2026-02-27');
 		expect(html).not.toContain('Source Articles');
 	});
 
@@ -43,6 +58,12 @@ describe('formatEmailHtml', () => {
 
 		expect(html).toContain('white-space: pre-wrap;');
 		expect(html).toContain('Line 1\nLine 2\n\nLine 3');
+	});
+
+	it('omits the summary block when summaryText is empty', () => {
+		const html = formatEmailHtml({ summaryText: '', sourceArticles: [] });
+		expect(html).toContain('Date:</strong> 2026-02-27');
+		expect(html).not.toContain('white-space: pre-wrap;');
 	});
 });
 
@@ -73,7 +94,7 @@ describe('formatEmailText', () => {
 		const text = formatEmailText(summary);
 
 		expect(text).toContain('Sky News Daily Summary');
-		expect(text).toContain('Date:');
+		expect(text).toContain('Date: 2026-02-27');
 		expect(text).not.toContain('Source Articles:');
 	});
 
@@ -83,9 +104,7 @@ describe('formatEmailText', () => {
 		};
 
 		const text = formatEmailText(summary);
-		const today = new Date().toISOString().split('T')[0];
-
-		expect(text).toContain(`Date: ${today}`);
+		expect(text).toContain('Date: 2026-02-27');
 	});
 
 	it('should include footer with copyright', () => {

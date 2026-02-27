@@ -9,6 +9,7 @@ env:
     HUGGINGFACE_API_KEY: /summariser/huggingface-api-key
     JWT_SECRET: /summariser/jwt-secret
     APP_PASSWORD: /summariser/app-password
+    VERIFICATION_SECRET: /summariser/verification-secret
 
 phases:
   install:
