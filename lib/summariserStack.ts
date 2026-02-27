@@ -157,7 +157,7 @@ export class SummariserStack extends Stack {
 		const getDraftSummaryLambda = new NodejsFunction(this, 'GetDraftSummaryLambda', {
 			runtime: lambda.Runtime.NODEJS_22_X,
 			handler: 'handler',
-			entry: path.resolve('lib/lambdas/getDraftSummary/getSummary.ts'),
+			entry: path.resolve('lib/lambdas/getSummary/getSummary.ts'),
 			depsLockFilePath: path.resolve('pnpm-lock.yaml'),
 			timeout: Duration.minutes(1),
 			memorySize: 512,
@@ -171,7 +171,7 @@ export class SummariserStack extends Stack {
 		const getPublishedSummaryLambda = new NodejsFunction(this, 'GetPublishedSummaryLambda', {
 			runtime: lambda.Runtime.NODEJS_22_X,
 			handler: 'handler',
-			entry: path.resolve('lib/lambdas/getDraftSummary/getDraftSummary.ts'),
+			entry: path.resolve('lib/lambdas/getSummary/getSummary.ts'),
 			depsLockFilePath: path.resolve('pnpm-lock.yaml'),
 			timeout: Duration.minutes(1),
 			memorySize: 512,
