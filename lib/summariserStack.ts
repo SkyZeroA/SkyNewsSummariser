@@ -214,7 +214,7 @@ export class SummariserStack extends Stack {
 		const sendEmailLambda = new NodejsFunction(this, 'SendSummaryEmailLambda', {
 			runtime: lambda.Runtime.NODEJS_22_X,
 			handler: 'handler',
-			entry: path.resolve('lib/lambdas/sendEmail/sendEmail.ts'),
+			entry: path.resolve('lib/lambdas/sendSummary/sendSummary.ts'),
 			depsLockFilePath: path.resolve('pnpm-lock.yaml'),
 			timeout: Duration.minutes(5),
 			memorySize: 1024,
