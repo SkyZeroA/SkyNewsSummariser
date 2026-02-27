@@ -3,8 +3,6 @@ import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { verify } from 'jsonwebtoken';
 import { buildCorsHeaders, getAuthToken, handlePreflight } from '@lib/lambdas/utils.ts';
 
-const SUMMARY_KEY = 'draft-summary.json';
-
 const streamToString = (body: unknown): Promise<string> => {
 	if (!body) {
 		return Promise.resolve('');
@@ -19,6 +17,8 @@ const streamToString = (body: unknown): Promise<string> => {
 };
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+	const { BUCKET_NAME, SUMMARY_KEY } = process.env;
+
 	if (event.httpMethod === 'OPTIONS') {
 		return handlePreflight(event);
 	}
@@ -40,15 +40,24 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 		};
 	}
 
-	const bucketName = process.env.DRAFT_SUMMARY_BUCKET_NAME;
-	if (!bucketName) {
+	if (!BUCKET_NAME) {
 		return {
 			statusCode: 500,
 			headers: {
 				...corsHeaders,
 				'Content-Type': 'application/json',
 			},
-			body: JSON.stringify({ error: 'Server misconfigured: DRAFT_SUMMARY_BUCKET_NAME is missing' }),
+			body: JSON.stringify({ error: 'Server misconfigured: BUCKET_NAME is missing' }),
+		};
+	}
+	if (!SUMMARY_KEY) {
+		return {
+			statusCode: 500,
+			headers: {
+				...corsHeaders,
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({ error: 'Server misconfigured: SUMMARY_KEY is missing' }),
 		};
 	}
 
@@ -72,7 +81,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
 		const response = await s3.send(
 			new GetObjectCommand({
-				Bucket: bucketName,
+				Bucket: BUCKET_NAME,
 				Key: SUMMARY_KEY,
 			})
 		);
@@ -81,7 +90,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 		const parsed = text ? (JSON.parse(text) as { summaryText?: string; sourceArticles?: { title: string; url: string }[] }) : null;
 
 		const lastModified = response.LastModified?.toISOString() ?? new Date().toISOString();
-		const etag = response.ETag?.replaceAll('"', '') ?? 'draft';
+		const etag = response.ETag?.replaceAll('"', '') ?? 'summary';
 
 		return {
 			statusCode: 200,
@@ -128,7 +137,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 			};
 		}
 
-		console.error('Failed to read draft summary from S3:', error);
+		console.error('Failed to read summary from S3:', error);
 		return {
 			statusCode: 500,
 			headers: {

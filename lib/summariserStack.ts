@@ -157,13 +157,28 @@ export class SummariserStack extends Stack {
 		const getDraftSummaryLambda = new NodejsFunction(this, 'GetDraftSummaryLambda', {
 			runtime: lambda.Runtime.NODEJS_22_X,
 			handler: 'handler',
+			entry: path.resolve('lib/lambdas/getDraftSummary/getSummary.ts'),
+			depsLockFilePath: path.resolve('pnpm-lock.yaml'),
+			timeout: Duration.minutes(1),
+			memorySize: 512,
+			environment: {
+				JWT_SECRET: process.env.JWT_SECRET ?? '',
+				BUCKET_NAME: draftSummaryBucket.bucketName,
+				SUMMARY_KEY: 'draft-summary.json',
+			},
+		});
+
+		const getPublishedSummaryLambda = new NodejsFunction(this, 'GetPublishedSummaryLambda', {
+			runtime: lambda.Runtime.NODEJS_22_X,
+			handler: 'handler',
 			entry: path.resolve('lib/lambdas/getDraftSummary/getDraftSummary.ts'),
 			depsLockFilePath: path.resolve('pnpm-lock.yaml'),
 			timeout: Duration.minutes(1),
 			memorySize: 512,
 			environment: {
 				JWT_SECRET: process.env.JWT_SECRET ?? '',
-				DRAFT_SUMMARY_BUCKET_NAME: draftSummaryBucket.bucketName,
+				BUCKET_NAME: publishedSummaryBucket.bucketName,
+				SUMMARY_KEY: 'published-summary.json',
 			},
 		});
 
@@ -251,7 +266,16 @@ export class SummariserStack extends Stack {
 		// Allow publish summary lambda to write to the published summary bucket
 		publishedSummaryBucket.grantWrite(publishSummaryLambda);
 
+		// Allow API lambdas to read the latest published summary
+		publishedSummaryBucket.grantRead(getPublishedSummaryLambda);
+
 		const publishSummaryResource = restApi.root.addResource('publish-summary');
+		publishSummaryResource.addMethod(
+			'GET',
+			new LambdaIntegration(getPublishedSummaryLambda, {
+				proxy: true,
+			})
+		);
 		publishSummaryResource.addMethod(
 			'POST',
 			new LambdaIntegration(publishSummaryLambda, {
