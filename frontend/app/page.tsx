@@ -14,10 +14,14 @@ export default function Home() {
 
   // Fetch published summary on mount
   useEffect(() => {
+    if (!apiUrl) {
+      console.error("API URL not available");
+      return;
+    }
     const fetchPublishedSummary = async () => {
       try {
         setIsFetchingSummary(true);
-        if (!apiUrl) {return;}
+
         const response = await fetch(`${apiUrl}publish-summary`, {
           method: "GET",
           credentials: "include",
@@ -36,7 +40,7 @@ export default function Home() {
       }
     };
     fetchPublishedSummary();
-  }, [apiUrl]);
+  }, []);
 
 
 
