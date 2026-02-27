@@ -73,6 +73,51 @@ export default function AdminDashboard() {
     checkAuth();
   }, [router, apiUrl, fetchSummary]);
 
+    // Publish handler
+  const handlePublish = async () => {
+    if (!apiUrl || !summary) {return;}
+    try {
+      const response = await fetch(`${apiUrl}publish-summary`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          summaryText: editedSummary,
+          sourceArticles: summary.sourceArticles,
+        }),
+      });
+      if (response.ok) {
+        console.log("Summary published successfully");
+      } else {
+        const data = await response.json().catch(() => ({}));
+        console.error(data.error || "Failed to publish summary");
+      }
+    } catch (error) {
+      console.error("Error publishing summary:", error);
+    }
+  };
+
+  // For testing: load hardcoded summary
+  const loadTestSummary = () => {
+    const now = new Date().toISOString();
+    const testSummary = {
+      id: "test-summary-1",
+      summaryText: "Sky News: Major events unfolded today. The UK government announced new defense plans. Economic forecasts remain uncertain. See articles below for details.",
+      sourceArticles: [
+        { title: "UK unveils new defense strategy", url: "https://news.example.com/uk-defense" },
+        { title: "Economic outlook for 2026", url: "https://news.example.com/economy-2026" },
+        { title: "Technology trends to watch", url: "https://news.example.com/tech-trends" },
+      ],
+      status: "pending" as const,
+      createdAt: now,
+      updatedAt: now,
+    };
+    setSummary(testSummary);
+    setEditedSummary(testSummary.summaryText);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -82,9 +127,7 @@ export default function AdminDashboard() {
         </div>
       </div>
     );
-  }
-
-  return (
+}  return (
     <div className="max-w-[1400px] mx-auto px-6 py-8">
       {/* Header */}
       <div className="mb-8 animate-fadeIn">
@@ -179,7 +222,10 @@ export default function AdminDashboard() {
             <Button
               color="success"
               size="lg"
-              className="font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg px-8"            >
+              className="font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg px-8"
+              onPress={handlePublish}
+              disabled={isLoading}
+            >
               Publish
             </Button>
           </div>
@@ -190,6 +236,12 @@ export default function AdminDashboard() {
             <p className="text-gray-600 dark:text-gray-400 text-lg">
               No pending summary to review
             </p>
+            <button
+              className="mt-6 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              onClick={loadTestSummary}
+            >
+              Load Test Summary
+            </button>
           </CardBody>
         </Card>
       )}

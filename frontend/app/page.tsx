@@ -4,58 +4,43 @@ import { useState, useEffect } from "react";
 import { Card, CardBody, Link } from "@heroui/react";
 import { ComprehensiveSummary } from "@/types/summary";
 import SubscribeForm from "@/components/SubscribeForm";
+import { useConfig } from "@/app/providers";
 
 export default function Home() {
+  const { apiUrl } = useConfig();
   const [approvedSummary, setApprovedSummary] = useState<ComprehensiveSummary | null>(null);
   const [isFetchingSummary, setIsFetchingSummary] = useState(true);
+  const [summarisedArticles, setSummarisedArticles] = useState<ComprehensiveSummary['sourceArticles']>([]);
 
-  // Fetch approved summary on mount
+  // Fetch published summary on mount
   useEffect(() => {
-    const fetchApprovedSummary = async () => {
+    if (!apiUrl) {
+      console.error("API URL not available");
+      return;
+    }
+    const fetchPublishedSummary = async () => {
       try {
         setIsFetchingSummary(true);
-        const response = await fetch("/api/summaries?status=approved");
 
+        const response = await fetch(`${apiUrl}publish-summary`, {
+          method: "GET",
+          credentials: "include",
+        });
         if (response.ok) {
           const data = await response.json();
-          // Get the daily summary if it's approved
           if (data.summary) {
             setApprovedSummary(data.summary);
+            setSummarisedArticles(data.summary.sourceArticles || []);
           }
         }
       } catch (error) {
-        console.error("Error fetching approved summary:", error);
+        console.error("Error fetching published summary:", error);
       } finally {
         setIsFetchingSummary(false);
       }
     };
-
-    fetchApprovedSummary();
+    fetchPublishedSummary();
   }, []);
-
-  // Sample data for summarised articles
-  const summarisedArticles = [
-    {
-      id: 1,
-      image: "/placeholder-1.jpg",
-      title: "UK 'rapidly developing' plans to respond for war, says defence minister",
-    },
-    {
-      id: 2,
-      image: "/placeholder-2.jpg",
-      title: "Economisation of cost ballast with hiring has announced vehicle hits with a slowing",
-    },
-    {
-      id: 3,
-      image: "/placeholder-3.jpg",
-      title: "British backpacker jailed after being caught with half a tonne of fish",
-    },
-    {
-      id: 4,
-      image: "/placeholder-4.jpg",
-      title: "Last three postage stamps scrapped, new product takes place in Ukraine",
-    },
-  ];
 
 
 
@@ -121,7 +106,7 @@ export default function Home() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {summarisedArticles.map((article, index) => (
             <Card
-              key={article.id}
+              key={index}
               isPressable
               onPress={() => console.log(`Clicked article: ${article.title}`)}
               className="overflow-hidden hover:shadow-xl hover:scale-105 transition-all duration-300 animate-scaleIn"
