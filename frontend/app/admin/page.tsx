@@ -99,16 +99,40 @@ export default function AdminDashboard() {
     }
   };
 
+  // For testing: load hardcoded summary
+  const loadTestSummary = () => {
+    const now = new Date().toISOString();
+    const testSummary = {
+      id: "test-summary-1",
+      summaryText: "Sky News: Major events unfolded today. The UK government announced new defense plans. Economic forecasts remain uncertain. See articles below for details.",
+      sourceArticles: [
+        { title: "UK unveils new defense strategy", url: "https://news.example.com/uk-defense" },
+        { title: "Economic outlook for 2026", url: "https://news.example.com/economy-2026" },
+        { title: "Technology trends to watch", url: "https://news.example.com/tech-trends" },
+      ],
+      status: "pending" as const,
+      createdAt: now,
+      updatedAt: now,
+    };
+    setSummary(testSummary);
+    setEditedSummary(testSummary.summaryText);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center animate-fadeIn">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-400">Loading summary...</p>
+          <button
+            className="mt-6 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            onClick={loadTestSummary}
+          >
+            Load Test Summary
+          </button>
         </div>
       </div>
     );
-  
 }  return (
     <div className="max-w-[1400px] mx-auto px-6 py-8">
       {/* Header */}
