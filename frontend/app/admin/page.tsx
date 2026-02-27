@@ -124,12 +124,6 @@ export default function AdminDashboard() {
         <div className="text-center animate-fadeIn">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-400">Loading summary...</p>
-          <button
-            className="mt-6 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            onClick={loadTestSummary}
-          >
-            Load Test Summary
-          </button>
         </div>
       </div>
     );
@@ -242,6 +236,12 @@ export default function AdminDashboard() {
             <p className="text-gray-600 dark:text-gray-400 text-lg">
               No pending summary to review
             </p>
+            <button
+              className="mt-6 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              onClick={loadTestSummary}
+            >
+              Load Test Summary
+            </button>
           </CardBody>
         </Card>
       )}
