@@ -63,7 +63,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 		verify(authToken, jwtSecret);
 		jwtVerified = true;
 
-		const key = `published-summary-${new Date().toISOString()}.json`;
+		const key = 'published-summary.json';
 
 		await s3.send(
 			new PutObjectCommand({
