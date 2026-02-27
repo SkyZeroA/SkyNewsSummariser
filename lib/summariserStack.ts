@@ -60,7 +60,7 @@ export class SummariserStack extends Stack {
 
 		const subscribeLambda = new NodejsFunction(this, 'SubscribeLambda', {
 			runtime: lambda.Runtime.NODEJS_20_X,
-			entry: path.resolve('lib/lambdas/subscribe/subscribe.ts'),
+			entry: path.resolve('lib/lambdas/subscribe/sendVerification.ts'),
 			handler: 'handler',
 			depsLockFilePath: path.resolve('pnpm-lock.yaml'),
 			environment: {
@@ -71,7 +71,7 @@ export class SummariserStack extends Stack {
 
 		const verifySubscriptionLambda = new NodejsFunction(this, 'VerifySubscriptionLambda', {
 			runtime: lambda.Runtime.NODEJS_20_X,
-			entry: path.resolve('lib/lambdas/subscribe/verifySubscription.ts'),
+			entry: path.resolve('lib/lambdas/subscribe/subscribe.ts'),
 			handler: 'handler',
 			depsLockFilePath: path.resolve('pnpm-lock.yaml'),
 			environment: {

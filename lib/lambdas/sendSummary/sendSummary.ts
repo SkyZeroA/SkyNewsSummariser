@@ -1,13 +1,10 @@
 import { Handler } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
-import { formatEmailHtml, formatEmailText } from '@lib/lambdas/sendEmail/utils.ts';
-import nodemailer from 'nodemailer';
+import { formatEmailHtml, formatEmailText } from '@lib/lambdas/sendSummary/utils.ts';
+import { sendMail } from '@lib/lambdas/email/utils.ts';
 
 const TABLE_NAME = process.env.SUBSCRIBERS_TABLE!;
-const SMTP_HOST = 'smtp.gmail.com';
-const SMTP_PORT = 465;
-const SMTP_USER = 'skyteam5developer@gmail.com';
 
 const dynamoClient = new DynamoDBClient({});
 const db = DynamoDBDocumentClient.from(dynamoClient);
@@ -15,10 +12,6 @@ const db = DynamoDBDocumentClient.from(dynamoClient);
 export interface SendSummaryOptions {
 	recipients: string[];
 	summary: unknown;
-	smtpHost: string;
-	smtpPort: number;
-	smtpUser: string;
-	smtpPass: string;
 }
 
 interface Subscriber {
@@ -26,37 +19,17 @@ interface Subscriber {
 	status?: string;
 }
 
-export const sendSummaryEmail = async ({
+export const sendSummaryEmails = async ({
 	recipients,
 	summary,
-	smtpHost,
-	smtpPort,
-	smtpUser,
-	smtpPass,
 }: SendSummaryOptions): Promise<{ successful: string[]; failed: { email: string; error: unknown }[] }> => {
-	const transporter = nodemailer.createTransport({
-		host: smtpHost,
-		port: smtpPort,
-		secure: smtpPort === 465,
-		auth: {
-			user: smtpUser,
-			pass: smtpPass,
-		},
-	});
-
 	const html = formatEmailHtml(summary);
 	const text = formatEmailText(summary);
 
 	const results = await Promise.all(
 		recipients.map(async (email) => {
 			try {
-				await transporter.sendMail({
-					from: smtpUser,
-					to: email,
-					subject: 'Sky News Daily Summary',
-					html,
-					text,
-				});
+				await sendMail(email, 'Sky News Daily Summary', text, html);
 				return { email, success: true };
 			} catch (error) {
 				return { email, success: false, error };
@@ -114,13 +87,9 @@ export const handler: Handler = async (event) => {
 		}
 
 		// Send emails to all active subscribers
-		const { successful, failed } = await sendSummaryEmail({
+		const { successful, failed } = await sendSummaryEmails({
 			recipients: subscribers.filter((s) => !s.status || s.status === 'active').map((s) => s.email),
 			summary: event,
-			smtpHost: SMTP_HOST,
-			smtpPort: SMTP_PORT,
-			smtpUser: SMTP_USER,
-			smtpPass: process.env.APP_PASSWORD!,
 		});
 
 		return {

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { Context } from 'aws-lambda';
 
 // Hoist mock functions and environment setup so they're available during vi.mock() hoisting
-const { mockSend, mockSendMail } = vi.hoisted(() => {
+const { mockSend, mockSendMail, mockFormatEmailHtml, mockFormatEmailText } = vi.hoisted(() => {
 	// Set environment variables even before mocks are processed
 	process.env.SUBSCRIBERS_TABLE = 'test-subscribers-table';
 	process.env.APP_PASSWORD = 'test-app-password';
@@ -10,6 +10,8 @@ const { mockSend, mockSendMail } = vi.hoisted(() => {
 	return {
 		mockSend: vi.fn(),
 		mockSendMail: vi.fn(),
+		mockFormatEmailHtml: vi.fn(() => '<html>formatted</html>'),
+		mockFormatEmailText: vi.fn(() => 'formatted'),
 	};
 });
 
@@ -26,22 +28,16 @@ vi.mock('@aws-sdk/lib-dynamodb', () => ({
 	ScanCommand: vi.fn((params) => params),
 }));
 
-// Mock nodemailer
-vi.mock('nodemailer', () => ({
-	default: {
-		createTransport: vi.fn(() => ({
-			sendMail: mockSendMail,
-		})),
-	},
+vi.mock('@lib/lambdas/email/utils.ts', () => ({
+	sendMail: mockSendMail,
 }));
 
-// Mock utils
-vi.mock('@lib/lambdas/sendEmail/utils.ts', () => ({
-	formatEmailHtml: vi.fn((summary) => `<html>HTML for ${JSON.stringify(summary)}</html>`),
-	formatEmailText: vi.fn((summary) => `Text for ${JSON.stringify(summary)}`),
+vi.mock('@lib/lambdas/sendSummary/utils.ts', () => ({
+	formatEmailHtml: mockFormatEmailHtml,
+	formatEmailText: mockFormatEmailText,
 }));
 
-import { handler } from '@lib/lambdas/sendEmail/sendEmail.ts';
+import { handler } from '@lib/lambdas/sendSummary/sendSummary.ts';
 
 describe('handler', () => {
 	let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
@@ -75,7 +71,7 @@ describe('handler', () => {
 			Items: mockSubscribers,
 		});
 
-		mockSendMail.mockResolvedValue({ messageId: 'test-message-id' });
+		mockSendMail.mockResolvedValue(undefined);
 
 		const event = {
 			summaryText: 'Breaking news summary',
@@ -92,6 +88,7 @@ describe('handler', () => {
 		expect(body.failed).toHaveLength(0);
 
 		expect(mockSendMail).toHaveBeenCalledTimes(2);
+		expect(mockSendMail).toHaveBeenCalledWith('user1@example.com', 'Sky News Daily Summary', 'formatted', '<html>formatted</html>');
 	});
 
 	it('should handle event.summaryText format', async () => {
@@ -99,7 +96,7 @@ describe('handler', () => {
 			Items: [{ email: 'user@example.com' }],
 		});
 
-		mockSendMail.mockResolvedValue({ messageId: 'test-message-id' });
+		mockSendMail.mockResolvedValue(undefined);
 
 		const event = {
 			summaryText: 'Test summary',
@@ -166,7 +163,7 @@ describe('handler', () => {
 			Items: [{ email: 'user1@example.com' }, { email: 'user2@example.com' }],
 		});
 
-		mockSendMail.mockResolvedValueOnce({ messageId: 'success-id' }).mockRejectedValueOnce(new Error('SMTP Error'));
+		mockSendMail.mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('SMTP Error'));
 
 		const event = {
 			summaryText: 'Test',

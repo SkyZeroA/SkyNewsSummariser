@@ -1,47 +1,31 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { APIGatewayProxyEvent, Context } from 'aws-lambda';
 
-// Hoist mock functions and environment setup so they're available during vi.mock() hoisting
-const { mockSend, mockBuildCorsHeaders, mockHandlePreflight, mockSendMail, mockCreateTransport } = vi.hoisted(() => {
-	// Set environment variables even before mocks are processed
-	process.env.SUBSCRIBERS_TABLE = 'test-subscribers-table';
+const { mockBuildCorsHeaders, mockHandlePreflight, mockSendMail, mockSignVerificationToken } = vi.hoisted(() => {
 	process.env.APP_PASSWORD = 'test-app-password';
 	process.env.VERIFICATION_SECRET = 'test-verification-secret';
-
 	return {
-		mockSend: vi.fn(),
 		mockBuildCorsHeaders: vi.fn(),
 		mockHandlePreflight: vi.fn(),
 		mockSendMail: vi.fn(),
-		mockCreateTransport: vi.fn(),
+		mockSignVerificationToken: vi.fn(() => 'test-token'),
 	};
 });
-
-vi.mock('@aws-sdk/client-dynamodb', () => ({
-	DynamoDBClient: vi.fn(() => ({})),
-}));
-
-vi.mock('@aws-sdk/lib-dynamodb', () => ({
-	DynamoDBDocumentClient: {
-		from: vi.fn(() => ({
-			send: mockSend,
-		})),
-	},
-	UpdateCommand: vi.fn((params) => params),
-}));
-
-vi.mock('nodemailer', () => ({
-	default: {
-		createTransport: mockCreateTransport,
-	},
-}));
 
 vi.mock('@lib/lambdas/utils.ts', () => ({
 	buildCorsHeaders: mockBuildCorsHeaders,
 	handlePreflight: mockHandlePreflight,
 }));
 
-import { handler } from '@lib/lambdas/subscribe/subscribe.ts';
+vi.mock('@lib/lambdas/email/utils.ts', () => ({
+	sendMail: mockSendMail,
+}));
+
+vi.mock('@lib/lambdas/subscribe/verificationToken.ts', () => ({
+	signVerificationToken: mockSignVerificationToken,
+}));
+
+import { handler } from '@lib/lambdas/subscribe/sendVerification.ts';
 
 describe('subscribe handler', () => {
 	let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
@@ -75,10 +59,10 @@ describe('subscribe handler', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		process.env.VERIFICATION_SECRET = 'test-verification-secret';
-		mockCreateTransport.mockReturnValue({
-			sendMail: mockSendMail,
-		});
+		process.env.APP_PASSWORD = 'test-app-password';
 		mockSendMail.mockResolvedValue(undefined);
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date('2026-02-27T12:00:00.000Z'));
 		consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 		consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 	});
@@ -86,6 +70,7 @@ describe('subscribe handler', () => {
 	afterEach(() => {
 		consoleWarnSpy.mockRestore();
 		consoleErrorSpy.mockRestore();
+		vi.useRealTimers();
 	});
 
 	describe('OPTIONS requests (CORS preflight)', () => {
@@ -221,15 +206,16 @@ describe('subscribe handler', () => {
 					message: 'Verification email sent. Please confirm to activate your subscription.',
 				}),
 			});
-			expect(mockCreateTransport).toHaveBeenCalled();
-			expect(mockSendMail).toHaveBeenCalledWith(
-				expect.objectContaining({
-					to: 'test@example.com',
-					subject: expect.stringContaining('Confirm'),
-					text: expect.stringMatching(/subscribe\/verify\?token=/),
-				})
+			expect(mockSignVerificationToken).toHaveBeenCalledWith(
+				expect.objectContaining({ email: 'test@example.com' }),
+				'test-verification-secret'
 			);
-			expect(mockSend).not.toHaveBeenCalled();
+			expect(mockSendMail).toHaveBeenCalledWith(
+				'test@example.com',
+				expect.stringContaining('Confirm'),
+				expect.stringMatching(/subscribe\/verify\?token=test-token/),
+				expect.stringContaining('subscribe/verify')
+			);
 		});
 
 		it('should normalize email (lowercase)', async () => {
@@ -241,12 +227,7 @@ describe('subscribe handler', () => {
 
 			expect(result).toBeDefined();
 			expect(result!.statusCode).toBe(202);
-			expect(mockSend).not.toHaveBeenCalled();
-			expect(mockSendMail).toHaveBeenCalledWith(
-				expect.objectContaining({
-					to: 'test@example.com',
-				})
-			);
+			expect(mockSendMail).toHaveBeenCalledWith('test@example.com', expect.any(String), expect.any(String), expect.any(String));
 		});
 	});
 
@@ -288,6 +269,37 @@ describe('subscribe handler', () => {
 				body: JSON.stringify({ error: 'Internal server error' }),
 			});
 			expect(consoleErrorSpy).toHaveBeenCalledWith('Subscribe error:', expect.any(Error));
+		});
+
+		it('should return 500 when APP_PASSWORD is missing', async () => {
+			delete process.env.APP_PASSWORD;
+			const event = createMockEvent({
+				body: JSON.stringify({ email: 'test@example.com' }),
+			});
+
+			const result = await handler(event, mockContext, mockCallback);
+
+			expect(result).toEqual({
+				statusCode: 500,
+				headers: corsHeaders,
+				body: JSON.stringify({ error: 'Internal server error' }),
+			});
+		});
+
+		it('should return 500 when base URL cannot be determined', async () => {
+			const event = createMockEvent({
+				body: JSON.stringify({ email: 'test@example.com' }),
+				headers: {},
+				requestContext: { stage: 'prod' } as unknown as APIGatewayProxyEvent['requestContext'],
+			});
+
+			const result = await handler(event, mockContext, mockCallback);
+
+			expect(result).toEqual({
+				statusCode: 500,
+				headers: corsHeaders,
+				body: JSON.stringify({ error: 'Server configuration error' }),
+			});
 		});
 	});
 });
