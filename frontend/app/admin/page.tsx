@@ -99,25 +99,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // For testing: load hardcoded summary
-  const loadTestSummary = () => {
-    const now = new Date().toISOString();
-    const testSummary = {
-      id: "test-summary-1",
-      summaryText: "Sky News: Major events unfolded today. The UK government announced new defense plans. Economic forecasts remain uncertain. See articles below for details.",
-      sourceArticles: [
-        { title: "UK unveils new defense strategy", url: "https://news.example.com/uk-defense" },
-        { title: "Economic outlook for 2026", url: "https://news.example.com/economy-2026" },
-        { title: "Technology trends to watch", url: "https://news.example.com/tech-trends" },
-      ],
-      status: "pending" as const,
-      createdAt: now,
-      updatedAt: now,
-    };
-    setSummary(testSummary);
-    setEditedSummary(testSummary.summaryText);
-  };
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -236,12 +217,6 @@ export default function AdminDashboard() {
             <p className="text-gray-600 dark:text-gray-400 text-lg">
               No pending summary to review
             </p>
-            <button
-              className="mt-6 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              onClick={loadTestSummary}
-            >
-              Load Test Summary
-            </button>
           </CardBody>
         </Card>
       )}

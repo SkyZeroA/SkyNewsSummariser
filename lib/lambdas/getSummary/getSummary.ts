@@ -18,11 +18,6 @@ const streamToString = (body: unknown): Promise<string> => {
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
 	const { BUCKET_NAME, SUMMARY_KEY } = process.env;
-	console.log('getSummary lambda invoked');
-	console.log('HTTP Method:', event.httpMethod);
-	console.log('Headers:', JSON.stringify(event.headers));
-	console.log('BUCKET_NAME:', BUCKET_NAME);
-	console.log('SUMMARY_KEY:', SUMMARY_KEY);
 
 	if (event.httpMethod === 'OPTIONS') {
 		return handlePreflight(event);
@@ -85,11 +80,9 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 	const s3 = new S3Client({});
 	let jwtVerified = false;
 	try {
-		console.log('Verifying JWT...');
 		verify(authToken, jwtSecret);
 		jwtVerified = true;
 
-		console.log('Fetching summary from S3:', BUCKET_NAME, SUMMARY_KEY);
 		const response = await s3.send(
 			new GetObjectCommand({
 				Bucket: BUCKET_NAME,
@@ -97,13 +90,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 			})
 		);
 
-		console.log('S3 response received:', {
-			LastModified: response.LastModified,
-			ETag: response.ETag,
-		});
-
 		const text = await streamToString(response.Body);
-		console.log('Raw summary text:', text);
 		const parsed = text ? (JSON.parse(text) as { summaryText?: string; sourceArticles?: { title: string; url: string }[] }) : null;
 
 		const lastModified = response.LastModified?.toISOString() ?? new Date().toISOString();
