@@ -2,6 +2,7 @@ import type { APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResul
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { verify } from 'jsonwebtoken';
+import { handlePreflight } from '../utils.ts';
 
 const TABLE_NAME = process.env.SUBSCRIBERS_TABLE!;
 
@@ -36,17 +37,8 @@ interface UnsubscribeTokenPayload {
 }
 
 export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-	// Email clients will generally do a plain GET with no CORS headers.
 	if (event.httpMethod === 'OPTIONS') {
-		return {
-			statusCode: 204,
-			headers: {
-				'Access-Control-Allow-Origin': '*',
-				'Access-Control-Allow-Methods': 'GET,OPTIONS',
-				'Access-Control-Allow-Headers': 'Content-Type',
-			},
-			body: '',
-		};
+		return handlePreflight(event);
 	}
 
 	const jwtSecret = process.env.JWT_SECRET;
@@ -71,34 +63,46 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 		});
 	}
 
-	let email: string | undefined = undefined;
+	let decoded: UnsubscribeTokenPayload | undefined = undefined;
 	try {
-		const decoded = verify(token, jwtSecret) as UnsubscribeTokenPayload;
-		if (decoded?.action !== 'unsubscribe') {
-			return htmlResponse({
-				statusCode: 400,
-				body: renderPage({
-					title: 'Unsubscribe',
-					message: 'Invalid unsubscribe token.',
-				}),
-			});
-		}
-		email = decoded?.email;
-		if (!email) {
-			return htmlResponse({
-				statusCode: 400,
-				body: renderPage({
-					title: 'Unsubscribe',
-					message: 'Invalid unsubscribe token (missing email).',
-				}),
-			});
-		}
+		decoded = verify(token, jwtSecret) as UnsubscribeTokenPayload;
 	} catch {
 		return htmlResponse({
 			statusCode: 400,
 			body: renderPage({
 				title: 'Unsubscribe',
-				message: 'Unsubscribe link is invalid or expired.',
+				message: 'Invalid or expired unsubscribe token.',
+			}),
+		});
+	}
+
+	if (!decoded) {
+		return htmlResponse({
+			statusCode: 400,
+			body: renderPage({
+				title: 'Unsubscribe',
+				message: 'Invalid or expired unsubscribe token.',
+			}),
+		});
+	}
+
+	if (decoded?.action !== 'unsubscribe') {
+		return htmlResponse({
+			statusCode: 400,
+			body: renderPage({
+				title: 'Unsubscribe',
+				message: 'Invalid unsubscribe token.',
+			}),
+		});
+	}
+
+	const email = decoded?.email;
+	if (!email) {
+		return htmlResponse({
+			statusCode: 400,
+			body: renderPage({
+				title: 'Unsubscribe',
+				message: 'Invalid unsubscribe token (missing email).',
 			}),
 		});
 	}
