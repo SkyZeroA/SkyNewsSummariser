@@ -10,7 +10,7 @@ export default function Home() {
   const { apiUrl } = useConfig();
   const [approvedSummary, setApprovedSummary] = useState<ComprehensiveSummary | null>(null);
   const [isFetchingSummary, setIsFetchingSummary] = useState(true);
-  const [summarisedArticles, setSummarisedArticles] = useState<ComprehensiveSummary['sourceArticles']>([]);
+  const [sourceArticles, setSourceArticles] = useState<ComprehensiveSummary['sourceArticles']>([]);
 
   // Fetch published summary on mount
   useEffect(() => {
@@ -30,7 +30,7 @@ export default function Home() {
           const data = await response.json();
           if (data.summary) {
             setApprovedSummary(data.summary);
-            setSummarisedArticles(data.summary.sourceArticles || []);
+            setSourceArticles(data.summary.sourceArticles || []);
           }
         }
       } catch (error) {
@@ -67,13 +67,13 @@ export default function Home() {
               </div>
 
               {/* Source Articles Links */}
-              {approvedSummary.sourceArticles.length > 0 && (
+              {sourceArticles.length > 0 && (
                 <div className="pt-4 border-t border-gray-200 dark:border-gray-700 animate-slideUp" style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
                   <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
                     Source Articles:
                   </h3>
                   <div className="flex flex-wrap gap-2">
-                    {approvedSummary.sourceArticles.map((article, index) => (
+                    {sourceArticles.map((article, index) => (
                       <Link
                         key={index}
                         href={article.url}
@@ -104,7 +104,7 @@ export default function Home() {
           Summarised Articles
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {summarisedArticles.map((article, index) => (
+          {sourceArticles.map((article, index) => (
             <Card
               key={index}
               isPressable
