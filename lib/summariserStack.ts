@@ -138,7 +138,15 @@ export class SummariserStack extends Stack {
 			})
 		);
 
-		const summaryBucket = new Bucket(this, 'SummaryBucket', {
+		const draftSummaryBucket = new Bucket(this, 'DraftSummaryBucket', {
+			publicReadAccess: false,
+			blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
+			removalPolicy: RemovalPolicy.DESTROY,
+			autoDeleteObjects: true,
+			enforceSSL: true,
+		});
+
+		const publishedSummaryBucket = new Bucket(this, 'PublishedSummaryBucket', {
 			publicReadAccess: false,
 			blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
 			removalPolicy: RemovalPolicy.DESTROY,
@@ -149,13 +157,28 @@ export class SummariserStack extends Stack {
 		const getDraftSummaryLambda = new NodejsFunction(this, 'GetDraftSummaryLambda', {
 			runtime: lambda.Runtime.NODEJS_22_X,
 			handler: 'handler',
-			entry: path.resolve('lib/lambdas/getDraftSummary/getDraftSummary.ts'),
+			entry: path.resolve('lib/lambdas/getSummary/getSummary.ts'),
 			depsLockFilePath: path.resolve('pnpm-lock.yaml'),
 			timeout: Duration.minutes(1),
 			memorySize: 512,
 			environment: {
 				JWT_SECRET: process.env.JWT_SECRET ?? '',
-				DRAFT_SUMMARY_BUCKET_NAME: summaryBucket.bucketName,
+				BUCKET_NAME: draftSummaryBucket.bucketName,
+				SUMMARY_KEY: 'draft-summary.json',
+			},
+		});
+
+		const getPublishedSummaryLambda = new NodejsFunction(this, 'GetPublishedSummaryLambda', {
+			runtime: lambda.Runtime.NODEJS_22_X,
+			handler: 'handler',
+			entry: path.resolve('lib/lambdas/getSummary/getSummary.ts'),
+			depsLockFilePath: path.resolve('pnpm-lock.yaml'),
+			timeout: Duration.minutes(1),
+			memorySize: 512,
+			environment: {
+				JWT_SECRET: process.env.JWT_SECRET ?? '',
+				BUCKET_NAME: publishedSummaryBucket.bucketName,
+				SUMMARY_KEY: 'published-summary.json',
 			},
 		});
 
@@ -168,7 +191,7 @@ export class SummariserStack extends Stack {
 			memorySize: 1024,
 			environment: {
 				HUGGINGFACE_API_KEY: process.env.HUGGINGFACE_API_KEY ?? '',
-				DRAFT_SUMMARY_BUCKET_NAME: summaryBucket.bucketName,
+				DRAFT_SUMMARY_BUCKET_NAME: draftSummaryBucket.bucketName,
 			},
 		});
 
@@ -202,11 +225,11 @@ export class SummariserStack extends Stack {
 		// Allow fetch lambda to invoke summarise lambda
 		summariseLambda.grantInvoke(fetchLambda);
 
-		// Allow summarise lambda to write to the summary bucket
-		summaryBucket.grantWrite(summariseLambda);
+		// Allow summarise lambda to write to the draft summary bucket
+		draftSummaryBucket.grantWrite(summariseLambda);
 
 		// Allow API lambdas to read/update the latest draft summary
-		summaryBucket.grantRead(getDraftSummaryLambda);
+		draftSummaryBucket.grantRead(getDraftSummaryLambda);
 
 		// Summary endpoints
 		const draftSummaryResource = restApi.root.addResource('draft-summary');
@@ -219,6 +242,49 @@ export class SummariserStack extends Stack {
 		draftSummaryResource.addMethod(
 			'OPTIONS',
 			new LambdaIntegration(getDraftSummaryLambda, {
+				proxy: true,
+			})
+		);
+
+		const publishSummaryLambda = new NodejsFunction(this, 'PublishSummaryLambda', {
+			runtime: lambda.Runtime.NODEJS_22_X,
+			handler: 'handler',
+			entry: path.resolve('lib/lambdas/publishSummary/publishSummary.ts'),
+			depsLockFilePath: path.resolve('pnpm-lock.yaml'),
+			timeout: Duration.minutes(5),
+			memorySize: 1024,
+			environment: {
+				JWT_SECRET: process.env.JWT_SECRET ?? '',
+				PUBLISHED_SUMMARY_BUCKET_NAME: publishedSummaryBucket.bucketName,
+				SEND_EMAIL_LAMBDA_NAME: sendEmailLambda.functionName,
+			},
+		});
+
+		// Allow publish summary lambda to invoke send email lambda
+		sendEmailLambda.grantInvoke(publishSummaryLambda);
+
+		// Allow publish summary lambda to write to the published summary bucket
+		publishedSummaryBucket.grantWrite(publishSummaryLambda);
+
+		// Allow API lambdas to read the latest published summary
+		publishedSummaryBucket.grantRead(getPublishedSummaryLambda);
+
+		const publishSummaryResource = restApi.root.addResource('publish-summary');
+		publishSummaryResource.addMethod(
+			'GET',
+			new LambdaIntegration(getPublishedSummaryLambda, {
+				proxy: true,
+			})
+		);
+		publishSummaryResource.addMethod(
+			'POST',
+			new LambdaIntegration(publishSummaryLambda, {
+				proxy: true,
+			})
+		);
+		publishSummaryResource.addMethod(
+			'OPTIONS',
+			new LambdaIntegration(publishSummaryLambda, {
 				proxy: true,
 			})
 		);

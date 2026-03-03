@@ -3,7 +3,7 @@ interface SourceArticle {
 	url: string;
 }
 
-interface Summary {
+export interface Summary {
 	summaryText?: string;
 	sourceArticles?: unknown[];
 }
