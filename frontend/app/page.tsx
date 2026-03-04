@@ -5,6 +5,7 @@ import { Card, CardBody, Link } from "@heroui/react";
 import { ComprehensiveSummary } from "@/types/summary";
 import SubscribeForm from "@/components/SubscribeForm";
 import { useConfig } from "@/app/providers";
+import { SummarySkeleton, ArticleGridSkeleton } from "@/components/SkeletonLoader";
 
 export default function Home() {
   const { apiUrl } = useConfig();
@@ -40,7 +41,7 @@ export default function Home() {
       }
     };
     fetchPublishedSummary();
-  }, []);
+  }, [apiUrl]);
 
 
 
@@ -52,13 +53,9 @@ export default function Home() {
           Summary
         </h1>
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold mb-3">Yesterday's News</h2>
+          <h2 className="text-xl font-semibold mb-3">Yesterday&apos;s News</h2>
 
-          {isFetchingSummary && (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            </div>
-          )}
+          {isFetchingSummary && <SummarySkeleton />}
 
           {!isFetchingSummary && approvedSummary && (
             <div className="space-y-4">
@@ -103,36 +100,41 @@ export default function Home() {
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 uppercase tracking-wide">
           Summarised Articles
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {sourceArticles.map((article, index) => (
-            <Card
-              key={index}
-              isPressable
-              onPress={() => console.log(`Clicked article: ${article.title}`)}
-              className="overflow-hidden hover:shadow-xl hover:scale-105 transition-all duration-300 animate-scaleIn"
-              style={{ animationDelay: `${0.3 + index * 0.1}s`, animationFillMode: 'both' }}
-            >
-              <CardBody className="p-0">
-                <div className="relative w-full h-48 bg-gray-200 dark:bg-gray-700 overflow-hidden">
-                  <div className="absolute inset-0 flex items-center justify-center text-gray-400 transition-transform duration-300 hover:scale-110">
-                    Image placeholder
+
+        {isFetchingSummary && <ArticleGridSkeleton count={4} />}
+
+        {!isFetchingSummary && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {sourceArticles.map((article, index) => (
+              <Card
+                key={index}
+                isPressable
+                onPress={() => console.log(`Clicked article: ${article.title}`)}
+                className="overflow-hidden hover:shadow-xl hover:scale-105 transition-all duration-300 animate-scaleIn"
+                style={{ animationDelay: `${0.3 + index * 0.1}s`, animationFillMode: 'both' }}
+              >
+                <CardBody className="p-0">
+                  <div className="relative w-full h-48 bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                    <div className="absolute inset-0 flex items-center justify-center text-gray-400 transition-transform duration-300 hover:scale-110">
+                      Image placeholder
+                    </div>
                   </div>
-                </div>
-                <div className="p-4">
-                  <p className="text-sm text-gray-900 dark:text-white line-clamp-3">
-                    {article.title}
-                  </p>
-                </div>
-              </CardBody>
-            </Card>
-          ))}
-        </div>
+                  <div className="p-4">
+                    <p className="text-sm text-gray-900 dark:text-white line-clamp-3">
+                      {article.title}
+                    </p>
+                  </div>
+                </CardBody>
+              </Card>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Email Subscription Section */}
       <div className="mt-8">
         <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-3 text-center">Want this delivered daily?</h2>
-        <p className="text-gray-700 dark:text-gray-300 mb-4 text-center">Enter your email below to receive a summary of yesterdays news in your inbox every morning.</p>
+        <p className="text-gray-700 dark:text-gray-300 mb-4 text-center">Enter your email below to receive a summary of yesterday&apos;s news in your inbox every morning.</p>
         <SubscribeForm />
       </div>
 
