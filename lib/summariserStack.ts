@@ -98,6 +98,7 @@ export class SummariserStack extends Stack {
 		const verifyResource = authResource.addResource('verify');
 		const subscribeResource = restApi.root.addResource('subscribe');
 		const unsubscribeResource = restApi.root.addResource('unsubscribe');
+		const languageResource = restApi.root.addResource('language');
 		const subscribeVerifyResource = subscribeResource.addResource('verify');
 
 		loginResource.addMethod(
@@ -191,6 +192,39 @@ export class SummariserStack extends Stack {
 		unsubscribeResource.addMethod(
 			'OPTIONS',
 			new LambdaIntegration(unsubscribeLambda, {
+				proxy: true,
+			})
+		);
+
+		const changeLanguageLambda = new NodejsFunction(this, 'ChangeLanguageLambda', {
+			runtime: lambda.Runtime.NODEJS_22_X,
+			handler: 'handler',
+			entry: path.resolve('lib/lambdas/changeLanguage/changeLanguage.ts'),
+			depsLockFilePath: path.resolve('pnpm-lock.yaml'),
+			timeout: Duration.minutes(1),
+			memorySize: 512,
+			environment: {
+				SUBSCRIBERS_TABLE: subscribersTable.tableName,
+				JWT_SECRET: process.env.JWT_SECRET ?? '',
+			},
+		});
+		subscribersTable.grantWriteData(changeLanguageLambda);
+
+		languageResource.addMethod(
+			'GET',
+			new LambdaIntegration(changeLanguageLambda, {
+				proxy: true,
+			})
+		);
+		languageResource.addMethod(
+			'POST',
+			new LambdaIntegration(changeLanguageLambda, {
+				proxy: true,
+			})
+		);
+		languageResource.addMethod(
+			'OPTIONS',
+			new LambdaIntegration(changeLanguageLambda, {
 				proxy: true,
 			})
 		);

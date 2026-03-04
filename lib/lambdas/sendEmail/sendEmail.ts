@@ -58,8 +58,13 @@ export const sendSummaryEmail = async ({
 				});
 				const unsubscribeUrl = `${apiBaseUrl}/unsubscribe?token=${encodeURIComponent(token)}`;
 
-				const html = formatEmailHtml(summary, unsubscribeUrl);
-				const text = formatEmailText(summary, unsubscribeUrl);
+				const changeLanguageToken = sign({ email, action: 'change-language' }, jwtSecret, {
+					expiresIn: '180d',
+				});
+				const changeLanguageUrl = `${apiBaseUrl}/language?token=${encodeURIComponent(changeLanguageToken)}`;
+
+				const html = formatEmailHtml(summary, unsubscribeUrl, changeLanguageUrl);
+				const text = formatEmailText(summary, unsubscribeUrl, changeLanguageUrl);
 
 				await transporter.sendMail({
 					from: smtpUser,

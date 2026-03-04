@@ -8,7 +8,7 @@ export interface Summary {
 	sourceArticles?: unknown[];
 }
 
-export const formatEmailHtml = (summary: unknown, unsubscribeUrl?: string): string => {
+export const formatEmailHtml = (summary: unknown, unsubscribeUrl?: string, changeLanguageUrl?: string): string => {
 	const summaryData = summary as Summary;
 	const summaryText = summaryData.summaryText || '';
 	const allArticles = summaryData.sourceArticles || [];
@@ -61,6 +61,7 @@ export const formatEmailHtml = (summary: unknown, unsubscribeUrl?: string): stri
 	<div class="footer">
 		<p>You are receiving this email because you subscribed to Sky News Summariser.</p>
 		${unsubscribeUrl ? `<p><a href="${unsubscribeUrl}">Unsubscribe</a></p>` : ''}
+		${changeLanguageUrl ? `<p><a href="${changeLanguageUrl}">Change language</a></p>` : ''}
 		<p>© ${new Date().getFullYear()} Sky News Summariser. All rights reserved.</p>
 	</div>
 </body>
@@ -71,7 +72,7 @@ export const formatEmailHtml = (summary: unknown, unsubscribeUrl?: string): stri
 };
 
 // Format the summary as plain text email
-export const formatEmailText = (summary: unknown, unsubscribeUrl?: string): string => {
+export const formatEmailText = (summary: unknown, unsubscribeUrl?: string, changeLanguageUrl?: string): string => {
 	const summaryData = summary as Summary;
 	const summaryText = summaryData.summaryText || '';
 	const allArticles = summaryData.sourceArticles || [];
@@ -103,6 +104,9 @@ export const formatEmailText = (summary: unknown, unsubscribeUrl?: string): stri
 	text += `You are receiving this email because you subscribed to Sky News Summariser.\n`;
 	if (unsubscribeUrl) {
 		text += `Unsubscribe: ${unsubscribeUrl}\n`;
+	}
+	if (changeLanguageUrl) {
+		text += `Change language: ${changeLanguageUrl}\n`;
 	}
 	text += `© ${new Date().getFullYear()} Sky News Summariser. All rights reserved.\n`;
 

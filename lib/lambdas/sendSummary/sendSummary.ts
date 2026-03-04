@@ -221,8 +221,13 @@ export const sendSummaryEmails = async ({
 					});
 					const unsubscribeUrl = `${apiBaseUrl}/unsubscribe?token=${encodeURIComponent(token)}`;
 
-					const html = formatEmailHtml(summaryForEmail, unsubscribeUrl);
-					const text = formatEmailText(summaryForEmail, unsubscribeUrl);
+					const changeLanguageToken = sign({ email, action: 'change-language' }, jwtSecret, {
+						expiresIn: '180d',
+					});
+					const changeLanguageUrl = `${apiBaseUrl}/language?token=${encodeURIComponent(changeLanguageToken)}`;
+
+					const html = formatEmailHtml(summaryForEmail, unsubscribeUrl, changeLanguageUrl);
+					const text = formatEmailText(summaryForEmail, unsubscribeUrl, changeLanguageUrl);
 
 					await sendMail(email, 'Sky News Daily Summary', text, html);
 					return { email, success: true };
