@@ -6,6 +6,8 @@ import * as path from 'node:path';
 import { LambdaIntegration, RestApi } from 'aws-cdk-lib/aws-apigateway';
 import { Table, AttributeType, BillingMode } from 'aws-cdk-lib/aws-dynamodb';
 import { Bucket, BlockPublicAccess } from 'aws-cdk-lib/aws-s3';
+import * as events from 'aws-cdk-lib/aws-events';
+import * as targets from 'aws-cdk-lib/aws-events-targets';
 
 export interface SummariserStackProps extends StackProps {
 	stage: string;
@@ -252,6 +254,16 @@ export class SummariserStack extends Stack {
 				CHARTBEAT_API_KEY: process.env.CHARTBEAT_API_KEY ?? '',
 				SUMMARISE_LAMBDA_NAME: summariseLambda.functionName,
 			},
+		});
+
+		// Run the fetch + normalise workflow every day at 06:00 (EventBridge schedules are UTC by default)
+		new events.Rule(this, 'FetchAndNormaliseDailyRule', {
+			description: 'Triggers FetchAndNormaliseLambda daily at 06:00 UTC',
+			schedule: events.Schedule.cron({
+				minute: '10',
+				hour: '11',
+			}),
+			targets: [new targets.LambdaFunction(fetchLambda)],
 		});
 
 		const sendEmailLambda = new NodejsFunction(this, 'SendSummaryEmailLambda', {
