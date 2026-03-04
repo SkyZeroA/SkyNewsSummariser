@@ -60,15 +60,27 @@ export class SummariserStack extends Stack {
 
 		const subscribeLambda = new NodejsFunction(this, 'SubscribeLambda', {
 			runtime: lambda.Runtime.NODEJS_20_X,
+			entry: path.resolve('lib/lambdas/subscribe/sendVerification.ts'),
+			handler: 'handler',
+			depsLockFilePath: path.resolve('pnpm-lock.yaml'),
+			environment: {
+				APP_PASSWORD: process.env.APP_PASSWORD ?? '',
+				VERIFICATION_SECRET: process.env.VERIFICATION_SECRET ?? '',
+			},
+		});
+
+		const verifySubscriptionLambda = new NodejsFunction(this, 'VerifySubscriptionLambda', {
+			runtime: lambda.Runtime.NODEJS_20_X,
 			entry: path.resolve('lib/lambdas/subscribe/subscribe.ts'),
 			handler: 'handler',
 			depsLockFilePath: path.resolve('pnpm-lock.yaml'),
 			environment: {
 				SUBSCRIBERS_TABLE: subscribersTable.tableName,
+				VERIFICATION_SECRET: process.env.VERIFICATION_SECRET ?? '',
 			},
 		});
 
-		subscribersTable.grantWriteData(subscribeLambda);
+		subscribersTable.grantWriteData(verifySubscriptionLambda);
 
 		const restApi = new RestApi(this, 'RestApi', {
 			restApiName: `api-${props.stage}`,
@@ -83,6 +95,7 @@ export class SummariserStack extends Stack {
 		const verifyResource = authResource.addResource('verify');
 		const subscribeResource = restApi.root.addResource('subscribe');
 		const unsubscribeResource = restApi.root.addResource('unsubscribe');
+		const subscribeVerifyResource = subscribeResource.addResource('verify');
 
 		loginResource.addMethod(
 			'POST',
@@ -139,6 +152,19 @@ export class SummariserStack extends Stack {
 			})
 		);
 
+		subscribeVerifyResource.addMethod(
+			'GET',
+			new LambdaIntegration(verifySubscriptionLambda, {
+				proxy: true,
+			})
+		);
+		subscribeVerifyResource.addMethod(
+			'OPTIONS',
+			new LambdaIntegration(verifySubscriptionLambda, {
+				proxy: true,
+			})
+		);
+
 		const unsubscribeLambda = new NodejsFunction(this, 'UnsubscribeLambda', {
 			runtime: lambda.Runtime.NODEJS_22_X,
 			handler: 'handler',
@@ -166,7 +192,6 @@ export class SummariserStack extends Stack {
 			})
 		);
 
-		// Single bucket for both draft + published summaries (separate object keys)
 		const summaryBucket = new Bucket(this, 'SummaryBucket', {
 			publicReadAccess: false,
 			blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
@@ -232,7 +257,7 @@ export class SummariserStack extends Stack {
 		const sendEmailLambda = new NodejsFunction(this, 'SendSummaryEmailLambda', {
 			runtime: lambda.Runtime.NODEJS_22_X,
 			handler: 'handler',
-			entry: path.resolve('lib/lambdas/sendEmail/sendEmail.ts'),
+			entry: path.resolve('lib/lambdas/sendSummary/sendSummary.ts'),
 			depsLockFilePath: path.resolve('pnpm-lock.yaml'),
 			timeout: Duration.minutes(5),
 			memorySize: 1024,

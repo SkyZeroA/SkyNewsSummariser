@@ -15,7 +15,7 @@
   "BuildComputeType": "MEDIUM",
   "Image": "aws/codebuild/standard:7.0",
   "BuildTimeout": "60",
-  "ParameterARNs": "arn:aws:ssm:eu-west-1:887792374450:parameter/summariser/chartbeat-api-key,arn:aws:ssm:eu-west-1:887792374450:parameter/summariser/app-password,arn:aws:ssm:eu-west-1:887792374450:parameter/summariser/jwt-secret,arn:aws:ssm:eu-west-1:887792374450:parameter/pipeline/githubAccessToken",
+  "ParameterARNs": "arn:aws:ssm:eu-west-1:887792374450:parameter/summariser/chartbeat-api-key,arn:aws:ssm:eu-west-1:887792374450:parameter/summariser/huggingface-api-key,arn:aws:ssm:eu-west-1:887792374450:parameter/summariser/app-password,arn:aws:ssm:eu-west-1:887792374450:parameter/summariser/jwt-secret,arn:aws:ssm:eu-west-1:887792374450:parameter/summariser/verification-secret,arn:aws:ssm:eu-west-1:887792374450:parameter/pipeline/githubAccessToken",
   "WriteParameterARNs": "",
   "SecretARNs": "",
   "RoleARNs": "",

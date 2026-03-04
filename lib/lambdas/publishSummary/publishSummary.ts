@@ -2,7 +2,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { verify } from 'jsonwebtoken';
 import { buildCorsHeaders, getAuthToken, handlePreflight } from '@lib/lambdas/utils.ts';
-import { Summary } from '@lib/lambdas/sendEmail/utils.ts';
+import { Summary } from '@lib/lambdas/sendSummary/utils.ts';
 import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
