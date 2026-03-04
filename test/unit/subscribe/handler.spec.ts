@@ -23,7 +23,7 @@ vi.mock('@aws-sdk/lib-dynamodb', () => ({
 			send: mockSend,
 		})),
 	},
-	PutCommand: vi.fn((params) => params),
+	UpdateCommand: vi.fn((params) => params),
 }));
 
 vi.mock('@lib/lambdas/utils.ts', () => ({
@@ -202,11 +202,19 @@ describe('subscribe handler', () => {
 			expect(mockSend).toHaveBeenCalledWith(
 				expect.objectContaining({
 					TableName: 'test-subscribers-table',
-					Item: expect.objectContaining({
+					Key: {
 						email: 'test@example.com',
-						status: 'active',
+					},
+					UpdateExpression: 'SET #status = :active, createdAt = :now',
+					ExpressionAttributeNames: {
+						'#status': 'status',
+					},
+					ExpressionAttributeValues: expect.objectContaining({
+						':active': 'active',
+						':inactive': 'inactive',
+						':now': expect.any(String),
 					}),
-					ConditionExpression: 'attribute_not_exists(email)',
+					ConditionExpression: 'attribute_not_exists(email) OR #status = :inactive',
 				})
 			);
 		});
@@ -222,7 +230,7 @@ describe('subscribe handler', () => {
 			expect(result!.statusCode).toBe(201);
 			expect(mockSend).toHaveBeenCalledWith(
 				expect.objectContaining({
-					Item: expect.objectContaining({
+					Key: expect.objectContaining({
 						email: 'test@example.com',
 					}),
 				})
@@ -238,8 +246,8 @@ describe('subscribe handler', () => {
 
 			expect(mockSend).toHaveBeenCalledWith(
 				expect.objectContaining({
-					Item: expect.objectContaining({
-						createdAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/),
+					ExpressionAttributeValues: expect.objectContaining({
+						':now': expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/),
 					}),
 				})
 			);

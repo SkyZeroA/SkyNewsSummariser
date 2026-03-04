@@ -82,6 +82,7 @@ export class SummariserStack extends Stack {
 		const logoutResource = authResource.addResource('logout');
 		const verifyResource = authResource.addResource('verify');
 		const subscribeResource = restApi.root.addResource('subscribe');
+		const unsubscribeResource = restApi.root.addResource('unsubscribe');
 
 		loginResource.addMethod(
 			'POST',
@@ -138,15 +139,35 @@ export class SummariserStack extends Stack {
 			})
 		);
 
-		const draftSummaryBucket = new Bucket(this, 'DraftSummaryBucket', {
-			publicReadAccess: false,
-			blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
-			removalPolicy: RemovalPolicy.DESTROY,
-			autoDeleteObjects: true,
-			enforceSSL: true,
+		const unsubscribeLambda = new NodejsFunction(this, 'UnsubscribeLambda', {
+			runtime: lambda.Runtime.NODEJS_22_X,
+			handler: 'handler',
+			entry: path.resolve('lib/lambdas/unsubscribe/unsubscribe.ts'),
+			depsLockFilePath: path.resolve('pnpm-lock.yaml'),
+			timeout: Duration.minutes(1),
+			memorySize: 512,
+			environment: {
+				SUBSCRIBERS_TABLE: subscribersTable.tableName,
+				JWT_SECRET: process.env.JWT_SECRET ?? '',
+			},
 		});
+		subscribersTable.grantWriteData(unsubscribeLambda);
 
-		const publishedSummaryBucket = new Bucket(this, 'PublishedSummaryBucket', {
+		unsubscribeResource.addMethod(
+			'GET',
+			new LambdaIntegration(unsubscribeLambda, {
+				proxy: true,
+			})
+		);
+		unsubscribeResource.addMethod(
+			'OPTIONS',
+			new LambdaIntegration(unsubscribeLambda, {
+				proxy: true,
+			})
+		);
+
+		// Single bucket for both draft + published summaries (separate object keys)
+		const summaryBucket = new Bucket(this, 'SummaryBucket', {
 			publicReadAccess: false,
 			blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
 			removalPolicy: RemovalPolicy.DESTROY,
@@ -163,7 +184,7 @@ export class SummariserStack extends Stack {
 			memorySize: 512,
 			environment: {
 				JWT_SECRET: process.env.JWT_SECRET ?? '',
-				BUCKET_NAME: draftSummaryBucket.bucketName,
+				BUCKET_NAME: summaryBucket.bucketName,
 				SUMMARY_KEY: 'draft-summary.json',
 			},
 		});
@@ -177,7 +198,7 @@ export class SummariserStack extends Stack {
 			memorySize: 512,
 			environment: {
 				JWT_SECRET: process.env.JWT_SECRET ?? '',
-				BUCKET_NAME: publishedSummaryBucket.bucketName,
+				BUCKET_NAME: summaryBucket.bucketName,
 				SUMMARY_KEY: 'published-summary.json',
 			},
 		});
@@ -191,7 +212,7 @@ export class SummariserStack extends Stack {
 			memorySize: 1024,
 			environment: {
 				HUGGINGFACE_API_KEY: process.env.HUGGINGFACE_API_KEY ?? '',
-				DRAFT_SUMMARY_BUCKET_NAME: draftSummaryBucket.bucketName,
+				DRAFT_SUMMARY_BUCKET_NAME: summaryBucket.bucketName,
 			},
 		});
 
@@ -218,6 +239,7 @@ export class SummariserStack extends Stack {
 			environment: {
 				SUBSCRIBERS_TABLE: subscribersTable.tableName,
 				APP_PASSWORD: process.env.APP_PASSWORD ?? '',
+				JWT_SECRET: process.env.JWT_SECRET ?? '',
 			},
 		});
 		subscribersTable.grantReadData(sendEmailLambda);
@@ -225,11 +247,11 @@ export class SummariserStack extends Stack {
 		// Allow fetch lambda to invoke summarise lambda
 		summariseLambda.grantInvoke(fetchLambda);
 
-		// Allow summarise lambda to write to the draft summary bucket
-		draftSummaryBucket.grantWrite(summariseLambda);
+		// Allow summarise lambda to write draft summaries
+		summaryBucket.grantWrite(summariseLambda);
 
-		// Allow API lambdas to read/update the latest draft summary
-		draftSummaryBucket.grantRead(getDraftSummaryLambda);
+		// Allow API lambdas to read summaries
+		summaryBucket.grantRead(getDraftSummaryLambda);
 
 		// Summary endpoints
 		const draftSummaryResource = restApi.root.addResource('draft-summary');
@@ -255,7 +277,7 @@ export class SummariserStack extends Stack {
 			memorySize: 1024,
 			environment: {
 				JWT_SECRET: process.env.JWT_SECRET ?? '',
-				PUBLISHED_SUMMARY_BUCKET_NAME: publishedSummaryBucket.bucketName,
+				PUBLISHED_SUMMARY_BUCKET_NAME: summaryBucket.bucketName,
 				SEND_EMAIL_LAMBDA_NAME: sendEmailLambda.functionName,
 			},
 		});
@@ -263,11 +285,11 @@ export class SummariserStack extends Stack {
 		// Allow publish summary lambda to invoke send email lambda
 		sendEmailLambda.grantInvoke(publishSummaryLambda);
 
-		// Allow publish summary lambda to write to the published summary bucket
-		publishedSummaryBucket.grantWrite(publishSummaryLambda);
+		// Allow publish summary lambda to write published summary
+		summaryBucket.grantWrite(publishSummaryLambda);
 
-		// Allow API lambdas to read the latest published summary
-		publishedSummaryBucket.grantRead(getPublishedSummaryLambda);
+		// Allow API lambdas to read the published summary
+		summaryBucket.grantRead(getPublishedSummaryLambda);
 
 		const publishSummaryResource = restApi.root.addResource('publish-summary');
 		publishSummaryResource.addMethod(

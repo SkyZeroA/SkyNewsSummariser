@@ -42,6 +42,8 @@ describe('sendSummaryEmail', () => {
 			smtpPort: 465,
 			smtpUser: 'test@gmail.com',
 			smtpPass: 'test-password',
+			apiBaseUrl: 'https://example.execute-api.eu-west-1.amazonaws.com/dev/',
+			jwtSecret: 'test-secret',
 		});
 
 		expect(mockCreateTransport).toHaveBeenCalledWith({
@@ -69,6 +71,8 @@ describe('sendSummaryEmail', () => {
 			smtpPort: 465,
 			smtpUser: 'test@gmail.com',
 			smtpPass: 'test-password',
+			apiBaseUrl: 'https://example.execute-api.eu-west-1.amazonaws.com/dev/',
+			jwtSecret: 'test-secret',
 		});
 
 		expect(mockSendMail).toHaveBeenCalledWith({
@@ -93,6 +97,8 @@ describe('sendSummaryEmail', () => {
 			smtpPort: 465,
 			smtpUser: 'test@gmail.com',
 			smtpPass: 'test-password',
+			apiBaseUrl: 'https://example.execute-api.eu-west-1.amazonaws.com/dev/',
+			jwtSecret: 'test-secret',
 		});
 
 		expect(result.successful).toEqual(['user1@example.com', 'user3@example.com']);
@@ -116,6 +122,8 @@ describe('sendSummaryEmail', () => {
 			smtpPort: 465,
 			smtpUser: 'test@gmail.com',
 			smtpPass: 'wrong-password',
+			apiBaseUrl: 'https://example.execute-api.eu-west-1.amazonaws.com/dev/',
+			jwtSecret: 'test-secret',
 		});
 
 		expect(result.successful).toEqual([]);
