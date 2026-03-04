@@ -1,6 +1,7 @@
 import { Handler } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { TranslateClient, TranslateTextCommand } from '@aws-sdk/client-translate';
 import { formatEmailHtml, formatEmailText } from '@lib/lambdas/sendSummary/utils.ts';
 import { sendMail } from '@lib/lambdas/email/utils.ts';
 import { sign } from 'jsonwebtoken';
@@ -9,6 +10,8 @@ const TABLE_NAME = process.env.SUBSCRIBERS_TABLE!;
 
 const dynamoClient = new DynamoDBClient({});
 const db = DynamoDBDocumentClient.from(dynamoClient);
+
+const translateClient = new TranslateClient({});
 
 export interface SendSummaryOptions {
 	recipients: string[];
@@ -22,12 +25,148 @@ interface Subscriber {
 	status?: string;
 }
 
+interface SummaryLike {
+	summaryText?: unknown;
+	sourceArticles?: unknown;
+}
+
+interface SourceArticleLike {
+	title?: unknown;
+	url?: unknown;
+}
+
+const chunkText = (text: string, maxChunkLength: number): string[] => {
+	if (text.length <= maxChunkLength) {
+		return [text];
+	}
+
+	const chunks: string[] = [];
+	let remaining = text;
+
+	while (remaining.length > maxChunkLength) {
+		let cut = maxChunkLength;
+		const window = remaining.slice(0, maxChunkLength + 1);
+
+		const lastParagraphBreak = window.lastIndexOf('\n\n');
+		if (lastParagraphBreak >= maxChunkLength * 0.5) {
+			cut = lastParagraphBreak + 2;
+		} else {
+			const lastNewline = window.lastIndexOf('\n');
+			if (lastNewline >= maxChunkLength * 0.5) {
+				cut = lastNewline + 1;
+			} else {
+				const lastSpace = window.lastIndexOf(' ');
+				if (lastSpace >= maxChunkLength * 0.5) {
+					cut = lastSpace + 1;
+				}
+			}
+		}
+
+		chunks.push(remaining.slice(0, cut));
+		remaining = remaining.slice(cut);
+	}
+
+	if (remaining.length > 0) {
+		chunks.push(remaining);
+	}
+	return chunks;
+};
+
+const translateTextToFrench = async (text: string): Promise<string> => {
+	const trimmed = text.trim();
+	if (!trimmed) {
+		return text;
+	}
+
+	// Amazon Translate limit is 5,000 bytes per request; keep chunks comfortably under that.
+	const chunks = chunkText(text, 4500);
+	const translated: string[] = [];
+
+	for (const chunk of chunks) {
+		if (!chunk) {
+			translated.push(chunk);
+			continue;
+		}
+
+		const resp = await translateClient.send(
+			new TranslateTextCommand({
+				Text: chunk,
+				SourceLanguageCode: 'en',
+				TargetLanguageCode: 'fr',
+			})
+		);
+		translated.push(resp.TranslatedText ?? chunk);
+	}
+
+	return translated.join('');
+};
+
+const translateSummaryToFrench = async (summary: unknown): Promise<unknown> => {
+	if (!summary || typeof summary !== 'object') {
+		return summary;
+	}
+
+	const summaryObj = summary as SummaryLike & Record<string, unknown>;
+	const summaryText = typeof summaryObj.summaryText === 'string' ? summaryObj.summaryText : undefined;
+	const sourceArticles = Array.isArray(summaryObj.sourceArticles) ? (summaryObj.sourceArticles as unknown[]) : undefined;
+
+	const translatedSummaryText = summaryText ? await translateTextToFrench(summaryText) : summaryText;
+
+	let translatedSourceArticles: unknown[] | undefined = sourceArticles;
+	if (sourceArticles) {
+		translatedSourceArticles = await Promise.all(
+			sourceArticles.map(async (article) => {
+				if (!article || typeof article !== 'object') {
+					return article;
+				}
+				const a = article as SourceArticleLike & Record<string, unknown>;
+				const title = typeof a.title === 'string' ? a.title : undefined;
+				if (!title) {
+					return article;
+				}
+
+				const translatedTitle = await translateTextToFrench(title);
+				return {
+					...a,
+					title: translatedTitle,
+				};
+			})
+		);
+	}
+
+	const out: Record<string, unknown> = {
+		...summaryObj,
+	};
+
+	if (translatedSummaryText === undefined) {
+		// Keep existing
+	} else {
+		out.summaryText = translatedSummaryText;
+	}
+
+	if (translatedSourceArticles === undefined) {
+		// Keep existing
+	} else {
+		out.sourceArticles = translatedSourceArticles;
+	}
+
+	return out;
+};
+
 export const sendSummaryEmails = async ({
 	recipients,
 	summary,
 	apiBaseUrl,
 	jwtSecret,
 }: SendSummaryOptions): Promise<{ successful: string[]; failed: { email: string; error: unknown }[] }> => {
+	let summaryForEmail: unknown = summary;
+	try {
+		summaryForEmail = await translateSummaryToFrench(summary);
+	} catch (error) {
+		console.error('Failed to translate summary to French; sending original summary instead:', error);
+		summaryForEmail = summary;
+	}
+
 	const results = await Promise.all(
 		recipients.map(async (email) => {
 			try {
@@ -36,8 +175,8 @@ export const sendSummaryEmails = async ({
 				});
 				const unsubscribeUrl = `${apiBaseUrl}/unsubscribe?token=${encodeURIComponent(token)}`;
 
-				const html = formatEmailHtml(summary, unsubscribeUrl);
-				const text = formatEmailText(summary, unsubscribeUrl);
+				const html = formatEmailHtml(summaryForEmail, unsubscribeUrl);
+				const text = formatEmailText(summaryForEmail, unsubscribeUrl);
 
 				await sendMail(email, 'Sky News Daily Summary', text, html);
 				return { email, success: true };

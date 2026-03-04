@@ -1,12 +1,20 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-const { mockSendMail, mockFormatEmailHtml, mockFormatEmailText } = vi.hoisted(() => {
+const { mockSendMail, mockFormatEmailHtml, mockFormatEmailText, mockTranslateSend } = vi.hoisted(() => {
 	return {
 		mockSendMail: vi.fn(),
 		mockFormatEmailHtml: vi.fn(() => '<html>formatted</html>'),
 		mockFormatEmailText: vi.fn(() => 'formatted'),
+		mockTranslateSend: vi.fn(async (command: { Text?: string }) => ({ TranslatedText: command?.Text ?? '' })),
 	};
 });
+
+vi.mock('@aws-sdk/client-translate', () => ({
+	TranslateClient: vi.fn(() => ({
+		send: mockTranslateSend,
+	})),
+	TranslateTextCommand: vi.fn((params) => params),
+}));
 
 vi.mock('@lib/lambdas/email/utils.ts', () => ({
 	sendMail: mockSendMail,

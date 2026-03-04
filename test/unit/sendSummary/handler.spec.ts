@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { Context } from 'aws-lambda';
 
 // Hoist mock functions and environment setup so they're available during vi.mock() hoisting
-const { mockSend, mockSendMail, mockFormatEmailHtml, mockFormatEmailText } = vi.hoisted(() => {
+const { mockSend, mockSendMail, mockFormatEmailHtml, mockFormatEmailText, mockTranslateSend } = vi.hoisted(() => {
 	// Set environment variables even before mocks are processed
 	process.env.SUBSCRIBERS_TABLE = 'test-subscribers-table';
 	process.env.APP_PASSWORD = 'test-app-password';
@@ -14,6 +14,7 @@ const { mockSend, mockSendMail, mockFormatEmailHtml, mockFormatEmailText } = vi.
 		mockSendMail: vi.fn(),
 		mockFormatEmailHtml: vi.fn(() => '<html>formatted</html>'),
 		mockFormatEmailText: vi.fn(() => 'formatted'),
+		mockTranslateSend: vi.fn(async (command: { Text?: string }) => ({ TranslatedText: command?.Text ?? '' })),
 	};
 });
 
@@ -28,6 +29,13 @@ vi.mock('@aws-sdk/lib-dynamodb', () => ({
 		})),
 	},
 	ScanCommand: vi.fn((params) => params),
+}));
+
+vi.mock('@aws-sdk/client-translate', () => ({
+	TranslateClient: vi.fn(() => ({
+		send: mockTranslateSend,
+	})),
+	TranslateTextCommand: vi.fn((params) => params),
 }));
 
 vi.mock('@lib/lambdas/email/utils.ts', () => ({

@@ -8,6 +8,7 @@ import { Table, AttributeType, BillingMode } from 'aws-cdk-lib/aws-dynamodb';
 import { Bucket, BlockPublicAccess } from 'aws-cdk-lib/aws-s3';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as targets from 'aws-cdk-lib/aws-events-targets';
+import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
 
 export interface SummariserStackProps extends StackProps {
 	stage: string;
@@ -280,6 +281,12 @@ export class SummariserStack extends Stack {
 			},
 		});
 		subscribersTable.grantReadData(sendEmailLambda);
+		sendEmailLambda.addToRolePolicy(
+			new PolicyStatement({
+				actions: ['translate:TranslateText'],
+				resources: ['*'],
+			})
+		);
 
 		// Allow fetch lambda to invoke summarise lambda
 		summariseLambda.grantInvoke(fetchLambda);
