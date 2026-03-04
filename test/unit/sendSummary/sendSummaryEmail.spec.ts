@@ -34,10 +34,12 @@ describe('sendSummaryEmail', () => {
 		const result = await sendSummaryEmails({
 			recipients: ['user1@example.com', 'user2@example.com'],
 			summary: { summaryText: 'Test summary' },
+			apiBaseUrl: 'https://api.example.com',
+			jwtSecret: 'test-jwt-secret',
 		});
 
-		expect(mockFormatEmailHtml).toHaveBeenCalledTimes(1);
-		expect(mockFormatEmailText).toHaveBeenCalledTimes(1);
+		expect(mockFormatEmailHtml).toHaveBeenCalledTimes(2);
+		expect(mockFormatEmailText).toHaveBeenCalledTimes(2);
 		expect(mockSendMail).toHaveBeenCalledTimes(2);
 		expect(mockSendMail).toHaveBeenCalledWith('user1@example.com', 'Sky News Daily Summary', 'formatted', '<html>formatted</html>');
 		expect(result.successful).toEqual(['user1@example.com', 'user2@example.com']);
@@ -50,6 +52,8 @@ describe('sendSummaryEmail', () => {
 		await sendSummaryEmails({
 			recipients: ['user@example.com'],
 			summary: { summaryText: 'Test summary' },
+			apiBaseUrl: 'https://api.example.com',
+			jwtSecret: 'test-jwt-secret',
 		});
 
 		expect(mockSendMail).toHaveBeenCalledWith('user@example.com', 'Sky News Daily Summary', 'formatted', '<html>formatted</html>');
@@ -64,6 +68,8 @@ describe('sendSummaryEmail', () => {
 		const result = await sendSummaryEmails({
 			recipients: ['user1@example.com', 'user2@example.com', 'user3@example.com'],
 			summary: { summaryText: 'Test' },
+			apiBaseUrl: 'https://api.example.com',
+			jwtSecret: 'test-jwt-secret',
 		});
 
 		expect(result.successful).toEqual(['user1@example.com', 'user3@example.com']);
@@ -83,6 +89,8 @@ describe('sendSummaryEmail', () => {
 		const result = await sendSummaryEmails({
 			recipients: ['user@example.com'],
 			summary: { summaryText: 'Test' },
+			apiBaseUrl: 'https://api.example.com',
+			jwtSecret: 'test-jwt-secret',
 		});
 
 		expect(result.successful).toEqual([]);

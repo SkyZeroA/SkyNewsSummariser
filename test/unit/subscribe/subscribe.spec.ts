@@ -21,7 +21,7 @@ vi.mock('@aws-sdk/lib-dynamodb', () => ({
 			send: mockSend,
 		})),
 	},
-	PutCommand: vi.fn((params) => params),
+	UpdateCommand: vi.fn((params) => params),
 }));
 
 vi.mock('@lib/lambdas/utils.ts', () => ({
@@ -105,13 +105,19 @@ const runVerifyHandlerTests = (name: string, handler: VerifyHandler) => {
 			expect(mockSend).toHaveBeenCalledWith(
 				expect.objectContaining({
 					TableName: 'test-subscribers-table',
-					Item: expect.objectContaining({
+					Key: {
 						email: 'test@example.com',
-						status: 'active',
-						createdAt: expect.any(String),
-						verifiedAt: expect.any(String),
+					},
+					UpdateExpression: 'SET #status = :active, createdAt = :now',
+					ExpressionAttributeNames: {
+						'#status': 'status',
+					},
+					ExpressionAttributeValues: expect.objectContaining({
+						':active': 'active',
+						':inactive': 'inactive',
+						':now': expect.any(String),
 					}),
-					ConditionExpression: 'attribute_not_exists(email)',
+					ConditionExpression: 'attribute_not_exists(email) OR #status = :inactive',
 				})
 			);
 		});

@@ -1,6 +1,6 @@
 import { APIGatewayProxyHandler, APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { buildCorsHeaders, handlePreflight } from '@lib/lambdas/utils.ts';
 import { verifyAndDecodeToken } from '@lib/lambdas/subscribe/verificationToken.ts';
 
@@ -76,20 +76,25 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 			};
 		}
 
-		const email = decoded.email.trim().toLowerCase();
-
-		const now = new Date().toISOString();
+		const normalizedEmail = decoded.email.trim().toLowerCase();
 
 		await db.send(
-			new PutCommand({
+			new UpdateCommand({
 				TableName: TABLE_NAME,
-				Item: {
-					email,
-					status: 'active',
-					createdAt: now,
-					verifiedAt: now,
+				Key: {
+					email: normalizedEmail,
 				},
-				ConditionExpression: 'attribute_not_exists(email)',
+				UpdateExpression: 'SET #status = :active, createdAt = :now',
+				ExpressionAttributeNames: {
+					'#status': 'status',
+				},
+				ExpressionAttributeValues: {
+					':active': 'active',
+					':inactive': 'inactive',
+					':now': new Date().toISOString(),
+				},
+				// Allow: new subscription OR re-activating an unsubscribed email. Reject: already active.
+				ConditionExpression: 'attribute_not_exists(email) OR #status = :inactive',
 			})
 		);
 

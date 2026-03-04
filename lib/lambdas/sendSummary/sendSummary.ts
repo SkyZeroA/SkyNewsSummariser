@@ -3,6 +3,7 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { formatEmailHtml, formatEmailText } from '@lib/lambdas/sendSummary/utils.ts';
 import { sendMail } from '@lib/lambdas/email/utils.ts';
+import { sign } from 'jsonwebtoken';
 
 const TABLE_NAME = process.env.SUBSCRIBERS_TABLE!;
 
@@ -12,6 +13,8 @@ const db = DynamoDBDocumentClient.from(dynamoClient);
 export interface SendSummaryOptions {
 	recipients: string[];
 	summary: unknown;
+	apiBaseUrl: string;
+	jwtSecret: string;
 }
 
 interface Subscriber {
@@ -22,13 +25,20 @@ interface Subscriber {
 export const sendSummaryEmails = async ({
 	recipients,
 	summary,
+	apiBaseUrl,
+	jwtSecret,
 }: SendSummaryOptions): Promise<{ successful: string[]; failed: { email: string; error: unknown }[] }> => {
-	const html = formatEmailHtml(summary);
-	const text = formatEmailText(summary);
-
 	const results = await Promise.all(
 		recipients.map(async (email) => {
 			try {
+				const token = sign({ email, action: 'unsubscribe' }, jwtSecret, {
+					expiresIn: '180d',
+				});
+				const unsubscribeUrl = `${apiBaseUrl}/unsubscribe?token=${encodeURIComponent(token)}`;
+
+				const html = formatEmailHtml(summary, unsubscribeUrl);
+				const text = formatEmailText(summary, unsubscribeUrl);
+
 				await sendMail(email, 'Sky News Daily Summary', text, html);
 				return { email, success: true };
 			} catch (error) {
@@ -54,6 +64,34 @@ export const handler: Handler = async (event) => {
 				body: JSON.stringify({ error: 'Summary data is required' }),
 			};
 		}
+
+		// Support both payload shapes:
+		// 1) legacy: event is the summary
+		// 2) preferred: { apiBaseUrl, summary }
+		const summaryPayload = (event as { summary?: unknown })?.summary ?? event;
+
+		// Verify JWT_SECRET is set for unsubscribe tokens
+		if (!process.env.JWT_SECRET) {
+			console.error('JWT_SECRET environment variable is not set');
+			return {
+				statusCode: 500,
+				body: JSON.stringify({ error: 'Configuration error: JWT_SECRET not set' }),
+			};
+		}
+
+		// Prefer receiving the base URL from the calling Lambda (runtime), falling back to env var.
+		// This avoids CDK/CloudFormation circular dependencies caused by wiring restApi.url into Lambda env vars.
+		const eventApiBaseUrl =
+			typeof (event as { apiBaseUrl?: unknown })?.apiBaseUrl === 'string' ? (event as { apiBaseUrl: string }).apiBaseUrl : undefined;
+		const configuredApiBaseUrl = eventApiBaseUrl ?? process.env.API_BASE_URL;
+		if (!configuredApiBaseUrl) {
+			console.error('API_BASE_URL is missing (neither event.apiBaseUrl nor env var is set)');
+			return {
+				statusCode: 500,
+				body: JSON.stringify({ error: 'Configuration error: API_BASE_URL not set' }),
+			};
+		}
+		const apiBaseUrl = configuredApiBaseUrl.replace(/\/+$/, '');
 
 		// Verify APP_PASSWORD is set
 		if (!process.env.APP_PASSWORD) {
@@ -89,7 +127,9 @@ export const handler: Handler = async (event) => {
 		// Send emails to all active subscribers
 		const { successful, failed } = await sendSummaryEmails({
 			recipients: subscribers.filter((s) => !s.status || s.status === 'active').map((s) => s.email),
-			summary: event,
+			summary: summaryPayload,
+			apiBaseUrl,
+			jwtSecret: process.env.JWT_SECRET,
 		});
 
 		return {
