@@ -260,8 +260,8 @@ export class SummariserStack extends Stack {
 		new events.Rule(this, 'FetchAndNormaliseDailyRule', {
 			description: 'Triggers FetchAndNormaliseLambda daily at 06:00 UTC',
 			schedule: events.Schedule.cron({
-				minute: '10',
-				hour: '11',
+				minute: '0',
+				hour: '6',
 			}),
 			targets: [new targets.LambdaFunction(fetchLambda)],
 		});
