@@ -92,7 +92,7 @@ export const handler: Handler = async (event) => {
 			};
 		}
 
-		// Verify JWT_SECRET and API_BASE_URL are set for unsubscribe links
+		// Verify JWT_SECRET is set for unsubscribe tokens
 		if (!process.env.JWT_SECRET) {
 			console.error('JWT_SECRET environment variable is not set');
 			return {
@@ -100,13 +100,20 @@ export const handler: Handler = async (event) => {
 				body: JSON.stringify({ error: 'Configuration error: JWT_SECRET not set' }),
 			};
 		}
-		if (!process.env.API_BASE_URL) {
-			console.error('API_BASE_URL environment variable is not set');
+
+		// Prefer receiving the base URL from the calling Lambda (runtime), falling back to env var.
+		// This avoids CDK/CloudFormation circular dependencies caused by wiring restApi.url into Lambda env vars.
+		const eventApiBaseUrl =
+			typeof (event as { apiBaseUrl?: unknown })?.apiBaseUrl === 'string' ? (event as { apiBaseUrl: string }).apiBaseUrl : undefined;
+		const configuredApiBaseUrl = eventApiBaseUrl ?? process.env.API_BASE_URL;
+		if (!configuredApiBaseUrl) {
+			console.error('API_BASE_URL is missing (neither event.apiBaseUrl nor env var is set)');
 			return {
 				statusCode: 500,
 				body: JSON.stringify({ error: 'Configuration error: API_BASE_URL not set' }),
 			};
 		}
+		const apiBaseUrl = configuredApiBaseUrl.replace(/\/+$/, '');
 
 		// Verify APP_PASSWORD is set
 		if (!process.env.APP_PASSWORD) {
@@ -147,7 +154,7 @@ export const handler: Handler = async (event) => {
 			smtpPort: SMTP_PORT,
 			smtpUser: SMTP_USER,
 			smtpPass: process.env.APP_PASSWORD!,
-			apiBaseUrl: process.env.API_BASE_URL,
+			apiBaseUrl,
 			jwtSecret: process.env.JWT_SECRET,
 		});
 

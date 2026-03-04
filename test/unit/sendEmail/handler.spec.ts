@@ -169,7 +169,7 @@ describe('handler', () => {
 		expect(result.statusCode).toBe(500);
 		const body = JSON.parse(result.body);
 		expect(body.error).toBe('Configuration error: API_BASE_URL not set');
-		expect(consoleErrorSpy).toHaveBeenCalledWith('API_BASE_URL environment variable is not set');
+		expect(consoleErrorSpy).toHaveBeenCalledWith('API_BASE_URL is missing (neither event.apiBaseUrl nor env var is set)');
 	});
 
 	it('should query DynamoDB with correct filter expression', async () => {
