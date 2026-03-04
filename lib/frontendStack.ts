@@ -30,6 +30,28 @@ export class FrontendStack extends Stack {
 					var request = event.request;
 					var uri = request.uri;
 
+					// Redirect explicit .html URLs to clean extensionless URLs.
+					// CloudFront Functions can return a response at viewer-request time.
+					if (uri.endsWith('.html') && !uri.startsWith('/_next/')) {
+						if (uri === '/index.html') {
+							return {
+								statusCode: 301,
+								statusDescription: 'Moved Permanently',
+								headers: {
+									location: { value: '/' },
+								},
+							};
+						}
+
+						return {
+							statusCode: 301,
+							statusDescription: 'Moved Permanently',
+							headers: {
+								location: { value: uri.slice(0, -5) },
+							},
+						};
+					}
+
 					if (uri.startsWith('/_next/')) {
 						return request;
 					}
@@ -45,7 +67,6 @@ export class FrontendStack extends Stack {
 
 					var lastSegment = uri.substring(uri.lastIndexOf('/') + 1);
 					if (lastSegment.indexOf('.') !== -1) {
-						request.uri = event.request.uri;
 						return request;
 					}
 
@@ -94,6 +115,8 @@ export class FrontendStack extends Stack {
 				'/',
 				'/index.html',
 				'/config.json',
+				'/admin',
+				'/login',
 				// Cover both possible Next export layouts
 				'/admin.html',
 				'/login.html',
