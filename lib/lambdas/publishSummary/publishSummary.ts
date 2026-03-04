@@ -1,22 +1,9 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { verify } from 'jsonwebtoken';
 import { buildCorsHeaders, getAuthToken, handlePreflight } from '@lib/lambdas/utils.ts';
-
-const SUMMARY_KEY = 'draft-summary.json';
-
-const streamToString = (body: unknown): Promise<string> => {
-	if (!body) {
-		return Promise.resolve('');
-	}
-
-	const maybeTransform = body as { transformToString?: () => Promise<string> };
-	if (typeof maybeTransform.transformToString === 'function') {
-		return maybeTransform.transformToString();
-	}
-
-	throw new Error('Unsupported S3 response body type');
-};
+import { Summary } from '@lib/lambdas/sendEmail/utils.ts';
+import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
 	if (event.httpMethod === 'OPTIONS') {
@@ -40,7 +27,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 		};
 	}
 
-	const bucketName = process.env.DRAFT_SUMMARY_BUCKET_NAME;
+	const bucketName = process.env.PUBLISHED_SUMMARY_BUCKET_NAME;
 	if (!bucketName) {
 		return {
 			statusCode: 500,
@@ -48,7 +35,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 				...corsHeaders,
 				'Content-Type': 'application/json',
 			},
-			body: JSON.stringify({ error: 'Server misconfigured: DRAFT_SUMMARY_BUCKET_NAME is missing' }),
+			body: JSON.stringify({ error: 'Server misconfigured: PUBLISHED_SUMMARY_BUCKET_NAME is missing' }),
 		};
 	}
 
@@ -66,22 +53,35 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
 	const s3 = new S3Client({});
 	let jwtVerified = false;
+
+	let summary: Summary = { summaryText: '', sourceArticles: [] };
+	if (event.body) {
+		summary = JSON.parse(event.body);
+	}
+
 	try {
 		verify(authToken, jwtSecret);
 		jwtVerified = true;
 
-		const response = await s3.send(
-			new GetObjectCommand({
+		const key = 'published-summary.json';
+
+		await s3.send(
+			new PutObjectCommand({
 				Bucket: bucketName,
-				Key: SUMMARY_KEY,
+				Key: key,
+				Body: JSON.stringify(summary, null, 2),
+				ContentType: 'application/json',
 			})
 		);
 
-		const text = await streamToString(response.Body);
-		const parsed = text ? (JSON.parse(text) as { summaryText?: string; sourceArticles?: { title: string; url: string }[] }) : null;
-
-		const lastModified = response.LastModified?.toISOString() ?? new Date().toISOString();
-		const etag = response.ETag?.replaceAll('"', '') ?? 'draft';
+		const lambdaClient = new LambdaClient({});
+		await lambdaClient.send(
+			new InvokeCommand({
+				FunctionName: process.env.SEND_EMAIL_LAMBDA_NAME,
+				InvocationType: 'Event',
+				Payload: Buffer.from(JSON.stringify(summary)),
+			})
+		);
 
 		return {
 			statusCode: 200,
@@ -89,18 +89,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 				...corsHeaders,
 				'Content-Type': 'application/json',
 			},
-			body: JSON.stringify({
-				summary: parsed
-					? {
-							id: etag,
-							summaryText: parsed.summaryText ?? '',
-							sourceArticles: parsed.sourceArticles ?? [],
-							status: 'pending',
-							createdAt: lastModified,
-							updatedAt: lastModified,
-						}
-					: null,
-			}),
+			body: JSON.stringify({ success: true }),
 		};
 	} catch (error) {
 		if (!jwtVerified) {
@@ -110,7 +99,15 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 					...corsHeaders,
 					'Content-Type': 'application/json',
 				},
-				body: JSON.stringify({ authenticated: false }),
+				body: JSON.stringify({
+					summary: {
+						summaryText: summary.summaryText ?? '',
+						sourceArticles: summary.sourceArticles ?? [],
+						status: 'pending',
+						createdAt: new Date().toISOString(),
+						updatedAt: new Date().toISOString(),
+					},
+				}),
 			};
 		}
 
