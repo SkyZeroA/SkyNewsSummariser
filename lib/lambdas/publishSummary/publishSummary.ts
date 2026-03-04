@@ -74,12 +74,16 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 			})
 		);
 
+		const forwardedProto = event.headers?.['x-forwarded-proto'] ?? event.headers?.['X-Forwarded-Proto'];
+		const proto = typeof forwardedProto === 'string' && forwardedProto.length > 0 ? forwardedProto : 'https';
+		const apiBaseUrl = `${proto}://${event.requestContext.domainName}/${event.requestContext.stage}`;
+
 		const lambdaClient = new LambdaClient({});
 		await lambdaClient.send(
 			new InvokeCommand({
 				FunctionName: process.env.SEND_EMAIL_LAMBDA_NAME,
 				InvocationType: 'Event',
-				Payload: Buffer.from(JSON.stringify(summary)),
+				Payload: Buffer.from(JSON.stringify({ apiBaseUrl, summary })),
 			})
 		);
 

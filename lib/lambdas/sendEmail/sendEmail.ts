@@ -92,6 +92,11 @@ export const handler: Handler = async (event) => {
 			};
 		}
 
+		// Support both payload shapes:
+		// 1) legacy: event is the summary
+		// 2) preferred: { apiBaseUrl, summary }
+		const summaryPayload = (event as { summary?: unknown })?.summary ?? event;
+
 		// Verify JWT_SECRET is set for unsubscribe tokens
 		if (!process.env.JWT_SECRET) {
 			console.error('JWT_SECRET environment variable is not set');
@@ -149,7 +154,7 @@ export const handler: Handler = async (event) => {
 		// Send emails to all active subscribers
 		const { successful, failed } = await sendSummaryEmail({
 			recipients: subscribers.filter((s) => !s.status || s.status === 'active').map((s) => s.email),
-			summary: event,
+			summary: summaryPayload,
 			smtpHost: SMTP_HOST,
 			smtpPort: SMTP_PORT,
 			smtpUser: SMTP_USER,
