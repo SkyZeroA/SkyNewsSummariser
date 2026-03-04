@@ -5,6 +5,9 @@ import { TranslateClient, TranslateTextCommand } from '@aws-sdk/client-translate
 import { formatEmailHtml, formatEmailText } from '@lib/lambdas/sendSummary/utils.ts';
 import { sendMail } from '@lib/lambdas/email/utils.ts';
 import { sign } from 'jsonwebtoken';
+import { DEFAULT_SUBSCRIBER_LANGUAGE, parseSubscriberLanguage } from '@lib/lambdas/subscribe/language.ts';
+
+type SubscriberLanguage = import('@lib/lambdas/subscribe/language.ts').SubscriberLanguage;
 
 const TABLE_NAME = process.env.SUBSCRIBERS_TABLE!;
 
@@ -14,7 +17,7 @@ const db = DynamoDBDocumentClient.from(dynamoClient);
 const translateClient = new TranslateClient({});
 
 export interface SendSummaryOptions {
-	recipients: string[];
+	subscribers: Subscriber[];
 	summary: unknown;
 	apiBaseUrl: string;
 	jwtSecret: string;
@@ -23,7 +26,20 @@ export interface SendSummaryOptions {
 interface Subscriber {
 	email: string;
 	status?: string;
+	language?: string;
 }
+
+type TranslateTargetLanguageCode = 'es' | 'fr';
+
+const toSubscriberLanguage = (input: unknown): SubscriberLanguage => parseSubscriberLanguage(input) ?? DEFAULT_SUBSCRIBER_LANGUAGE;
+
+const TRANSLATE_TARGET_BY_LANGUAGE: Partial<Record<SubscriberLanguage, TranslateTargetLanguageCode>> = {
+	spanish: 'es',
+	french: 'fr',
+};
+
+const toTranslateTargetLanguageCode = (language: SubscriberLanguage): TranslateTargetLanguageCode | null =>
+	TRANSLATE_TARGET_BY_LANGUAGE[language] ?? null;
 
 interface SummaryLike {
 	summaryText?: unknown;
@@ -72,7 +88,7 @@ const chunkText = (text: string, maxChunkLength: number): string[] => {
 	return chunks;
 };
 
-const translateTextToFrench = async (text: string): Promise<string> => {
+const translateText = async (text: string, targetLanguageCode: TranslateTargetLanguageCode): Promise<string> => {
 	const trimmed = text.trim();
 	if (!trimmed) {
 		return text;
@@ -92,7 +108,7 @@ const translateTextToFrench = async (text: string): Promise<string> => {
 			new TranslateTextCommand({
 				Text: chunk,
 				SourceLanguageCode: 'en',
-				TargetLanguageCode: 'fr',
+				TargetLanguageCode: targetLanguageCode,
 			})
 		);
 		translated.push(resp.TranslatedText ?? chunk);
@@ -101,7 +117,12 @@ const translateTextToFrench = async (text: string): Promise<string> => {
 	return translated.join('');
 };
 
-const translateSummaryToFrench = async (summary: unknown): Promise<unknown> => {
+const translateSummary = async (summary: unknown, language: SubscriberLanguage): Promise<unknown> => {
+	const targetLanguageCode = toTranslateTargetLanguageCode(language);
+	if (!targetLanguageCode) {
+		return summary;
+	}
+
 	if (!summary || typeof summary !== 'object') {
 		return summary;
 	}
@@ -110,7 +131,7 @@ const translateSummaryToFrench = async (summary: unknown): Promise<unknown> => {
 	const summaryText = typeof summaryObj.summaryText === 'string' ? summaryObj.summaryText : undefined;
 	const sourceArticles = Array.isArray(summaryObj.sourceArticles) ? (summaryObj.sourceArticles as unknown[]) : undefined;
 
-	const translatedSummaryText = summaryText ? await translateTextToFrench(summaryText) : summaryText;
+	const translatedSummaryText = summaryText ? await translateText(summaryText, targetLanguageCode) : summaryText;
 
 	let translatedSourceArticles: unknown[] | undefined = sourceArticles;
 	if (sourceArticles) {
@@ -125,7 +146,7 @@ const translateSummaryToFrench = async (summary: unknown): Promise<unknown> => {
 					return article;
 				}
 
-				const translatedTitle = await translateTextToFrench(title);
+				const translatedTitle = await translateText(title, targetLanguageCode);
 				return {
 					...a,
 					title: translatedTitle,
@@ -154,35 +175,61 @@ const translateSummaryToFrench = async (summary: unknown): Promise<unknown> => {
 };
 
 export const sendSummaryEmails = async ({
-	recipients,
+	subscribers,
 	summary,
 	apiBaseUrl,
 	jwtSecret,
 }: SendSummaryOptions): Promise<{ successful: string[]; failed: { email: string; error: unknown }[] }> => {
-	let summaryForEmail: unknown = summary;
-	try {
-		summaryForEmail = await translateSummaryToFrench(summary);
-	} catch (error) {
-		console.error('Failed to translate summary to French; sending original summary instead:', error);
-		summaryForEmail = summary;
+	const activeSubscribers = subscribers.filter((s) => !s.status || s.status === 'active');
+	const recipientsByLanguage = new Map<SubscriberLanguage, string[]>();
+	for (const s of activeSubscribers) {
+		const email = typeof s.email === 'string' ? s.email.trim().toLowerCase() : '';
+		if (!email) {
+			continue;
+		}
+		const lang = toSubscriberLanguage(s.language);
+		const list = recipientsByLanguage.get(lang) ?? [];
+		list.push(email);
+		recipientsByLanguage.set(lang, list);
+	}
+
+	const uniqueLanguages = [...recipientsByLanguage.keys()];
+	const summariesByLanguage = new Map<SubscriberLanguage, unknown>();
+	for (const lang of uniqueLanguages) {
+		if (lang === 'english') {
+			summariesByLanguage.set(lang, summary);
+			continue;
+		}
+
+		try {
+			const translated = await translateSummary(summary, lang);
+			summariesByLanguage.set(lang, translated);
+		} catch (error) {
+			console.error(`Failed to translate summary to ${lang}; sending original summary instead:`, error);
+			summariesByLanguage.set(lang, summary);
+		}
 	}
 
 	const results = await Promise.all(
-		recipients.map(async (email) => {
-			try {
-				const token = sign({ email, action: 'unsubscribe' }, jwtSecret, {
-					expiresIn: '180d',
-				});
-				const unsubscribeUrl = `${apiBaseUrl}/unsubscribe?token=${encodeURIComponent(token)}`;
+		uniqueLanguages.flatMap((lang) => {
+			const recipients = recipientsByLanguage.get(lang) ?? [];
+			const summaryForEmail = summariesByLanguage.get(lang) ?? summary;
+			return recipients.map(async (email) => {
+				try {
+					const token = sign({ email, action: 'unsubscribe' }, jwtSecret, {
+						expiresIn: '180d',
+					});
+					const unsubscribeUrl = `${apiBaseUrl}/unsubscribe?token=${encodeURIComponent(token)}`;
 
-				const html = formatEmailHtml(summaryForEmail, unsubscribeUrl);
-				const text = formatEmailText(summaryForEmail, unsubscribeUrl);
+					const html = formatEmailHtml(summaryForEmail, unsubscribeUrl);
+					const text = formatEmailText(summaryForEmail, unsubscribeUrl);
 
-				await sendMail(email, 'Sky News Daily Summary', text, html);
-				return { email, success: true };
-			} catch (error) {
-				return { email, success: false, error };
-			}
+					await sendMail(email, 'Sky News Daily Summary', text, html);
+					return { email, success: true };
+				} catch (error) {
+					return { email, success: false, error };
+				}
+			});
 		})
 	);
 
@@ -263,9 +310,9 @@ export const handler: Handler = async (event) => {
 			};
 		}
 
-		// Send emails to all active subscribers
+		// Send emails to all active subscribers, honoring each subscriber's language setting
 		const { successful, failed } = await sendSummaryEmails({
-			recipients: subscribers.filter((s) => !s.status || s.status === 'active').map((s) => s.email),
+			subscribers,
 			summary: summaryPayload,
 			apiBaseUrl,
 			jwtSecret: process.env.JWT_SECRET,

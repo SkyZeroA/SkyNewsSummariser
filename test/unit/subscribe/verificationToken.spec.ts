@@ -33,6 +33,23 @@ describe('verificationToken', () => {
 		expect(verifyAndDecodeToken(token, secret)).toEqual({ email: 'test@example.com' });
 	});
 
+	it('includes language when present and valid', async () => {
+		const { signVerificationToken, verifyAndDecodeToken } = await import('@lib/lambdas/subscribe/verificationToken.ts');
+		const now = Date.now();
+
+		const token = signVerificationToken(
+			{
+				email: 'test@example.com',
+				language: 'french',
+				iat: now,
+				exp: now + 60_000,
+			},
+			secret
+		);
+
+		expect(verifyAndDecodeToken(token, secret)).toEqual({ email: 'test@example.com', language: 'french' });
+	});
+
 	it('returns null for an expired token', async () => {
 		const { signVerificationToken, verifyAndDecodeToken } = await import('@lib/lambdas/subscribe/verificationToken.ts');
 		const now = Date.now();

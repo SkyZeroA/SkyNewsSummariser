@@ -108,14 +108,16 @@ const runVerifyHandlerTests = (name: string, handler: VerifyHandler) => {
 					Key: {
 						email: 'test@example.com',
 					},
-					UpdateExpression: 'SET #status = :active, createdAt = :now',
+					UpdateExpression: 'SET #status = :active, createdAt = :now, #language = :language',
 					ExpressionAttributeNames: {
 						'#status': 'status',
+						'#language': 'language',
 					},
 					ExpressionAttributeValues: expect.objectContaining({
 						':active': 'active',
 						':inactive': 'inactive',
 						':now': expect.any(String),
+						':language': 'english',
 					}),
 					ConditionExpression: 'attribute_not_exists(email) OR #status = :inactive',
 				})

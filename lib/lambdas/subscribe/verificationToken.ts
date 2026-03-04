@@ -1,9 +1,14 @@
 import crypto from 'node:crypto';
 
+import { parseSubscriberLanguage } from '@lib/lambdas/subscribe/language.ts';
+
+type SubscriberLanguage = import('@lib/lambdas/subscribe/language.ts').SubscriberLanguage;
+
 export interface VerificationTokenPayload {
 	email: string;
 	exp: number;
 	iat: number;
+	language?: SubscriberLanguage;
 }
 
 const base64UrlEncode = (input: string | Buffer): string => {
@@ -25,7 +30,7 @@ export const signVerificationToken = (payload: VerificationTokenPayload, secret:
 	return `${body}.${base64UrlEncode(sig)}`;
 };
 
-export const verifyAndDecodeToken = (token: string, secret: string): { email: string } | null => {
+export const verifyAndDecodeToken = (token: string, secret: string): { email: string; language: SubscriberLanguage } | { email: string } | null => {
 	const [body, sig] = token.split('.');
 	if (!body || !sig) {
 		return null;
@@ -51,7 +56,7 @@ export const verifyAndDecodeToken = (token: string, secret: string): { email: st
 		return null;
 	}
 
-	const { email, exp } = parsed as { email?: unknown; exp?: unknown };
+	const { email, exp, language } = parsed as { email?: unknown; exp?: unknown; language?: unknown };
 	if (typeof email !== 'string' || typeof exp !== 'number') {
 		return null;
 	}
@@ -59,5 +64,12 @@ export const verifyAndDecodeToken = (token: string, secret: string): { email: st
 		return null;
 	}
 
+	const parsedLanguage = parseSubscriberLanguage(language);
+	if (parsedLanguage) {
+		return { email, language: parsedLanguage };
+	}
+
+	// Backwards compatible: tokens created before language was introduced.
+	// Only return language when explicitly present and valid.
 	return { email };
 };

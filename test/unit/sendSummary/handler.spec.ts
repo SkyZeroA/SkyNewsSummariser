@@ -74,8 +74,8 @@ describe('handler', () => {
 
 	it('should send emails to all active subscribers successfully', async () => {
 		const mockSubscribers = [
-			{ email: 'user1@example.com', status: 'active' },
-			{ email: 'user2@example.com', status: 'active' },
+			{ email: 'user1@example.com', status: 'active', language: 'english' },
+			{ email: 'user2@example.com', status: 'active', language: 'french' },
 			{ email: 'user4@example.com', status: 'inactive' },
 		];
 
@@ -101,6 +101,8 @@ describe('handler', () => {
 
 		expect(mockSendMail).toHaveBeenCalledTimes(2);
 		expect(mockSendMail).toHaveBeenCalledWith('user1@example.com', 'Sky News Daily Summary', 'formatted', '<html>formatted</html>');
+		// user2 wants French -> translation is attempted
+		expect(mockTranslateSend).toHaveBeenCalled();
 	});
 
 	it('should handle event.summaryText format', async () => {

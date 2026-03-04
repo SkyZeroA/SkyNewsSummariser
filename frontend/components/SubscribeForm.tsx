@@ -4,8 +4,10 @@ import { useState } from "react";
 import { useConfig } from "@/app/providers";
 
 interface Props {
-  onSubscribe?: (email: string) => Promise<void> | void;
+  onSubscribe?: (email: string, language?: SubscriberLanguage) => Promise<void> | void;
 }
+
+type SubscriberLanguage = "english" | "spanish" | "french";
 
 // Simple email validation helper kept at module scope
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -19,6 +21,7 @@ const validate = (value: string) => {
 export default function SubscribeForm({ onSubscribe }: Props) {
   const { apiUrl } = useConfig();
   const [email, setEmail] = useState("");
+  const [language, setLanguage] = useState<SubscriberLanguage>("english");
   const [error, setError] = useState<string | null>(null);
   const [touched, setTouched] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -48,7 +51,7 @@ export default function SubscribeForm({ onSubscribe }: Props) {
       setLoading(true);
       const trimmed = email.trim();
       if (onSubscribe) {
-        await onSubscribe(trimmed);
+        await onSubscribe(trimmed, language);
       } else {
         if (!apiUrl) {
           throw new Error('API URL not configured');
@@ -57,7 +60,7 @@ export default function SubscribeForm({ onSubscribe }: Props) {
         const res = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: trimmed }),
+          body: JSON.stringify({ email: trimmed, language }),
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
@@ -105,6 +108,45 @@ export default function SubscribeForm({ onSubscribe }: Props) {
             {loading ? "Subscribing…" : "Subscribe"}
           </button>
         </div>
+
+    <fieldset className="mt-3">
+      <legend className="text-sm font-medium text-gray-900 dark:text-gray-100">Language</legend>
+      <div className="mt-2 flex flex-wrap gap-4">
+        <label className="inline-flex items-center gap-2 text-sm text-gray-900 dark:text-gray-100">
+          <input
+            type="radio"
+            name="language"
+            value="english"
+            checked={language === "english"}
+            onChange={() => setLanguage("english")}
+            className="h-4 w-4"
+          />
+          English
+        </label>
+        <label className="inline-flex items-center gap-2 text-sm text-gray-900 dark:text-gray-100">
+          <input
+            type="radio"
+            name="language"
+            value="spanish"
+            checked={language === "spanish"}
+            onChange={() => setLanguage("spanish")}
+            className="h-4 w-4"
+          />
+          Spanish
+        </label>
+        <label className="inline-flex items-center gap-2 text-sm text-gray-900 dark:text-gray-100">
+          <input
+            type="radio"
+            name="language"
+            value="french"
+            checked={language === "french"}
+            onChange={() => setLanguage("french")}
+            className="h-4 w-4"
+          />
+          French
+        </label>
+      </div>
+    </fieldset>
         {error && (
           <p
             id="subscribe-email-error"

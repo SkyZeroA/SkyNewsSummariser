@@ -40,7 +40,10 @@ describe('sendSummaryEmail', () => {
 		mockSendMail.mockResolvedValue(undefined);
 
 		const result = await sendSummaryEmails({
-			recipients: ['user1@example.com', 'user2@example.com'],
+			subscribers: [
+				{ email: 'user1@example.com', language: 'english' },
+				{ email: 'user2@example.com', language: 'english' },
+			],
 			summary: { summaryText: 'Test summary' },
 			apiBaseUrl: 'https://api.example.com',
 			jwtSecret: 'test-jwt-secret',
@@ -58,7 +61,7 @@ describe('sendSummaryEmail', () => {
 		mockSendMail.mockResolvedValue(undefined);
 
 		await sendSummaryEmails({
-			recipients: ['user@example.com'],
+			subscribers: [{ email: 'user@example.com', language: 'english' }],
 			summary: { summaryText: 'Test summary' },
 			apiBaseUrl: 'https://api.example.com',
 			jwtSecret: 'test-jwt-secret',
@@ -74,7 +77,11 @@ describe('sendSummaryEmail', () => {
 			.mockResolvedValueOnce(undefined);
 
 		const result = await sendSummaryEmails({
-			recipients: ['user1@example.com', 'user2@example.com', 'user3@example.com'],
+			subscribers: [
+				{ email: 'user1@example.com', language: 'english' },
+				{ email: 'user2@example.com', language: 'english' },
+				{ email: 'user3@example.com', language: 'english' },
+			],
 			summary: { summaryText: 'Test' },
 			apiBaseUrl: 'https://api.example.com',
 			jwtSecret: 'test-jwt-secret',
@@ -95,7 +102,7 @@ describe('sendSummaryEmail', () => {
 		);
 
 		const result = await sendSummaryEmails({
-			recipients: ['user@example.com'],
+			subscribers: [{ email: 'user@example.com', language: 'english' }],
 			summary: { summaryText: 'Test' },
 			apiBaseUrl: 'https://api.example.com',
 			jwtSecret: 'test-jwt-secret',
