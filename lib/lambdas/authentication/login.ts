@@ -4,10 +4,10 @@ import { DynamoDBDocumentClient, GetCommand } from '@aws-sdk/lib-dynamodb';
 import { compare } from 'bcryptjs';
 import { sign } from 'jsonwebtoken';
 import { buildCorsHeaders, handlePreflight } from '@lib/lambdas/utils.ts';
+import { ADMIN_TABLE_NAME } from '@lib/common/constants.ts';
 
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
-const TABLE_NAME = 'admins';
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
 	if (event.httpMethod === 'OPTIONS') {
@@ -43,7 +43,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
 		// Query DynamoDB for the user
 		const command = new GetCommand({
-			TableName: TABLE_NAME,
+			TableName: ADMIN_TABLE_NAME,
 			Key: {
 				email: email,
 			},

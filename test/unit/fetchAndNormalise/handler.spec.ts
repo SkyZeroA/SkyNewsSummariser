@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as cheerio from 'cheerio';
-import { handler, type FetchAndNormaliseResult } from '@lib/lambdas/fetchAndNormalise/fetchAndNormalise.ts';
+import { handler } from '@lib/lambdas/fetchAndNormalise/fetchAndNormalise.ts';
+import { FetchAndNormaliseResult } from '@lib/common/interfaces.ts';
 
 // Mock global fetch
 global.fetch = vi.fn();

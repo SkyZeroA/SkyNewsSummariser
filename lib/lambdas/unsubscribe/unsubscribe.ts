@@ -4,8 +4,6 @@ import { DynamoDBDocumentClient, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { verify } from 'jsonwebtoken';
 import { handlePreflight } from '../utils.ts';
 
-const TABLE_NAME = process.env.SUBSCRIBERS_TABLE!;
-
 const dynamoClient = new DynamoDBClient({});
 const db = DynamoDBDocumentClient.from(dynamoClient);
 
@@ -110,7 +108,7 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 	try {
 		await db.send(
 			new UpdateCommand({
-				TableName: TABLE_NAME,
+				TableName: process.env.SUBSCRIBERS_TABLE,
 				Key: { email },
 				UpdateExpression: 'SET #status = :inactive',
 				ExpressionAttributeNames: {

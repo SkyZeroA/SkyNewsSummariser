@@ -25,6 +25,7 @@ export class FrontendStack extends Stack {
 		super(scope, id, props);
 
 		const urlRewriteFunction = new CloudFrontFunction(this, 'UrlRewriteFunction', {
+			functionName: `${this.stackName}-UrlRewriteFunction`,
 			code: FunctionCode.fromInline(`
 				function handler(event) {
 					var request = event.request;
