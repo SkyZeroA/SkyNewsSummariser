@@ -1,9 +1,5 @@
 import nodemailer from 'nodemailer';
-
-const SMTP_HOST = 'smtp.gmail.com';
-const SMTP_PORT = 465;
-const SMTP_USER = 'skyteam5developer@gmail.com';
-const SMTP_PASS = process.env.APP_PASSWORD;
+import { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS } from '@lib/common/constants.ts';
 
 export const createTransporter = () => {
 	const transporter = nodemailer.createTransport({

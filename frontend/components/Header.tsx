@@ -247,7 +247,7 @@ export default function Header() {
                 <span className="text-sm text-gray-700 dark:text-gray-300">
                   Welcome, <span className="font-semibold">{userName}</span>
                 </span>
-                <Link href="/admin.html" className="text-sm transition-all duration-300 hover:scale-105">
+                <Link href="/admin" className="text-sm transition-all duration-300 hover:scale-105">
                   <Button
                     color="primary"
                     variant="flat"
@@ -268,7 +268,7 @@ export default function Header() {
                 </Button>
               </div>
             ) : (
-              <Link href="/login.html" className="text-sm transition-all duration-300 hover:scale-105">
+              <Link href="/login" className="text-sm transition-all duration-300 hover:scale-105">
                 Admin Login
               </Link>
             )
@@ -295,7 +295,7 @@ export default function Header() {
             <Link
               className="w-full"
               color="primary"
-              href="/admin.html"
+              href="/admin"
               size="lg"
             >
               Admin Dashboard
@@ -317,7 +317,7 @@ export default function Header() {
             <Link
               className="w-full"
               color="primary"
-              href="/login.html"
+              href="/login"
               size="lg"
             >
               Admin Login

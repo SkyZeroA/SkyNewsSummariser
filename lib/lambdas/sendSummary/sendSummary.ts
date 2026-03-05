@@ -2,10 +2,11 @@ import { Handler } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { TranslateClient, TranslateTextCommand } from '@aws-sdk/client-translate';
-import { formatEmailHtml, formatEmailText, Summary } from '@lib/lambdas/sendSummary/utils.ts';
+import { formatEmailHtml, formatEmailText } from '@lib/lambdas/sendSummary/utils.ts';
 import { sendMail } from '@lib/lambdas/email/utils.ts';
 import { sign } from 'jsonwebtoken';
 import { DEFAULT_SUBSCRIBER_LANGUAGE, parseSubscriberLanguage } from '@lib/lambdas/subscribe/language.ts';
+import type { SendSummaryOptions, Subscriber, Summary } from '@lib/common/interfaces.ts';
 
 type SubscriberLanguage = import('@lib/lambdas/subscribe/language.ts').SubscriberLanguage;
 
@@ -15,19 +16,6 @@ const dynamoClient = new DynamoDBClient({});
 const db = DynamoDBDocumentClient.from(dynamoClient);
 
 const translateClient = new TranslateClient({});
-
-export interface SendSummaryOptions {
-	subscribers: Subscriber[];
-	summary: unknown;
-	apiBaseUrl: string;
-	jwtSecret: string;
-}
-
-interface Subscriber {
-	email: string;
-	status?: string;
-	language?: string;
-}
 
 type TranslateTargetLanguageCode = 'es' | 'fr';
 

@@ -3,10 +3,7 @@ import { buildCorsHeaders, handlePreflight } from '@lib/lambdas/utils.ts';
 import { signVerificationToken } from '@lib/lambdas/subscribe/verificationToken.ts';
 import { DEFAULT_SUBSCRIBER_LANGUAGE, parseSubscriberLanguage } from '@lib/lambdas/subscribe/language.ts';
 import { sendMail } from '@lib/lambdas/email/utils.ts';
-
-const TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
-
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { EMAIL_REGEX, TOKEN_TTL_MS } from '@lib/common/constants.ts';
 
 const getBaseUrlFromEvent = (event: APIGatewayProxyEvent): string | null => {
 	const headers = event.headers || {};

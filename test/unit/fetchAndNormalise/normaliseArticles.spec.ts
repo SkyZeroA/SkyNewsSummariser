@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as cheerio from 'cheerio';
-import { normaliseArticles, type ChartBeatArticle } from '@lib/lambdas/fetchAndNormalise/fetchAndNormalise.ts';
+import { normaliseArticles } from '@lib/lambdas/fetchAndNormalise/fetchAndNormalise.ts';
+import { SourceArticle } from '@lib/common/interfaces.ts';
 
 // Mock global fetch
 global.fetch = vi.fn();
@@ -44,7 +45,7 @@ describe('normaliseArticles', () => {
 	});
 
 	it('should handle empty articles array', async () => {
-		const articles: ChartBeatArticle[] = [];
+		const articles: SourceArticle[] = [];
 
 		const result = await normaliseArticles(articles);
 
@@ -52,7 +53,7 @@ describe('normaliseArticles', () => {
 	});
 
 	it('should fetch content for all articles in parallel', async () => {
-		const articles: ChartBeatArticle[] = [
+		const articles: SourceArticle[] = [
 			{ title: 'Article 1', url: 'https://example.com/1' },
 			{ title: 'Article 2', url: 'https://example.com/2' },
 		];

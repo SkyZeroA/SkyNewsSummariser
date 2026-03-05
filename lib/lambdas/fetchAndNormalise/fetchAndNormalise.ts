@@ -2,39 +2,26 @@ import { Handler } from 'aws-lambda';
 import * as cheerio from 'cheerio';
 import { buildUrl, getPath } from '@lib/lambdas/fetchAndNormalise/utils.ts';
 import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
-
-export interface ChartBeatArticle {
-	title: string;
-	url: string;
-}
-
-export interface normalisedArticle {
-	title: string;
-	content: string;
-	url: string;
-}
-
-export interface FetchAndNormaliseResult {
-	articles: normalisedArticle[];
-	count: number;
-}
-
-const DEFAULT_EXCLUDE_PATHS = ['/', '/uk', '/watch-live', 'home', '/live'];
-const TARGET_ARTICLE_COUNT = 10;
-const LIMIT_START = 30;
-const LIMIT_INCREMENT = 5;
-const MAX_LIMIT = 60;
-const MAX_ARTICLE_WORDS = 500;
+import { SourceArticle, NormalisedArticle, FetchAndNormaliseResult } from '@lib/common/interfaces.ts';
+import {
+	DEFAULT_EXCLUDE_PATHS,
+	LIMIT_START,
+	LIMIT_INCREMENT,
+	MAX_LIMIT,
+	TARGET_ARTICLE_COUNT,
+	MAX_ARTICLE_WORDS,
+	NEWS_HOST,
+	CHARTBEAT_API_URL,
+} from '@lib/common/constants.ts';
 
 // Fetches the most popular articles from Chartbeat live endpoint
-export const fetchFromChartBeat = async (apiKey: string, limit: number): Promise<ChartBeatArticle[]> => {
+export const fetchFromChartBeat = async (apiKey: string, limit: number): Promise<SourceArticle[]> => {
 	try {
-		const host = 'news.sky.com';
-		const excludePaths = new Set(DEFAULT_EXCLUDE_PATHS.map((value) => getPath(value, host)));
+		const excludePaths = new Set(DEFAULT_EXCLUDE_PATHS.map((value) => getPath(value, NEWS_HOST)));
 
-		const url = new URL('https://api.chartbeat.com/live/toppages/v3/');
+		const url = new URL(CHARTBEAT_API_URL);
 		url.searchParams.append('apikey', apiKey);
-		url.searchParams.append('host', host);
+		url.searchParams.append('host', NEWS_HOST);
 		url.searchParams.append('limit', String(limit));
 
 		// Get and validate response from chartbeat
@@ -53,11 +40,11 @@ export const fetchFromChartBeat = async (apiKey: string, limit: number): Promise
 			.map((page: unknown) => {
 				const p = page as Record<string, unknown>;
 				const rawValue = (p.path as string) || '';
-				const path = getPath(rawValue, host);
+				const path = getPath(rawValue, NEWS_HOST);
 
 				return {
 					title: (p.title as string) || '',
-					url: buildUrl(rawValue, host, path),
+					url: buildUrl(rawValue, NEWS_HOST, path),
 					path,
 				};
 			})
@@ -93,7 +80,7 @@ export const fetchArticleContent = async (url: string): Promise<string> => {
 };
 
 // Normalises the raw articles from ChartBeat into a consistent format with content
-export const normaliseArticles = async (articles: ChartBeatArticle[]): Promise<normalisedArticle[]> => {
+export const normaliseArticles = async (articles: SourceArticle[]): Promise<NormalisedArticle[]> => {
 	const normalisedPromises = articles.map(async (article) => {
 		const content = await fetchArticleContent(article.url);
 		const wordCount = content.trim().split(/\s+/).filter(Boolean).length;
@@ -110,7 +97,7 @@ export const normaliseArticles = async (articles: ChartBeatArticle[]): Promise<n
 	});
 	const normalised = await Promise.all(normalisedPromises);
 	// Filter out nulls (skipped articles)
-	return normalised.filter(Boolean) as normalisedArticle[];
+	return normalised.filter(Boolean) as NormalisedArticle[];
 };
 
 // Lambda handler for fetching and normalizing ChartBeat articles
@@ -122,7 +109,7 @@ export const handler: Handler<unknown, FetchAndNormaliseResult> = async () => {
 	}
 
 	try {
-		let articlesWithContent: normalisedArticle[] = [];
+		let articlesWithContent: NormalisedArticle[] = [];
 		let limit = LIMIT_START;
 
 		// Keep fetching with increasing limit until we have enough articles with content
@@ -146,14 +133,13 @@ export const handler: Handler<unknown, FetchAndNormaliseResult> = async () => {
 
 		const finalArticles = articlesWithContent.slice(0, TARGET_ARTICLE_COUNT);
 
-		const lambdaName = process.env.SUMMARISE_LAMBDA_NAME;
-		if (lambdaName) {
+		if (process.env.SUMMARISE_LAMBDA_NAME) {
 			const lambdaClient = new LambdaClient({});
 			// Only send title, content, and url to the summarise lambda
 			const articlesPayload = finalArticles.map(({ title, content, url }) => ({ title, content, url }));
 			await lambdaClient.send(
 				new InvokeCommand({
-					FunctionName: lambdaName,
+					FunctionName: process.env.SUMMARISE_LAMBDA_NAME,
 					InvocationType: 'Event',
 					Payload: Buffer.from(JSON.stringify({ articles: articlesPayload })),
 				})

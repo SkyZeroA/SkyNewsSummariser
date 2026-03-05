@@ -1,15 +1,9 @@
 import crypto from 'node:crypto';
 
 import { parseSubscriberLanguage } from '@lib/lambdas/subscribe/language.ts';
+import type { VerificationTokenPayload } from '@lib/common/interfaces.ts';
 
 type SubscriberLanguage = import('@lib/lambdas/subscribe/language.ts').SubscriberLanguage;
-
-export interface VerificationTokenPayload {
-	email: string;
-	exp: number;
-	iat: number;
-	language?: SubscriberLanguage;
-}
 
 const base64UrlEncode = (input: string | Buffer): string => {
 	const buf = typeof input === 'string' ? Buffer.from(input, 'utf8') : input;
