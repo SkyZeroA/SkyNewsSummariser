@@ -1,7 +1,8 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { verify } from 'jsonwebtoken';
-import { buildCorsHeaders, getAuthToken, handlePreflight } from '@lib/lambdas/utils.ts';
+import { buildCorsHeaders, handlePreflight } from '@lib/common/cors.ts';
+import { getAuthToken } from '@lib/common/auth.ts';
 
 const streamToString = (body: unknown): Promise<string> => {
 	if (!body) {

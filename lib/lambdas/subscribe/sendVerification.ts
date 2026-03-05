@@ -1,5 +1,5 @@
 import { APIGatewayProxyHandler, APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { buildCorsHeaders, handlePreflight } from '@lib/lambdas/utils.ts';
+import { buildCorsHeaders, handlePreflight } from '@lib/common/cors.ts';
 import { signVerificationToken } from '@lib/lambdas/subscribe/verificationToken.ts';
 import { sendMail } from '@lib/lambdas/email/utils.ts';
 import { EMAIL_REGEX, TOKEN_TTL_MS } from '@lib/common/constants.ts';

@@ -3,7 +3,7 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand } from '@aws-sdk/lib-dynamodb';
 import { compare } from 'bcryptjs';
 import { sign } from 'jsonwebtoken';
-import { buildCorsHeaders, handlePreflight } from '@lib/lambdas/utils.ts';
+import { buildCorsHeaders, handlePreflight } from '@lib/common/cors.ts';
 import { ADMIN_TABLE_NAME } from '@lib/common/constants.ts';
 
 const client = new DynamoDBClient({});

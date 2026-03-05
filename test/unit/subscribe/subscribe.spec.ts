@@ -24,7 +24,7 @@ vi.mock('@aws-sdk/lib-dynamodb', () => ({
 	UpdateCommand: vi.fn((params) => params),
 }));
 
-vi.mock('@lib/lambdas/utils.ts', () => ({
+vi.mock('@lib/common/cors.ts', () => ({
 	buildCorsHeaders: mockBuildCorsHeaders,
 	handlePreflight: mockHandlePreflight,
 }));
