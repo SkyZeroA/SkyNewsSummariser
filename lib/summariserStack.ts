@@ -8,7 +8,7 @@ import { Table, AttributeType, BillingMode } from 'aws-cdk-lib/aws-dynamodb';
 import { Bucket, BlockPublicAccess } from 'aws-cdk-lib/aws-s3';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as targets from 'aws-cdk-lib/aws-events-targets';
-import { SUBSCRIBERS_TABLE_NAME } from './common/constants.ts';
+import { DRAFT_SUMMARY_KEY, PUBLISHED_SUMMARY_KEY, SUBSCRIBERS_TABLE_NAME } from './common/constants.ts';
 
 export interface SummariserStackProps extends StackProps {
 	stage: string;
@@ -213,7 +213,7 @@ export class SummariserStack extends Stack {
 			environment: {
 				JWT_SECRET: process.env.JWT_SECRET ?? '',
 				BUCKET_NAME: summaryBucket.bucketName,
-				SUMMARY_KEY: 'draft-summary.json',
+				SUMMARY_KEY: DRAFT_SUMMARY_KEY,
 			},
 		});
 
@@ -227,7 +227,7 @@ export class SummariserStack extends Stack {
 			environment: {
 				JWT_SECRET: process.env.JWT_SECRET ?? '',
 				BUCKET_NAME: summaryBucket.bucketName,
-				SUMMARY_KEY: 'published-summary.json',
+				SUMMARY_KEY: PUBLISHED_SUMMARY_KEY,
 			},
 		});
 

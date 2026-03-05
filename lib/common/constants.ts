@@ -19,3 +19,6 @@ export const TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
 export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const HUGGINGFACE_API_URL = 'https://router.huggingface.co/hf-inference/models/sshleifer/distilbart-cnn-12-6';
+
+export const DRAFT_SUMMARY_KEY = 'draft_summary.json';
+export const PUBLISHED_SUMMARY_KEY = 'published_summary.json';
