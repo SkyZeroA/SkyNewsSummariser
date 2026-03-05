@@ -4,23 +4,10 @@ import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { formatEmailHtml, formatEmailText } from '@lib/lambdas/sendSummary/utils.ts';
 import { sendMail } from '@lib/lambdas/email/utils.ts';
 import { sign } from 'jsonwebtoken';
-
-const TABLE_NAME = process.env.SUBSCRIBERS_TABLE!;
+import { SendSummaryOptions, Subscriber } from '@lib/common/interfaces.ts';
 
 const dynamoClient = new DynamoDBClient({});
 const db = DynamoDBDocumentClient.from(dynamoClient);
-
-export interface SendSummaryOptions {
-	recipients: string[];
-	summary: unknown;
-	apiBaseUrl: string;
-	jwtSecret: string;
-}
-
-interface Subscriber {
-	email: string;
-	status?: string;
-}
 
 export const sendSummaryEmails = async ({
 	recipients,
@@ -104,7 +91,7 @@ export const handler: Handler = async (event) => {
 
 		// Get all active subscribers from DynamoDB
 		const scanCommand = new ScanCommand({
-			TableName: TABLE_NAME,
+			TableName: process.env.SUBSCRIBERS_TABLE,
 			FilterExpression: 'attribute_not_exists(#status) OR #status = :active',
 			ExpressionAttributeNames: {
 				'#status': 'status',

@@ -15,8 +15,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 		return { statusCode: 403, body: 'Forbidden' };
 	}
 
-	const jwtSecret = process.env.JWT_SECRET;
-	if (!jwtSecret) {
+	if (!process.env.JWT_SECRET) {
 		return {
 			statusCode: 500,
 			headers: {
@@ -27,8 +26,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 		};
 	}
 
-	const bucketName = process.env.PUBLISHED_SUMMARY_BUCKET_NAME;
-	if (!bucketName) {
+	if (!process.env.PUBLISHED_SUMMARY_BUCKET_NAME) {
 		return {
 			statusCode: 500,
 			headers: {
@@ -60,14 +58,14 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 	}
 
 	try {
-		verify(authToken, jwtSecret);
+		verify(authToken, process.env.JWT_SECRET);
 		jwtVerified = true;
 
 		const key = 'published-summary.json';
 
 		await s3.send(
 			new PutObjectCommand({
-				Bucket: bucketName,
+				Bucket: process.env.PUBLISHED_SUMMARY_BUCKET_NAME,
 				Key: key,
 				Body: JSON.stringify(summary, null, 2),
 				ContentType: 'application/json',

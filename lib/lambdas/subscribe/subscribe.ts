@@ -4,8 +4,6 @@ import { DynamoDBDocumentClient, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { buildCorsHeaders, handlePreflight } from '@lib/lambdas/utils.ts';
 import { verifyAndDecodeToken } from '@lib/lambdas/subscribe/verificationToken.ts';
 
-const TABLE_NAME = process.env.SUBSCRIBERS_TABLE!;
-
 const client = new DynamoDBClient({});
 const db = DynamoDBDocumentClient.from(client);
 
@@ -26,7 +24,7 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 	}
 
 	try {
-		if (!TABLE_NAME) {
+		if (!process.env.SUBSCRIBERS_TABLE) {
 			console.error('SUBSCRIBERS_TABLE environment variable is not set');
 			return {
 				statusCode: 500,
@@ -80,7 +78,7 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 
 		await db.send(
 			new UpdateCommand({
-				TableName: TABLE_NAME,
+				TableName: process.env.SUBSCRIBERS_TABLE,
 				Key: {
 					email: normalizedEmail,
 				},

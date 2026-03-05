@@ -1,17 +1,8 @@
-interface SourceArticle {
-	title: string;
-	url: string;
-}
+import { SourceArticle, Summary } from '@lib/common/interfaces.ts';
 
-export interface Summary {
-	summaryText?: string;
-	sourceArticles?: unknown[];
-}
-
-export const formatEmailHtml = (summary: unknown, unsubscribeUrl?: string): string => {
-	const summaryData = summary as Summary;
-	const summaryText = summaryData.summaryText || '';
-	const allArticles = summaryData.sourceArticles || [];
+export const formatEmailHtml = (summary: Summary, unsubscribeUrl?: string): string => {
+	const summaryText = summary.summaryText || '';
+	const allArticles = summary.sourceArticles || [];
 	// Filter articles to only include those with title and url
 	const articles = allArticles.filter((article: unknown): article is SourceArticle => {
 		const a = article as Partial<SourceArticle>;
@@ -71,10 +62,9 @@ export const formatEmailHtml = (summary: unknown, unsubscribeUrl?: string): stri
 };
 
 // Format the summary as plain text email
-export const formatEmailText = (summary: unknown, unsubscribeUrl?: string): string => {
-	const summaryData = summary as Summary;
-	const summaryText = summaryData.summaryText || '';
-	const allArticles = summaryData.sourceArticles || [];
+export const formatEmailText = (summary: Summary, unsubscribeUrl?: string): string => {
+	const summaryText = summary.summaryText || '';
+	const allArticles = summary.sourceArticles || [];
 	// Filter articles to only include those with title and url
 	const articles = allArticles.filter((article: unknown): article is SourceArticle => {
 		const a = article as Partial<SourceArticle>;

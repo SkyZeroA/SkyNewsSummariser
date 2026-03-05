@@ -1,17 +1,7 @@
 import { Handler } from 'aws-lambda';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-
-const HUGGINGFACE_API_URL = 'https://router.huggingface.co/hf-inference/models/sshleifer/distilbart-cnn-12-6';
-
-interface NormalisedArticle {
-	title: string;
-	content: string;
-	url: string;
-}
-
-interface Event {
-	articles: NormalisedArticle[];
-}
+import { HUGGINGFACE_API_URL } from '@lib/common/constants.ts';
+import { FetchAndNormaliseResult } from '@lib/common/interfaces.ts';
 
 const hasSummaryText = (value: unknown): value is { summary_text: string } =>
 	typeof value === 'object' && value !== null && 'summary_text' in value && typeof (value as { summary_text?: unknown }).summary_text === 'string';
@@ -39,7 +29,7 @@ const summariseText = async (text: string, apiKey: string): Promise<string> => {
 	throw new Error('Unexpected Hugging Face API response');
 };
 
-export const handler: Handler<Event, void> = async (event) => {
+export const handler: Handler<FetchAndNormaliseResult, void> = async (event) => {
 	const apiKey = process.env.HUGGINGFACE_API_KEY;
 	const bucketName = process.env.DRAFT_SUMMARY_BUCKET_NAME;
 	if (!apiKey) {
