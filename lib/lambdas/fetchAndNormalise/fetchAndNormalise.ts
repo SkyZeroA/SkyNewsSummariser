@@ -11,6 +11,7 @@ import {
 	TARGET_ARTICLE_COUNT,
 	MAX_ARTICLE_WORDS,
 	NEWS_HOST,
+	CHARTBEAT_API_URL,
 } from '@lib/common/constants.ts';
 
 // Fetches the most popular articles from Chartbeat live endpoint
@@ -18,7 +19,7 @@ export const fetchFromChartBeat = async (apiKey: string, limit: number): Promise
 	try {
 		const excludePaths = new Set(DEFAULT_EXCLUDE_PATHS.map((value) => getPath(value, NEWS_HOST)));
 
-		const url = new URL('https://api.chartbeat.com/live/toppages/v3/');
+		const url = new URL(CHARTBEAT_API_URL);
 		url.searchParams.append('apikey', apiKey);
 		url.searchParams.append('host', NEWS_HOST);
 		url.searchParams.append('limit', String(limit));

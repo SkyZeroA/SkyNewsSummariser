@@ -14,6 +14,7 @@ export const LIMIT_START = 30;
 export const LIMIT_INCREMENT = 5;
 export const MAX_LIMIT = 60;
 export const MAX_ARTICLE_WORDS = 500;
+export const CHARTBEAT_API_URL = 'https://api.chartbeat.com/live/toppages/v3/';
 
 export const TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
 export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
