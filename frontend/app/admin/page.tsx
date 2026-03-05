@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Card, CardBody, CardHeader, Button, Textarea, Link } from "@heroui/react";
 import { ComprehensiveSummary } from "@/types/summary";
 import { useConfig } from "@/app/providers";
+import { Skeleton, SourceArticleListSkeleton } from "@/components/SkeletonLoader";
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -101,14 +102,56 @@ export default function AdminDashboard() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center animate-fadeIn">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading summary...</p>
+      <div className="max-w-[1400px] mx-auto px-6 py-8">
+        {/* Header Skeleton */}
+        <div className="mb-8 animate-fadeIn">
+          <Skeleton className="h-10 w-64 mb-2" />
+          <Skeleton className="h-5 w-96" />
+        </div>
+
+        {/* Content Skeleton */}
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            {/* Summary Editor Skeleton */}
+            <Card className="overflow-hidden animate-slideUp h-full flex flex-col">
+              <CardHeader className="px-6 pt-6 pb-4 border-b border-gray-200 dark:border-gray-700">
+                <Skeleton className="h-7 w-56" />
+              </CardHeader>
+              <CardBody className="px-6 py-6 flex-1 flex flex-col">
+                <div className="space-y-4">
+                  <Skeleton className="h-6 w-32" />
+                  <div className="space-y-3">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-5/6" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-4/5" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-3/4" />
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+
+            {/* Source Articles Skeleton */}
+            <Card className="overflow-hidden animate-slideUp h-full flex flex-col" style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
+              <CardHeader className="px-6 pt-6 pb-4 border-b border-gray-200 dark:border-gray-700">
+                <Skeleton className="h-6 w-48" />
+              </CardHeader>
+              <CardBody className="px-6 py-6 flex-1">
+                <SourceArticleListSkeleton count={5} />
+              </CardBody>
+            </Card>
+          </div>
+
+          {/* Action Buttons Skeleton */}
+          <div className="flex gap-4 justify-center animate-fadeIn" style={{ animationDelay: '0.4s', animationFillMode: 'both' }}>
+            <Skeleton className="h-12 w-32 rounded-lg" />
+          </div>
         </div>
       </div>
     );
-}  return (
+  }  return (
     <div className="max-w-[1400px] mx-auto px-6 py-8">
       {/* Header */}
       <div className="mb-8 animate-fadeIn">
