@@ -9,6 +9,12 @@ interface Props {
 
 type SubscriberLanguage = "english" | "spanish" | "french";
 
+const LANGUAGE_OPTIONS: { value: SubscriberLanguage; label: string }[] = [
+  { value: "english", label: "English" },
+  { value: "spanish", label: "Spanish" },
+  { value: "french", label: "French" },
+];
+
 // Simple email validation helper kept at module scope
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const isValidEmail = (value: string) => EMAIL_REGEX.test(value.trim());
@@ -109,44 +115,27 @@ export default function SubscribeForm({ onSubscribe }: Props) {
           </button>
         </div>
 
-    <fieldset className="mt-3">
-      <legend className="text-sm font-medium text-gray-900 dark:text-gray-100">Language</legend>
-      <div className="mt-2 flex flex-wrap gap-4">
-        <label className="inline-flex items-center gap-2 text-sm text-gray-900 dark:text-gray-100">
-          <input
-            type="radio"
-            name="language"
-            value="english"
-            checked={language === "english"}
-            onChange={() => setLanguage("english")}
-            className="h-4 w-4"
-          />
-          English
-        </label>
-        <label className="inline-flex items-center gap-2 text-sm text-gray-900 dark:text-gray-100">
-          <input
-            type="radio"
-            name="language"
-            value="spanish"
-            checked={language === "spanish"}
-            onChange={() => setLanguage("spanish")}
-            className="h-4 w-4"
-          />
-          Spanish
-        </label>
-        <label className="inline-flex items-center gap-2 text-sm text-gray-900 dark:text-gray-100">
-          <input
-            type="radio"
-            name="language"
-            value="french"
-            checked={language === "french"}
-            onChange={() => setLanguage("french")}
-            className="h-4 w-4"
-          />
-          French
-        </label>
-      </div>
-    </fieldset>
+        <fieldset className="mt-3">
+          <legend className="text-sm font-medium text-gray-900 dark:text-gray-100">Language</legend>
+          <div className="mt-2 flex flex-wrap gap-4">
+            {LANGUAGE_OPTIONS.map(({ value, label }) => (
+              <label
+                key={value}
+                className="inline-flex items-center gap-2 text-sm text-gray-900 dark:text-gray-100"
+              >
+                <input
+                  type="radio"
+                  name="language"
+                  value={value}
+                  checked={language === value}
+                  onChange={() => setLanguage(value)}
+                  className="h-4 w-4"
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+        </fieldset>
         {error && (
           <p
             id="subscribe-email-error"

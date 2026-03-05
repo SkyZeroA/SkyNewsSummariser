@@ -2,7 +2,7 @@ import { Handler } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { TranslateClient, TranslateTextCommand } from '@aws-sdk/client-translate';
-import { formatEmailHtml, formatEmailText } from '@lib/lambdas/sendSummary/utils.ts';
+import { formatEmailHtml, formatEmailText, Summary } from '@lib/lambdas/sendSummary/utils.ts';
 import { sendMail } from '@lib/lambdas/email/utils.ts';
 import { sign } from 'jsonwebtoken';
 import { DEFAULT_SUBSCRIBER_LANGUAGE, parseSubscriberLanguage } from '@lib/lambdas/subscribe/language.ts';
@@ -40,11 +40,6 @@ const TRANSLATE_TARGET_BY_LANGUAGE: Partial<Record<SubscriberLanguage, Translate
 
 const toTranslateTargetLanguageCode = (language: SubscriberLanguage): TranslateTargetLanguageCode | null =>
 	TRANSLATE_TARGET_BY_LANGUAGE[language] ?? null;
-
-interface SummaryLike {
-	summaryText?: unknown;
-	sourceArticles?: unknown;
-}
 
 interface SourceArticleLike {
 	title?: unknown;
@@ -127,7 +122,7 @@ const translateSummary = async (summary: unknown, language: SubscriberLanguage):
 		return summary;
 	}
 
-	const summaryObj = summary as SummaryLike & Record<string, unknown>;
+	const summaryObj = summary as Summary & Record<string, unknown>;
 	const summaryText = typeof summaryObj.summaryText === 'string' ? summaryObj.summaryText : undefined;
 	const sourceArticles = Array.isArray(summaryObj.sourceArticles) ? (summaryObj.sourceArticles as unknown[]) : undefined;
 
@@ -159,15 +154,11 @@ const translateSummary = async (summary: unknown, language: SubscriberLanguage):
 		...summaryObj,
 	};
 
-	if (translatedSummaryText === undefined) {
-		// Keep existing
-	} else {
+	if (translatedSummaryText !== undefined) {
 		out.summaryText = translatedSummaryText;
 	}
 
-	if (translatedSourceArticles === undefined) {
-		// Keep existing
-	} else {
+	if (translatedSourceArticles !== undefined) {
 		out.sourceArticles = translatedSourceArticles;
 	}
 
@@ -249,17 +240,20 @@ export const sendSummaryEmails = async ({
 
 export const handler: Handler = async (event) => {
 	try {
-		if (!event) {
+		if (!event || typeof event !== 'object') {
 			return {
 				statusCode: 400,
-				body: JSON.stringify({ error: 'Summary data is required' }),
+				body: JSON.stringify({ error: 'Request body is required' }),
 			};
 		}
 
-		// Support both payload shapes:
-		// 1) legacy: event is the summary
-		// 2) preferred: { apiBaseUrl, summary }
-		const summaryPayload = (event as { summary?: unknown })?.summary ?? event;
+		const summaryPayload = (event as { summary?: unknown }).summary;
+		if (!summaryPayload) {
+			return {
+				statusCode: 400,
+				body: JSON.stringify({ error: 'summary is required' }),
+			};
+		}
 
 		// Verify JWT_SECRET is set for unsubscribe tokens
 		if (!process.env.JWT_SECRET) {

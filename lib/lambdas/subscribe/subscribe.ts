@@ -78,7 +78,7 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 		}
 
 		const normalizedEmail = decoded.email.trim().toLowerCase();
-		const language = 'language' in decoded ? decoded.language : DEFAULT_SUBSCRIBER_LANGUAGE;
+		const language = decoded.language ?? DEFAULT_SUBSCRIBER_LANGUAGE;
 
 		await db.send(
 			new UpdateCommand({

@@ -30,7 +30,7 @@ export const signVerificationToken = (payload: VerificationTokenPayload, secret:
 	return `${body}.${base64UrlEncode(sig)}`;
 };
 
-export const verifyAndDecodeToken = (token: string, secret: string): { email: string; language: SubscriberLanguage } | { email: string } | null => {
+export const verifyAndDecodeToken = (token: string, secret: string): { email: string; language?: SubscriberLanguage } | null => {
 	const [body, sig] = token.split('.');
 	if (!body || !sig) {
 		return null;
@@ -65,11 +65,5 @@ export const verifyAndDecodeToken = (token: string, secret: string): { email: st
 	}
 
 	const parsedLanguage = parseSubscriberLanguage(language);
-	if (parsedLanguage) {
-		return { email, language: parsedLanguage };
-	}
-
-	// Backwards compatible: tokens created before language was introduced.
-	// Only return language when explicitly present and valid.
-	return { email };
+	return parsedLanguage ? { email, language: parsedLanguage } : { email };
 };

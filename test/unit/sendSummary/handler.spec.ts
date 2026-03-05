@@ -86,8 +86,10 @@ describe('handler', () => {
 		mockSendMail.mockResolvedValue(undefined);
 
 		const event = {
-			summaryText: 'Breaking news summary',
-			sourceArticles: [{ title: 'Article 1', url: 'https://news.sky.com/article1' }],
+			summary: {
+				summaryText: 'Breaking news summary',
+				sourceArticles: [{ title: 'Article 1', url: 'https://news.sky.com/article1' }],
+			},
 		};
 
 		const result = await handler(event, mockContext, mockCallback);
@@ -113,7 +115,9 @@ describe('handler', () => {
 		mockSendMail.mockResolvedValue(undefined);
 
 		const event = {
-			summaryText: 'Test summary',
+			summary: {
+				summaryText: 'Test summary',
+			},
 		};
 
 		const result = await handler(event, mockContext, mockCallback);
@@ -129,7 +133,7 @@ describe('handler', () => {
 
 		expect(result.statusCode).toBe(400);
 		const body = JSON.parse(result.body);
-		expect(body.error).toBe('Summary data is required');
+		expect(body.error).toBe('Request body is required');
 		expect(mockSend).not.toHaveBeenCalled();
 		expect(mockSendMail).not.toHaveBeenCalled();
 	});
@@ -138,7 +142,9 @@ describe('handler', () => {
 		delete process.env.APP_PASSWORD;
 
 		const event = {
-			summaryText: 'Test',
+			summary: {
+				summaryText: 'Test',
+			},
 		};
 
 		const result = await handler(event, mockContext, mockCallback);
@@ -153,7 +159,9 @@ describe('handler', () => {
 		delete process.env.JWT_SECRET;
 
 		const event = {
-			summaryText: 'Test',
+			summary: {
+				summaryText: 'Test',
+			},
 		};
 
 		const result = await handler(event, mockContext, mockCallback);
@@ -168,7 +176,9 @@ describe('handler', () => {
 		delete process.env.API_BASE_URL;
 
 		const event = {
-			summaryText: 'Test',
+			summary: {
+				summaryText: 'Test',
+			},
 		};
 
 		const result = await handler(event, mockContext, mockCallback);
@@ -185,7 +195,9 @@ describe('handler', () => {
 		});
 
 		const event = {
-			summaryText: 'Test',
+			summary: {
+				summaryText: 'Test',
+			},
 		};
 
 		await handler(event, mockContext, mockCallback);
@@ -210,7 +222,9 @@ describe('handler', () => {
 		mockSendMail.mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('SMTP Error'));
 
 		const event = {
-			summaryText: 'Test',
+			summary: {
+				summaryText: 'Test',
+			},
 		};
 
 		const result = await handler(event, mockContext, mockCallback);
@@ -225,7 +239,9 @@ describe('handler', () => {
 		mockSend.mockRejectedValue(new Error('DynamoDB error'));
 
 		const event = {
-			summaryText: 'Test',
+			summary: {
+				summaryText: 'Test',
+			},
 		};
 
 		const result = await handler(event, mockContext, mockCallback);
@@ -245,7 +261,9 @@ describe('handler', () => {
 		mockSendMail.mockRejectedValue(new Error('SMTP connection failed'));
 
 		const event = {
-			summaryText: 'Test',
+			summary: {
+				summaryText: 'Test',
+			},
 		};
 
 		const result = await handler(event, mockContext, mockCallback);
@@ -263,7 +281,9 @@ describe('handler', () => {
 		});
 
 		const event = {
-			summaryText: 'Test',
+			summary: {
+				summaryText: 'Test',
+			},
 		};
 
 		const result = await handler(event, mockContext, mockCallback);

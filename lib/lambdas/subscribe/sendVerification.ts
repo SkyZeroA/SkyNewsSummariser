@@ -109,8 +109,7 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 		}
 
 		const parsedLanguage = parseSubscriberLanguage(language);
-		const languageProvided = language !== undefined && language !== null;
-		if (languageProvided && !parsedLanguage) {
+		if (!parsedLanguage) {
 			return {
 				statusCode: 400,
 				headers: corsHeaders,
