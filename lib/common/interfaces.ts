@@ -1,3 +1,7 @@
+export interface ChartbeatResponse {
+	pages: { path: string; title: string }[];
+}
+
 export interface SourceArticle {
 	title: string;
 	url: string;

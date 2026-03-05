@@ -1,6 +1,6 @@
 import { Handler } from 'aws-lambda';
 import * as cheerio from 'cheerio';
-import { buildUrl, getPath } from '@lib/lambdas/fetchAndNormalise/utils.ts';
+import { isChartbeatResponse, buildUrl, getPath } from '@lib/lambdas/fetchAndNormalise/utils.ts';
 import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 import { SourceArticle, NormalisedArticle, FetchAndNormaliseResult } from '@lib/common/interfaces.ts';
 import {
@@ -14,7 +14,6 @@ import {
 	CHARTBEAT_API_URL,
 } from '@lib/common/constants.ts';
 
-// Fetches the most popular articles from Chartbeat live endpoint
 export const fetchFromChartBeat = async (apiKey: string, limit: number): Promise<SourceArticle[]> => {
 	try {
 		const excludePaths = new Set(DEFAULT_EXCLUDE_PATHS.map((value) => getPath(value, NEWS_HOST)));
@@ -24,15 +23,13 @@ export const fetchFromChartBeat = async (apiKey: string, limit: number): Promise
 		url.searchParams.append('host', NEWS_HOST);
 		url.searchParams.append('limit', String(limit));
 
-		// Get and validate response from chartbeat
 		const response = await fetch(url.toString());
 		if (!response.ok) {
 			throw new Error(`ChartBeat API error: ${response.status} ${response.statusText}`);
 		}
 
-		// Format response into json and check for pages array
 		const data: unknown = await response.json();
-		if (typeof data !== 'object' || data === null || !('pages' in data) || !Array.isArray(data.pages)) {
+		if (!isChartbeatResponse(data)) {
 			throw new TypeError('Invalid ChartBeat response: missing pages array');
 		}
 
@@ -56,7 +53,6 @@ export const fetchFromChartBeat = async (apiKey: string, limit: number): Promise
 	}
 };
 
-// Fetches the actual text in each article from the URL
 export const fetchArticleContent = async (url: string): Promise<string> => {
 	try {
 		const response = await fetch(url);
@@ -66,9 +62,11 @@ export const fetchArticleContent = async (url: string): Promise<string> => {
 		}
 
 		const html = await response.text();
-
 		const $ = cheerio.load(html);
-		const $article = $('[data-component-name=ui-article-body] > p').filter((_, el) => {
+
+		// Get content from static pages - live pages currently ignored
+		const $article = $('[data-component-name=ui-article-body] > p')
+		.filter((_, el) => {
 			const strongText = $(el).find('strong').text().trim();
 			return !strongText.includes('Read more from Sky News:');
 		});
@@ -79,13 +77,16 @@ export const fetchArticleContent = async (url: string): Promise<string> => {
 	}
 };
 
-// Normalises the raw articles from ChartBeat into a consistent format with content
 export const normaliseArticles = async (articles: SourceArticle[]): Promise<NormalisedArticle[]> => {
 	const normalisedPromises = articles.map(async (article) => {
 		const content = await fetchArticleContent(article.url);
 		const wordCount = content.trim().split(/\s+/).filter(Boolean).length;
-		if (!content || wordCount > MAX_ARTICLE_WORDS) {
-			// Skip very long articles
+		
+		if (!content) {
+			console.warn(`Skipping article "${article.title}" because content is empty`);
+			return null;
+		}
+		if (wordCount > MAX_ARTICLE_WORDS) {
 			console.warn(`Skipping article "${article.title}" because it has ${wordCount} words (> ${MAX_ARTICLE_WORDS})`);
 			return null;
 		}
@@ -100,9 +101,7 @@ export const normaliseArticles = async (articles: SourceArticle[]): Promise<Norm
 	return normalised.filter(Boolean) as NormalisedArticle[];
 };
 
-// Lambda handler for fetching and normalizing ChartBeat articles
 export const handler: Handler<unknown, FetchAndNormaliseResult> = async () => {
-	// Set and validate API key
 	const apiKey = process.env.CHARTBEAT_API_KEY;
 	if (!apiKey) {
 		throw new Error('CHARTBEAT_API_KEY environment variable is required. Set this in your Lambda configuration.');
@@ -122,9 +121,7 @@ export const handler: Handler<unknown, FetchAndNormaliseResult> = async () => {
 				return { articles: [], count: 0 };
 			}
 
-			// Normalise the articles and filter out those with empty content
-			const normalisedArticles = await normaliseArticles(rawArticles);
-			articlesWithContent = normalisedArticles.filter((article) => article.content && article.content.trim() !== '');
+			articlesWithContent = await normaliseArticles(rawArticles);
 
 			if (articlesWithContent.length < TARGET_ARTICLE_COUNT) {
 				limit += LIMIT_INCREMENT;
@@ -135,8 +132,8 @@ export const handler: Handler<unknown, FetchAndNormaliseResult> = async () => {
 
 		if (process.env.SUMMARISE_LAMBDA_NAME) {
 			const lambdaClient = new LambdaClient({});
-			// Only send title, content, and url to the summarise lambda
 			const articlesPayload = finalArticles.map(({ title, content, url }) => ({ title, content, url }));
+
 			await lambdaClient.send(
 				new InvokeCommand({
 					FunctionName: process.env.SUMMARISE_LAMBDA_NAME,
@@ -145,7 +142,10 @@ export const handler: Handler<unknown, FetchAndNormaliseResult> = async () => {
 				})
 			);
 		}
-		return { articles: finalArticles, count: finalArticles.length };
+		return {
+			articles: finalArticles,
+			count: finalArticles.length
+		};
 	} catch (error) {
 		console.error('Error in fetchAndNormalise lambda:', error);
 		throw error;
