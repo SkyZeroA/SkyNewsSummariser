@@ -4,7 +4,14 @@ import { Construct } from 'constructs';
 import { RemovalPolicy, Stack, StackProps } from 'aws-cdk-lib';
 import * as path from 'node:path';
 import { S3BucketOrigin } from 'aws-cdk-lib/aws-cloudfront-origins';
-import { AllowedMethods, Distribution, ViewerProtocolPolicy } from 'aws-cdk-lib/aws-cloudfront';
+import {
+	AllowedMethods,
+	Distribution,
+	Function as CloudFrontFunction,
+	FunctionCode,
+	FunctionEventType,
+	ViewerProtocolPolicy,
+} from 'aws-cdk-lib/aws-cloudfront';
 import { PolicyStatement, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
 
 interface FrontendStackProps extends StackProps {
@@ -16,6 +23,58 @@ export class FrontendStack extends Stack {
 
 	constructor(scope: Construct, id: string, props: FrontendStackProps) {
 		super(scope, id, props);
+
+		const urlRewriteFunction = new CloudFrontFunction(this, 'UrlRewriteFunction', {
+			code: FunctionCode.fromInline(`
+				function handler(event) {
+					var request = event.request;
+					var uri = request.uri;
+
+					// Redirect explicit .html URLs to clean extensionless URLs.
+					// CloudFront Functions can return a response at viewer-request time.
+					if (uri.endsWith('.html') && !uri.startsWith('/_next/')) {
+						if (uri === '/index.html') {
+							return {
+								statusCode: 301,
+								statusDescription: 'Moved Permanently',
+								headers: {
+									location: { value: '/' },
+								},
+							};
+						}
+
+						return {
+							statusCode: 301,
+							statusDescription: 'Moved Permanently',
+							headers: {
+								location: { value: uri.slice(0, -5) },
+							},
+						};
+					}
+
+					if (uri.startsWith('/_next/')) {
+						return request;
+					}
+
+					if (uri === '/') {
+						request.uri = '/index.html';
+						return request;
+					}
+
+					if (uri.endsWith('/')) {
+						uri = uri.slice(0, -1);
+					}
+
+					var lastSegment = uri.substring(uri.lastIndexOf('/') + 1);
+					if (lastSegment.indexOf('.') !== -1) {
+						return request;
+					}
+
+					request.uri = uri + '.html';
+					return request;
+				}
+`),
+		});
 
 		// Create and deploy a bucket to host the static website
 		this.siteBucket = new Bucket(this, 'SiteBucket', {
@@ -32,6 +91,12 @@ export class FrontendStack extends Stack {
 				origin: S3BucketOrigin.withOriginAccessControl(this.siteBucket),
 				allowedMethods: AllowedMethods.ALLOW_GET_HEAD,
 				viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+				functionAssociations: [
+					{
+						function: urlRewriteFunction,
+						eventType: FunctionEventType.VIEWER_REQUEST,
+					},
+				],
 			},
 			defaultRootObject: 'index.html',
 		});
@@ -50,6 +115,8 @@ export class FrontendStack extends Stack {
 				'/',
 				'/index.html',
 				'/config.json',
+				'/admin',
+				'/login',
 				// Cover both possible Next export layouts
 				'/admin.html',
 				'/login.html',

@@ -62,11 +62,11 @@ export default function AdminDashboard() {
             fetchSummary();
           } else {
             // Not authenticated, redirect to login
-            router.push("/login.html");
+            router.push("/login");
           }
       } catch (error) {
         console.error("Auth check failed:", error);
-        router.push("/login.html");
+        router.push("/login");
       }
     };
 

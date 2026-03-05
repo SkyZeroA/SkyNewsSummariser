@@ -62,7 +62,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
 		const userData = {
 			email: user.email,
-			name: user.name,
+			name: user.Name,
 		};
 
 		const jwt_secret = process.env.JWT_SECRET;

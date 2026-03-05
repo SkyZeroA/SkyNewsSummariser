@@ -30,7 +30,7 @@ export default function AdminLoginPage() {
       globalThis.dispatchEvent(new Event('auth-change'));
 
       // Redirect to admin dashboard
-      router.push('/admin.html');
+      router.push('/admin');
     } else {
       // Throw error with message from API
       throw new Error(data.error || 'Invalid credentials');
