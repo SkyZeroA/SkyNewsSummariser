@@ -131,7 +131,7 @@ export default function AdminDashboard() {
                   Comprehensive Summary
                 </h2>
               </CardHeader>
-              <CardBody className="px-6 py-6 flex-1 flex flex-col">
+              <CardBody className="px-6 py-6 flex-1 flex flex-col overflow-y-auto">
                 <div className="flex flex-col gap-6 flex-1">
                   <div className="animate-fadeIn flex-1 flex flex-col" style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
                     <Textarea
@@ -141,12 +141,11 @@ export default function AdminDashboard() {
                       onValueChange={setEditedSummary}
                       variant="bordered"
                       minRows={0}
-                      maxRows={20}
                       classNames={{
                         base: "flex-1",
-                        input: "text-gray-900 dark:text-white text-base leading-relaxed overflow-hidden resize-none",
+                        input: "text-gray-900 dark:text-white text-base leading-relaxed resize-none",
                         label: "text-gray-700 dark:text-gray-300 text-lg font-semibold",
-                        inputWrapper: "transition-all duration-300 hover:border-blue-400 dark:hover:border-blue-500 h-full min-h-[600px]",
+                        inputWrapper: "transition-all duration-300 hover:border-blue-400 dark:hover:border-blue-500 h-full",
                       }}
                     />
                   </div>
