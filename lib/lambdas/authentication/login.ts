@@ -31,8 +31,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 			};
 		}
 
-		const body = JSON.parse(event.body);
-		const { email, password } = body;
+		const { email, password } = JSON.parse(event.body);
 		if (!email || !password) {
 			return {
 				statusCode: 400,
@@ -62,7 +61,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
 		const userData = {
 			email: user.email,
-			name: user.Name,
+			name: user.name,
 		};
 
 		const jwt_secret = process.env.JWT_SECRET;
