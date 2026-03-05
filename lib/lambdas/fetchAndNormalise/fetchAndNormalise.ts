@@ -89,7 +89,7 @@ export const normaliseArticles = async (articles: SourceArticle[]): Promise<Norm
 			console.warn(`Skipping article "${article.title}" because it has ${wordCount} words (> ${MAX_ARTICLE_WORDS})`);
 			return null;
 		}
-		
+
 		return {
 			title: article.title,
 			content,

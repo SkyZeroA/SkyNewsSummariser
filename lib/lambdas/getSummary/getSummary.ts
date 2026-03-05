@@ -67,7 +67,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 	const s3 = new S3Client({});
 	try {
 		verify(authToken, process.env.JWT_SECRET);
-	} catch (error){
+	} catch (error) {
 		console.warn('JWT verification failed:', error);
 		return {
 			statusCode: 401,
@@ -100,13 +100,14 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 				'Content-Type': 'application/json',
 			},
 			body: JSON.stringify({
-				summary: parsed ?
-					{
-						id: etag,
-						summaryText: parsed.summaryText ?? '',
-						sourceArticles: parsed.sourceArticles ?? [],
-						updatedAt: lastModified,
-					} : null,
+				summary: parsed
+					? {
+							id: etag,
+							summaryText: parsed.summaryText ?? '',
+							sourceArticles: parsed.sourceArticles ?? [],
+							updatedAt: lastModified,
+						}
+					: null,
 			}),
 		};
 	} catch (error) {
