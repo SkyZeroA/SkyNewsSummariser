@@ -123,17 +123,17 @@ export default function AdminDashboard() {
       {summary ? (
         <div className="space-y-6">
           {/* Two Column Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
             {/* Main Summary Editor */}
-            <Card className="overflow-hidden animate-slideUp h-full flex flex-col" style={{ animationDelay: '0.1s', animationFillMode: 'both' }}>
+            <Card className="overflow-hidden animate-slideUp flex flex-col" style={{ animationDelay: '0.1s', animationFillMode: 'both' }}>
               <CardHeader className="px-6 pt-6 pb-4 border-b border-gray-200 dark:border-gray-700">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                   Comprehensive Summary
                 </h2>
               </CardHeader>
-              <CardBody className="px-6 py-6 flex-1 flex flex-col">
-                <div className="flex flex-col gap-6 flex-1">
-                  <div className="animate-fadeIn flex-1 flex flex-col" style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
+              <CardBody className="px-6 py-6 flex-1 flex flex-col min-h-0">
+                <div className="flex flex-col gap-6 flex-1 min-h-0">
+                  <div className="animate-fadeIn flex-1 flex flex-col min-h-0" style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
                     <Textarea
                       label="Summary Text"
                       placeholder="Edit the comprehensive summary..."
@@ -141,12 +141,12 @@ export default function AdminDashboard() {
                       onValueChange={setEditedSummary}
                       variant="bordered"
                       minRows={0}
-                      maxRows={20}
+                      maxRows={45}
                       classNames={{
-                        base: "flex-1",
-                        input: "text-gray-900 dark:text-white text-base leading-relaxed overflow-hidden resize-none",
+                        base: "flex-1 flex flex-col min-h-0",
+                        input: "text-gray-900 dark:text-white text-base leading-relaxed resize-none overflow-y-auto flex-1",
                         label: "text-gray-700 dark:text-gray-300 text-lg font-semibold",
-                        inputWrapper: "transition-all duration-300 hover:border-blue-400 dark:hover:border-blue-500 h-full min-h-[600px]",
+                        inputWrapper: "transition-all duration-300 hover:border-blue-400 dark:hover:border-blue-500 flex-1 flex flex-col min-h-0",
                       }}
                     />
                   </div>
@@ -166,7 +166,7 @@ export default function AdminDashboard() {
             </Card>
 
             {/* Source Articles */}
-            <Card className="overflow-hidden animate-slideUp h-full flex flex-col" style={{ animationDelay: '0.3s', animationFillMode: 'both' }}>
+            <Card className="overflow-hidden animate-slideUp flex flex-col" style={{ animationDelay: '0.3s', animationFillMode: 'both' }}>
               <CardHeader className="px-6 pt-6 pb-4 border-b border-gray-200 dark:border-gray-700">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                   Source Articles ({summary.sourceArticles.length})
