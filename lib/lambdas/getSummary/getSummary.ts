@@ -4,33 +4,20 @@ import { verify } from 'jsonwebtoken';
 import { buildCorsHeaders, handlePreflight } from '@lib/common/cors.ts';
 import { getAuthToken } from '@lib/common/auth.ts';
 
-const streamToString = (body: unknown): Promise<string> => {
-	if (!body) {
-		return Promise.resolve('');
-	}
-
-	const maybeTransform = body as { transformToString?: () => Promise<string> };
-	if (typeof maybeTransform.transformToString === 'function') {
-		return maybeTransform.transformToString();
-	}
-
-	throw new Error('Unsupported S3 response body type');
-};
-
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-	const { BUCKET_NAME, SUMMARY_KEY } = process.env;
-
 	if (event.httpMethod === 'OPTIONS') {
 		return handlePreflight(event);
 	}
 
 	const corsHeaders = buildCorsHeaders(event);
 	if (!corsHeaders) {
-		return { statusCode: 403, body: 'Forbidden' };
+		return {
+			statusCode: 403,
+			body: 'Forbidden',
+		};
 	}
 
-	const jwtSecret = process.env.JWT_SECRET;
-	if (!jwtSecret) {
+	if (!process.env.JWT_SECRET) {
 		console.error('JWT_SECRET missing from environment');
 		return {
 			statusCode: 500,
@@ -41,8 +28,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 			body: JSON.stringify({ error: 'Server misconfigured: JWT_SECRET is missing' }),
 		};
 	}
-
-	if (!BUCKET_NAME) {
+	if (!process.env.BUCKET_NAME) {
 		console.error('BUCKET_NAME missing from environment');
 		return {
 			statusCode: 500,
@@ -53,7 +39,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 			body: JSON.stringify({ error: 'Server misconfigured: BUCKET_NAME is missing' }),
 		};
 	}
-	if (!SUMMARY_KEY) {
+	if (!process.env.SUMMARY_KEY) {
 		console.error('SUMMARY_KEY missing from environment');
 		return {
 			statusCode: 500,
@@ -79,19 +65,29 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 	}
 
 	const s3 = new S3Client({});
-	let jwtVerified = false;
 	try {
-		verify(authToken, jwtSecret);
-		jwtVerified = true;
+		verify(authToken, process.env.JWT_SECRET);
+	} catch (error){
+		console.warn('JWT verification failed:', error);
+		return {
+			statusCode: 401,
+			headers: {
+				...corsHeaders,
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({ authenticated: false }),
+		};
+	}
 
+	try {
 		const response = await s3.send(
 			new GetObjectCommand({
-				Bucket: BUCKET_NAME,
-				Key: SUMMARY_KEY,
+				Bucket: process.env.BUCKET_NAME,
+				Key: process.env.SUMMARY_KEY,
 			})
 		);
 
-		const text = await streamToString(response.Body);
+		const text = response.Body?.transformToString ? await response.Body.transformToString() : '';
 		const parsed = text ? (JSON.parse(text) as { summaryText?: string; sourceArticles?: { title: string; url: string }[] }) : null;
 
 		const lastModified = response.LastModified?.toISOString() ?? new Date().toISOString();
@@ -104,46 +100,16 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 				'Content-Type': 'application/json',
 			},
 			body: JSON.stringify({
-				summary: parsed
-					? {
-							id: etag,
-							summaryText: parsed.summaryText ?? '',
-							sourceArticles: parsed.sourceArticles ?? [],
-							status: 'pending',
-							createdAt: lastModified,
-							updatedAt: lastModified,
-						}
-					: null,
+				summary: parsed ?
+					{
+						id: etag,
+						summaryText: parsed.summaryText ?? '',
+						sourceArticles: parsed.sourceArticles ?? [],
+						updatedAt: lastModified,
+					} : null,
 			}),
 		};
 	} catch (error) {
-		if (!jwtVerified) {
-			console.warn('JWT verification failed:', error);
-			return {
-				statusCode: 401,
-				headers: {
-					...corsHeaders,
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({ authenticated: false }),
-			};
-		}
-
-		const maybeError = error as { name?: string; $metadata?: { httpStatusCode?: number } };
-		const errorName = maybeError?.name;
-
-		if (errorName === 'NoSuchKey' || maybeError?.$metadata?.httpStatusCode === 404) {
-			console.info('No summary found in S3 (NoSuchKey/404)');
-			return {
-				statusCode: 200,
-				headers: {
-					...corsHeaders,
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({ summary: null }),
-			};
-		}
-
 		console.error('Failed to read summary from S3:', error);
 		return {
 			statusCode: 500,
