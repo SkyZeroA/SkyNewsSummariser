@@ -30,7 +30,7 @@ vi.mock('@aws-sdk/lib-dynamodb', () => ({
 	ScanCommand: vi.fn((params) => params),
 }));
 
-vi.mock('@lib/lambdas/email/utils.ts', () => ({
+vi.mock('@lib/common/email.ts', () => ({
 	sendMail: mockSendMail,
 }));
 

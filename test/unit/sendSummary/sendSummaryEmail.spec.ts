@@ -8,7 +8,7 @@ const { mockSendMail, mockFormatEmailHtml, mockFormatEmailText } = vi.hoisted(()
 	};
 });
 
-vi.mock('@lib/lambdas/email/utils.ts', () => ({
+vi.mock('@lib/common/email.ts', () => ({
 	sendMail: mockSendMail,
 }));
 

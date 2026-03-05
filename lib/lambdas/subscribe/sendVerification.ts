@@ -1,7 +1,7 @@
 import { APIGatewayProxyHandler, APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { buildCorsHeaders, handlePreflight } from '@lib/common/cors.ts';
 import { signVerificationToken } from '@lib/lambdas/subscribe/verificationToken.ts';
-import { sendMail } from '@lib/lambdas/email/utils.ts';
+import { sendMail } from '@lib/common/email.ts';
 import { EMAIL_REGEX, TOKEN_TTL_MS } from '@lib/common/constants.ts';
 
 const getBaseUrlFromEvent = (event: APIGatewayProxyEvent): string | null => {
