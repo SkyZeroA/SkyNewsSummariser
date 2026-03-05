@@ -16,7 +16,7 @@ export interface FetchAndNormaliseResult {
 
 export interface SendSummaryOptions {
 	recipients: string[];
-	summary: unknown;
+	summary: Summary;
 	apiBaseUrl: string;
 	jwtSecret: string;
 }
@@ -28,7 +28,7 @@ export interface Subscriber {
 
 export interface Summary {
 	summaryText?: string;
-	sourceArticles?: unknown[];
+	sourceArticles?: SourceArticle[];
 }
 
 export interface VerificationTokenPayload {
