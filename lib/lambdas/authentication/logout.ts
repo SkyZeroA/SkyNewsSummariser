@@ -9,7 +9,10 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
 	const corsHeaders = buildCorsHeaders(event);
 	if (!corsHeaders) {
-		return { statusCode: 403, body: 'Forbidden' };
+		return {
+			statusCode: 403,
+			body: 'Forbidden'
+		};
 	}
 
 	try {
