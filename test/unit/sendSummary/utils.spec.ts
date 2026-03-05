@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { formatEmailHtml, formatEmailText } from '@lib/lambdas/sendSummary/utils.ts';
+import { Summary } from '@lib/common/interfaces.ts';
 
 beforeEach(() => {
 	vi.useFakeTimers();
@@ -12,14 +13,13 @@ afterEach(() => {
 
 describe('formatEmailHtml', () => {
 	it('should format email with summaryText and sourceArticles', () => {
-		const summary = {
+		const summary: Summary = {
 			summaryText: 'This is a test summary of the news.',
 			sourceArticles: [
 				{ title: 'Article 1', url: 'https://news.sky.com/article1' },
 				{ title: 'Article 2', url: 'https://news.sky.com/article2' },
-				{ title: 'Missing url' },
-				{ url: 'https://news.sky.com/no-title' },
-				'not-an-object',
+				{ title: 'Missing url', url: '' },
+				{ title: '', url: 'https://news.sky.com/no-title' },
 			],
 		};
 
