@@ -3,7 +3,15 @@ import * as cheerio from 'cheerio';
 import { buildUrl, getPath } from '@lib/lambdas/fetchAndNormalise/utils.ts';
 import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 import { SourceArticle, NormalisedArticle, FetchAndNormaliseResult } from '@lib/common/interfaces.ts';
-import { DEFAULT_EXCLUDE_PATHS, LIMIT_START, LIMIT_INCREMENT, MAX_LIMIT, TARGET_ARTICLE_COUNT, MAX_ARTICLE_WORDS ,NEWS_HOST } from '@lib/common/constants.ts';
+import {
+	DEFAULT_EXCLUDE_PATHS,
+	LIMIT_START,
+	LIMIT_INCREMENT,
+	MAX_LIMIT,
+	TARGET_ARTICLE_COUNT,
+	MAX_ARTICLE_WORDS,
+	NEWS_HOST,
+} from '@lib/common/constants.ts';
 
 // Fetches the most popular articles from Chartbeat live endpoint
 export const fetchFromChartBeat = async (apiKey: string, limit: number): Promise<SourceArticle[]> => {
