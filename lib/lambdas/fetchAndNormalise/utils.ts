@@ -1,3 +1,8 @@
+import { ChartbeatResponse } from '@lib/common/interfaces.ts';
+
+export const isChartbeatResponse = (data: unknown): data is ChartbeatResponse =>
+	typeof data === 'object' && data !== null && Array.isArray((data as { pages?: unknown }).pages);
+
 export const buildUrl = (rawValue: string, host: string, path: string): string => {
 	if (!rawValue) {
 		return '';

@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS } from '@lib/common/constants.ts';
+import { SMTP_HOST, SMTP_PORT, SMTP_USER } from '@lib/common/constants.ts';
 
 export const createTransporter = () => {
 	const transporter = nodemailer.createTransport({
@@ -8,7 +8,7 @@ export const createTransporter = () => {
 		secure: SMTP_PORT === 465,
 		auth: {
 			user: SMTP_USER,
-			pass: SMTP_PASS,
+			pass: process.env.APP_PASSWORD,
 		},
 	});
 	return transporter;

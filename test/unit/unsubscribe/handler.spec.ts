@@ -28,7 +28,7 @@ vi.mock('jsonwebtoken', () => ({
 	verify: mockVerify,
 }));
 
-vi.mock('@lib/lambdas/utils.ts', () => ({
+vi.mock('@lib/common/cors.ts', () => ({
 	handlePreflight: mockHandlePreflight,
 }));
 
