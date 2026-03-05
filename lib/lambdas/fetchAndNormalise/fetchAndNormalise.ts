@@ -65,8 +65,7 @@ export const fetchArticleContent = async (url: string): Promise<string> => {
 		const $ = cheerio.load(html);
 
 		// Get content from static pages - live pages currently ignored
-		const $article = $('[data-component-name=ui-article-body] > p')
-		.filter((_, el) => {
+		const $article = $('[data-component-name=ui-article-body] > p').filter((_, el) => {
 			const strongText = $(el).find('strong').text().trim();
 			return !strongText.includes('Read more from Sky News:');
 		});
@@ -81,7 +80,7 @@ export const normaliseArticles = async (articles: SourceArticle[]): Promise<Norm
 	const normalisedPromises = articles.map(async (article) => {
 		const content = await fetchArticleContent(article.url);
 		const wordCount = content.trim().split(/\s+/).filter(Boolean).length;
-		
+
 		if (!content) {
 			console.warn(`Skipping article "${article.title}" because content is empty`);
 			return null;
@@ -144,7 +143,7 @@ export const handler: Handler<unknown, FetchAndNormaliseResult> = async () => {
 		}
 		return {
 			articles: finalArticles,
-			count: finalArticles.length
+			count: finalArticles.length,
 		};
 	} catch (error) {
 		console.error('Error in fetchAndNormalise lambda:', error);
