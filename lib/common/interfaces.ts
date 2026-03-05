@@ -36,3 +36,8 @@ export interface VerificationTokenPayload {
 	exp: number;
 	iat: number;
 }
+
+export interface User {
+    email: string;
+    name: string;
+}

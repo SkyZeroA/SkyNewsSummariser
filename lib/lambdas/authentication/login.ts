@@ -5,6 +5,7 @@ import { compare } from 'bcryptjs';
 import { sign } from 'jsonwebtoken';
 import { buildCorsHeaders, handlePreflight } from '@lib/common/cors.ts';
 import { ADMIN_TABLE_NAME } from '@lib/common/constants.ts';
+import { User } from '@lib/common/interfaces.ts';
 
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
@@ -59,7 +60,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 			};
 		}
 
-		const userData = {
+		const userData: User = {
 			email: user.email,
 			name: user.name,
 		};
@@ -74,7 +75,10 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
 		return {
 			statusCode: 200,
-			body: JSON.stringify({ success: true, user: userData }),
+			body: JSON.stringify({
+				success: true,
+				user: userData,
+			}),
 			headers: {
 				...corsHeaders,
 				'Content-Type': 'application/json',
