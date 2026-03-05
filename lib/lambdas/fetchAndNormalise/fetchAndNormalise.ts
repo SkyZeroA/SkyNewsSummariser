@@ -133,14 +133,13 @@ export const handler: Handler<unknown, FetchAndNormaliseResult> = async () => {
 
 		const finalArticles = articlesWithContent.slice(0, TARGET_ARTICLE_COUNT);
 
-		const lambdaName = process.env.SUMMARISE_LAMBDA_NAME;
-		if (lambdaName) {
+		if (process.env.SUMMARISE_LAMBDA_NAME) {
 			const lambdaClient = new LambdaClient({});
 			// Only send title, content, and url to the summarise lambda
 			const articlesPayload = finalArticles.map(({ title, content, url }) => ({ title, content, url }));
 			await lambdaClient.send(
 				new InvokeCommand({
-					FunctionName: lambdaName,
+					FunctionName: process.env.SUMMARISE_LAMBDA_NAME,
 					InvocationType: 'Event',
 					Payload: Buffer.from(JSON.stringify({ articles: articlesPayload })),
 				})
