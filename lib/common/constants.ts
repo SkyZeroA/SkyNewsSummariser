@@ -21,5 +21,5 @@ export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const HUGGINGFACE_API_URL = 'https://router.huggingface.co/hf-inference/models/sshleifer/distilbart-cnn-12-6';
 
-export const DRAFT_SUMMARY_KEY = 'draft_summary.json';
-export const PUBLISHED_SUMMARY_KEY = 'published_summary.json';
+export const DRAFT_SUMMARY_KEY = 'draft-summary.json';
+export const PUBLISHED_SUMMARY_KEY = 'published-summary.json';

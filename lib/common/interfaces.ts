@@ -1,3 +1,5 @@
+import { SubscriberLanguage } from '@lib/lambdas/subscribe/language.ts';
+
 export interface SourceArticle {
 	title: string;
 	url: string;
@@ -15,7 +17,7 @@ export interface FetchAndNormaliseResult {
 }
 
 export interface SendSummaryOptions {
-	recipients: string[];
+	subscribers: Subscriber[];
 	summary: Summary;
 	apiBaseUrl: string;
 	jwtSecret: string;
@@ -24,6 +26,7 @@ export interface SendSummaryOptions {
 export interface Subscriber {
 	email: string;
 	status?: string;
+	language?: SubscriberLanguage;
 }
 
 export interface Summary {
@@ -35,4 +38,5 @@ export interface VerificationTokenPayload {
 	email: string;
 	exp: number;
 	iat: number;
+	language?: SubscriberLanguage;
 }

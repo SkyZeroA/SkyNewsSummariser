@@ -51,6 +51,19 @@ describe('formatEmailHtml', () => {
 		expect(html).toContain(unsubscribeUrl);
 	});
 
+	it('should include change language link when provided', () => {
+		const summary = {
+			summaryText: 'Test',
+		};
+		const unsubscribeUrl = 'https://example.com/unsubscribe?token=abc';
+		const changeLanguageUrl = 'https://example.com/language?token=def';
+
+		const html = formatEmailHtml(summary, unsubscribeUrl, changeLanguageUrl);
+
+		expect(html).toContain('Change language');
+		expect(html).toContain(changeLanguageUrl);
+	});
+
 	it('should handle empty summary object', () => {
 		const summary = {};
 
@@ -140,6 +153,17 @@ describe('formatEmailText', () => {
 		const text = formatEmailText(summary, unsubscribeUrl);
 
 		expect(text).toContain(`Unsubscribe: ${unsubscribeUrl}`);
+	});
+
+	it('should include change language link when provided', () => {
+		const summary = {
+			summaryText: 'Test',
+		};
+		const changeLanguageUrl = 'https://example.com/language?token=def';
+
+		const text = formatEmailText(summary, undefined, changeLanguageUrl);
+
+		expect(text).toContain(`Change language: ${changeLanguageUrl}`);
 	});
 
 	it('should include separator lines', () => {

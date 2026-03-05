@@ -1,6 +1,7 @@
 import { APIGatewayProxyHandler, APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { buildCorsHeaders, handlePreflight } from '@lib/lambdas/utils.ts';
 import { signVerificationToken } from '@lib/lambdas/subscribe/verificationToken.ts';
+import { DEFAULT_SUBSCRIBER_LANGUAGE, parseSubscriberLanguage } from '@lib/lambdas/subscribe/language.ts';
 import { sendMail } from '@lib/lambdas/email/utils.ts';
 import { EMAIL_REGEX, TOKEN_TTL_MS } from '@lib/common/constants.ts';
 
@@ -63,7 +64,7 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 			};
 		}
 
-		const { email } = JSON.parse(event.body);
+		const { email, language } = JSON.parse(event.body);
 
 		if (!email || typeof email !== 'string') {
 			console.warn('Subscribe request missing email');
@@ -104,9 +105,20 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 			};
 		}
 
+		const parsedLanguage = parseSubscriberLanguage(language);
+		if (!parsedLanguage) {
+			return {
+				statusCode: 400,
+				headers: corsHeaders,
+				body: JSON.stringify({ error: 'Invalid language. Use english, spanish, or french.' }),
+			};
+		}
+		const subscriberLanguage = parsedLanguage ?? DEFAULT_SUBSCRIBER_LANGUAGE;
+
 		const token = signVerificationToken(
 			{
 				email: normalizedEmail,
+				language: subscriberLanguage,
 				iat: Date.now(),
 				exp: Date.now() + TOKEN_TTL_MS,
 			},

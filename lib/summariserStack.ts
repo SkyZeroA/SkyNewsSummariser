@@ -8,6 +8,7 @@ import { Table, AttributeType, BillingMode } from 'aws-cdk-lib/aws-dynamodb';
 import { Bucket, BlockPublicAccess } from 'aws-cdk-lib/aws-s3';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as targets from 'aws-cdk-lib/aws-events-targets';
+import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { DRAFT_SUMMARY_KEY, PUBLISHED_SUMMARY_KEY, SUBSCRIBERS_TABLE_NAME } from './common/constants.ts';
 
 export interface SummariserStackProps extends StackProps {
@@ -98,6 +99,7 @@ export class SummariserStack extends Stack {
 		const verifyResource = authResource.addResource('verify');
 		const subscribeResource = restApi.root.addResource('subscribe');
 		const unsubscribeResource = restApi.root.addResource('unsubscribe');
+		const languageResource = restApi.root.addResource('language');
 		const subscribeVerifyResource = subscribeResource.addResource('verify');
 
 		loginResource.addMethod(
@@ -195,6 +197,39 @@ export class SummariserStack extends Stack {
 			})
 		);
 
+		const changeLanguageLambda = new NodejsFunction(this, 'ChangeLanguageLambda', {
+			runtime: lambda.Runtime.NODEJS_22_X,
+			handler: 'handler',
+			entry: path.resolve('lib/lambdas/changeLanguage/changeLanguage.ts'),
+			depsLockFilePath: path.resolve('pnpm-lock.yaml'),
+			timeout: Duration.minutes(1),
+			memorySize: 512,
+			environment: {
+				SUBSCRIBERS_TABLE: subscribersTable.tableName,
+				JWT_SECRET: process.env.JWT_SECRET ?? '',
+			},
+		});
+		subscribersTable.grantWriteData(changeLanguageLambda);
+
+		languageResource.addMethod(
+			'GET',
+			new LambdaIntegration(changeLanguageLambda, {
+				proxy: true,
+			})
+		);
+		languageResource.addMethod(
+			'POST',
+			new LambdaIntegration(changeLanguageLambda, {
+				proxy: true,
+			})
+		);
+		languageResource.addMethod(
+			'OPTIONS',
+			new LambdaIntegration(changeLanguageLambda, {
+				proxy: true,
+			})
+		);
+
 		const summaryBucket = new Bucket(this, 'SummaryBucket', {
 			publicReadAccess: false,
 			blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
@@ -281,6 +316,12 @@ export class SummariserStack extends Stack {
 			},
 		});
 		subscribersTable.grantReadData(sendEmailLambda);
+		sendEmailLambda.addToRolePolicy(
+			new PolicyStatement({
+				actions: ['translate:TranslateText'],
+				resources: ['*'],
+			})
+		);
 
 		// Allow fetch lambda to invoke summarise lambda
 		summariseLambda.grantInvoke(fetchLambda);

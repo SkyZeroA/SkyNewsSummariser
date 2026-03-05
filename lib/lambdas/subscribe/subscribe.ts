@@ -3,6 +3,7 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { buildCorsHeaders, handlePreflight } from '@lib/lambdas/utils.ts';
 import { verifyAndDecodeToken } from '@lib/lambdas/subscribe/verificationToken.ts';
+import { DEFAULT_SUBSCRIBER_LANGUAGE } from '@lib/lambdas/subscribe/language.ts';
 
 const client = new DynamoDBClient({});
 const db = DynamoDBDocumentClient.from(client);
@@ -75,6 +76,7 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 		}
 
 		const normalizedEmail = decoded.email.trim().toLowerCase();
+		const language = decoded.language ?? DEFAULT_SUBSCRIBER_LANGUAGE;
 
 		await db.send(
 			new UpdateCommand({
@@ -82,14 +84,16 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 				Key: {
 					email: normalizedEmail,
 				},
-				UpdateExpression: 'SET #status = :active, createdAt = :now',
+				UpdateExpression: 'SET #status = :active, createdAt = :now, #language = :language',
 				ExpressionAttributeNames: {
 					'#status': 'status',
+					'#language': 'language',
 				},
 				ExpressionAttributeValues: {
 					':active': 'active',
 					':inactive': 'inactive',
 					':now': new Date().toISOString(),
+					':language': language,
 				},
 				// Allow: new subscription OR re-activating an unsubscribed email. Reject: already active.
 				ConditionExpression: 'attribute_not_exists(email) OR #status = :inactive',
