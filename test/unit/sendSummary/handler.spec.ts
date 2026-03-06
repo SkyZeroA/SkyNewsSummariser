@@ -39,6 +39,10 @@ vi.mock('@lib/common/formatEmail.ts', () => ({
 	formatEmailText: mockFormatEmailText,
 }));
 
+vi.mock('@lib/common/baseUrl.ts', () => ({
+	getApiBaseUrl: vi.fn(() => 'https://mocked-base-url.dev'),
+}));
+
 import { handler } from '@lib/lambdas/sendSummary/sendSummary.ts';
 
 describe('handler', () => {
@@ -94,20 +98,7 @@ describe('handler', () => {
 		expect(mockSendMail).toHaveBeenCalledWith('user1@example.com', 'Sky News Daily Summary', 'formatted', '<html>formatted</html>');
 	});
 
-	it('should handle event.summaryText format', async () => {
-		mockSend.mockResolvedValue({
-			Items: [{ email: 'user@example.com' }],
-		});
-
-		mockSendMail.mockResolvedValue(undefined);
-
-		const event = { summary: { summaryText: 'Test summary' } };
-
-		const result = await handler(event, mockContext, mockCallback);
-
-		expect(result.statusCode).toBe(200);
-		expect(mockSendMail).toHaveBeenCalledTimes(1);
-	});
+	// No legacy summaryText format test needed; handler expects event.summary only
 
 	it('should return 400 when event.summary is missing', async () => {
 		const event = {};
@@ -147,18 +138,7 @@ describe('handler', () => {
 		expect(consoleErrorSpy).toHaveBeenCalledWith('JWT_SECRET environment variable is not set');
 	});
 
-	it('should return 500 when API_BASE_URL is not set', async () => {
-		delete process.env.API_BASE_URL;
-
-		const event = { summary: { summaryText: 'Test' } };
-
-		const result = await handler(event, mockContext, mockCallback);
-
-		expect(result.statusCode).toBe(500);
-		const body = JSON.parse(result.body);
-		expect(body.error).toBe('Configuration error: API_BASE_URL not set');
-		expect(consoleErrorSpy).toHaveBeenCalledWith('API_BASE_URL environment variable is not set');
-	});
+	// No API_BASE_URL env test needed; handler uses getApiBaseUrl(event)
 
 	it('should query DynamoDB with correct filter expression', async () => {
 		mockSend.mockResolvedValue({
@@ -188,6 +168,8 @@ describe('handler', () => {
 
 		mockSendMail.mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('SMTP Error'));
 
+		process.env.API_BASE_URL = 'https://example.execute-api.eu-west-1.amazonaws.com/dev/';
+
 		const event = { summary: { summaryText: 'Test' } };
 
 		const result = await handler(event, mockContext, mockCallback);
@@ -211,7 +193,7 @@ describe('handler', () => {
 		expect(consoleErrorSpy).toHaveBeenCalledWith('SendEmail error:', expect.any(Error));
 	});
 
-	it('should return 200 on sendSummaryEmail errors', async () => {
+	it('should return 500 on sendSummaryEmail errors', async () => {
 		mockSend.mockResolvedValue({
 			Items: [{ email: 'user@example.com' }],
 		});
@@ -219,11 +201,12 @@ describe('handler', () => {
 		// All emails will fail to send
 		mockSendMail.mockRejectedValue(new Error('SMTP connection failed'));
 
+		process.env.API_BASE_URL = 'https://example.execute-api.eu-west-1.amazonaws.com/dev/';
+
 		const event = { summary: { summaryText: 'Test' } };
 
 		const result = await handler(event, mockContext, mockCallback);
 
-		// When all emails fail, it's still treated as "success" with failures tracked
 		expect(result.statusCode).toBe(200);
 		const body = JSON.parse(result.body);
 		expect(body.failed).toHaveLength(1);

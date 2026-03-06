@@ -5,6 +5,7 @@ import { formatEmailHtml, formatEmailText } from '@lib/common/formatEmail.ts';
 import { sendMail } from '@lib/common/email.ts';
 import { sign } from 'jsonwebtoken';
 import { SendSummaryOptions, Subscriber } from '@lib/common/interfaces.ts';
+import { getApiBaseUrl } from '@lib/common/baseUrl.ts';
 
 const dynamoClient = new DynamoDBClient({});
 const db = DynamoDBDocumentClient.from(dynamoClient);
@@ -75,13 +76,6 @@ export const handler: Handler = async (event) => {
 				body: JSON.stringify({ error: 'SMTP configuration error: APP_PASSWORD not set' }),
 			};
 		}
-		if (!process.env.API_BASE_URL) {
-			console.error('API_BASE_URL environment variable is not set');
-			return {
-				statusCode: 500,
-				body: JSON.stringify({ error: 'Configuration error: API_BASE_URL not set' }),
-			};
-		}
 
 		const scanCommand = new ScanCommand({
 			TableName: process.env.SUBSCRIBERS_TABLE,
@@ -104,10 +98,11 @@ export const handler: Handler = async (event) => {
 			};
 		}
 
+		const apiBaseUrl = getApiBaseUrl(event);
 		const { successful, failed } = await sendSummaryEmails({
 			recipients: subscribers.filter((s) => !s.status || s.status === 'active').map((s) => s.email),
 			summary: event.summary,
-			apiBaseUrl: process.env.API_BASE_URL,
+			apiBaseUrl,
 			jwtSecret: process.env.JWT_SECRET,
 		});
 

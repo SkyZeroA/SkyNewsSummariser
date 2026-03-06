@@ -279,7 +279,6 @@ export class SummariserStack extends Stack {
 				SUBSCRIBERS_TABLE: subscribersTable.tableName,
 				APP_PASSWORD: process.env.APP_PASSWORD ?? '',
 				JWT_SECRET: process.env.JWT_SECRET ?? '',
-				API_BASE_URL: this.apiUrl,
 			},
 		});
 		subscribersTable.grantReadData(sendEmailLambda);
