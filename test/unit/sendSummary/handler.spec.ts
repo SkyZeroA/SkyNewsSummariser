@@ -46,50 +46,50 @@ vi.mock('@lib/common/baseUrl.ts', () => ({
 import { handler } from '@lib/lambdas/sendSummary/sendSummary.ts';
 
 describe('handler', () => {
-		const baseEvent = {
-			body: '',
-			headers: {},
-			multiValueHeaders: {},
-			httpMethod: 'POST',
-			isBase64Encoded: false,
-			path: '/send-summary',
-			resource: '',
-			requestContext: {
-				accountId: '123456789012',
-				apiId: 'mockApiId',
-				authorizer: {},
-				domainName: 'example.com',
-				protocol: 'HTTP/1.1',
-				identity: {
-					accessKey: null,
-					accountId: null,
-					apiKey: null,
-					apiKeyId: null,
-					caller: null,
-					clientCert: null,
-					cognitoAuthenticationProvider: null,
-					cognitoAuthenticationType: null,
-					cognitoIdentityId: null,
-					cognitoIdentityPoolId: null,
-					principalOrgId: null,
-					sourceIp: '127.0.0.1',
-					user: null,
-					userAgent: 'Vitest',
-					userArn: null,
-				},
-				requestId: 'mockRequestId',
-				requestTimeEpoch: Date.now(),
-				resourceId: 'mockResourceId',
-				resourcePath: '/send-summary',
-				stage: 'dev',
-				httpMethod: 'POST',
-				path: '/send-summary',
+	const baseEvent = {
+		body: '',
+		headers: {},
+		multiValueHeaders: {},
+		httpMethod: 'POST',
+		isBase64Encoded: false,
+		path: '/send-summary',
+		resource: '',
+		requestContext: {
+			accountId: '123456789012',
+			apiId: 'mockApiId',
+			authorizer: {},
+			domainName: 'example.com',
+			protocol: 'HTTP/1.1',
+			identity: {
+				accessKey: null,
+				accountId: null,
+				apiKey: null,
+				apiKeyId: null,
+				caller: null,
+				clientCert: null,
+				cognitoAuthenticationProvider: null,
+				cognitoAuthenticationType: null,
+				cognitoIdentityId: null,
+				cognitoIdentityPoolId: null,
+				principalOrgId: null,
+				sourceIp: '127.0.0.1',
+				user: null,
+				userAgent: 'Vitest',
+				userArn: null,
 			},
-			queryStringParameters: null,
-			multiValueQueryStringParameters: null,
-			stageVariables: null,
-			pathParameters: null,
-		};
+			requestId: 'mockRequestId',
+			requestTimeEpoch: Date.now(),
+			resourceId: 'mockResourceId',
+			resourcePath: '/send-summary',
+			stage: 'dev',
+			httpMethod: 'POST',
+			path: '/send-summary',
+		},
+		queryStringParameters: null,
+		multiValueQueryStringParameters: null,
+		stageVariables: null,
+		pathParameters: null,
+	};
 	let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
 
 	const mockContext = {} as Context;
@@ -127,7 +127,9 @@ describe('handler', () => {
 
 		const event = {
 			...baseEvent,
-			body: JSON.stringify({ summary: { summaryText: 'Breaking news summary', sourceArticles: [{ title: 'Article 1', url: 'https://news.sky.com/article1' }] } }),
+			body: JSON.stringify({
+				summary: { summaryText: 'Breaking news summary', sourceArticles: [{ title: 'Article 1', url: 'https://news.sky.com/article1' }] },
+			}),
 		};
 
 		const result = await handler(event, mockContext, mockCallback);
