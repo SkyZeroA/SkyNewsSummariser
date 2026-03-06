@@ -4,7 +4,6 @@ export const SUBSCRIBERS_TABLE_NAME = 'summariser-subscribers';
 export const SMTP_HOST = 'smtp.gmail.com';
 export const SMTP_PORT = 465;
 export const SMTP_USER = 'skyteam5developer@gmail.com';
-export const SMTP_PASS = process.env.APP_PASSWORD;
 
 // Used in FetchAndNormalise lambda
 export const DEFAULT_EXCLUDE_PATHS = ['/', '/uk', '/watch-live', 'home', '/live'];

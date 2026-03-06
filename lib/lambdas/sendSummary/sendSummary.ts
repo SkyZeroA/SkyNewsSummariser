@@ -1,4 +1,4 @@
-import { Handler } from 'aws-lambda';
+import { Handler, APIGatewayProxyEvent } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { formatEmailHtml, formatEmailText } from '@lib/common/formatEmail.ts';
@@ -54,9 +54,9 @@ export const sendSummaryEmails = async ({
 	};
 };
 
-export const handler: Handler = async (event) => {
+export const handler: Handler<APIGatewayProxyEvent> = async (event) => {
 	try {
-		if (!event.summary) {
+		if (!event.body) {
 			return {
 				statusCode: 400,
 				body: JSON.stringify({ error: 'Summary data is required' }),
@@ -101,7 +101,7 @@ export const handler: Handler = async (event) => {
 		const apiBaseUrl = getApiBaseUrl(event);
 		const { successful, failed } = await sendSummaryEmails({
 			recipients: subscribers.filter((s) => !s.status || s.status === 'active').map((s) => s.email),
-			summary: event.summary,
+			summary: JSON.parse(event.body).summary,
 			apiBaseUrl,
 			jwtSecret: process.env.JWT_SECRET,
 		});
