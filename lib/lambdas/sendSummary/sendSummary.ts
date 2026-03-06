@@ -18,24 +18,34 @@ export const sendSummaryEmails = async ({
 	const results = await Promise.all(
 		recipients.map(async (email) => {
 			try {
-				const token = sign({ email, action: 'unsubscribe' }, jwtSecret, {
-					expiresIn: '180d',
-				});
+				const token = sign({ email, action: 'unsubscribe' }, jwtSecret, { expiresIn: '180d' });
 				const unsubscribeUrl = `${apiBaseUrl}/unsubscribe?token=${encodeURIComponent(token)}`;
 
 				const html = formatEmailHtml(summary, unsubscribeUrl);
 				const text = formatEmailText(summary, unsubscribeUrl);
 
 				await sendMail(email, 'Sky News Daily Summary', text, html);
-				return { email, success: true };
+				return {
+					email,
+					success: true,
+				};
 			} catch (error) {
-				return { email, success: false, error };
+				return {
+					email,
+					success: false,
+					error,
+				};
 			}
 		})
 	);
 
 	const successful = results.filter((r) => r.success).map((r) => r.email);
-	const failed = results.filter((r) => !r.success).map((r) => ({ email: r.email, error: r.error }));
+	const failed = results
+		.filter((r) => !r.success)
+		.map((r) => ({
+			email: r.email,
+			error: r.error,
+		}));
 
 	return {
 		successful,
@@ -45,19 +55,12 @@ export const sendSummaryEmails = async ({
 
 export const handler: Handler = async (event) => {
 	try {
-		if (!event) {
+		if (!event.summary) {
 			return {
 				statusCode: 400,
 				body: JSON.stringify({ error: 'Summary data is required' }),
 			};
 		}
-
-		// Support both payload shapes:
-		// 1) legacy: event is the summary
-		// 2) preferred: { apiBaseUrl, summary }
-		const summaryPayload = (event as { summary?: unknown })?.summary ?? event;
-
-		// Verify JWT_SECRET is set for unsubscribe tokens
 		if (!process.env.JWT_SECRET) {
 			console.error('JWT_SECRET environment variable is not set');
 			return {
@@ -65,22 +68,6 @@ export const handler: Handler = async (event) => {
 				body: JSON.stringify({ error: 'Configuration error: JWT_SECRET not set' }),
 			};
 		}
-
-		// Prefer receiving the base URL from the calling Lambda (runtime), falling back to env var.
-		// This avoids CDK/CloudFormation circular dependencies caused by wiring restApi.url into Lambda env vars.
-		const eventApiBaseUrl =
-			typeof (event as { apiBaseUrl?: unknown })?.apiBaseUrl === 'string' ? (event as { apiBaseUrl: string }).apiBaseUrl : undefined;
-		const configuredApiBaseUrl = eventApiBaseUrl ?? process.env.API_BASE_URL;
-		if (!configuredApiBaseUrl) {
-			console.error('API_BASE_URL is missing (neither event.apiBaseUrl nor env var is set)');
-			return {
-				statusCode: 500,
-				body: JSON.stringify({ error: 'Configuration error: API_BASE_URL not set' }),
-			};
-		}
-		const apiBaseUrl = configuredApiBaseUrl.replace(/\/+$/, '');
-
-		// Verify APP_PASSWORD is set
 		if (!process.env.APP_PASSWORD) {
 			console.error('APP_PASSWORD environment variable is not set');
 			return {
@@ -88,8 +75,14 @@ export const handler: Handler = async (event) => {
 				body: JSON.stringify({ error: 'SMTP configuration error: APP_PASSWORD not set' }),
 			};
 		}
+		if (!process.env.API_BASE_URL) {
+			console.error('API_BASE_URL environment variable is not set');
+			return {
+				statusCode: 500,
+				body: JSON.stringify({ error: 'Configuration error: API_BASE_URL not set' }),
+			};
+		}
 
-		// Get all active subscribers from DynamoDB
 		const scanCommand = new ScanCommand({
 			TableName: process.env.SUBSCRIBERS_TABLE,
 			FilterExpression: 'attribute_not_exists(#status) OR #status = :active',
@@ -111,11 +104,10 @@ export const handler: Handler = async (event) => {
 			};
 		}
 
-		// Send emails to all active subscribers
 		const { successful, failed } = await sendSummaryEmails({
 			recipients: subscribers.filter((s) => !s.status || s.status === 'active').map((s) => s.email),
-			summary: summaryPayload,
-			apiBaseUrl,
+			summary: event.summary,
+			apiBaseUrl: process.env.API_BASE_URL,
 			jwtSecret: process.env.JWT_SECRET,
 		});
 

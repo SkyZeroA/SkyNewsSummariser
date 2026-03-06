@@ -77,10 +77,7 @@ describe('handler', () => {
 
 		mockSendMail.mockResolvedValue(undefined);
 
-		const event = {
-			summaryText: 'Breaking news summary',
-			sourceArticles: [{ title: 'Article 1', url: 'https://news.sky.com/article1' }],
-		};
+		const event = { summary: { summaryText: 'Breaking news summary', sourceArticles: [{ title: 'Article 1', url: 'https://news.sky.com/article1' }] } };
 
 		const result = await handler(event, mockContext, mockCallback);
 
@@ -102,9 +99,7 @@ describe('handler', () => {
 
 		mockSendMail.mockResolvedValue(undefined);
 
-		const event = {
-			summaryText: 'Test summary',
-		};
+		const event = { summary: { summaryText: 'Test summary' } };
 
 		const result = await handler(event, mockContext, mockCallback);
 
@@ -112,8 +107,8 @@ describe('handler', () => {
 		expect(mockSendMail).toHaveBeenCalledTimes(1);
 	});
 
-	it('should return 400 when event is a falsy value', async () => {
-		const event = false;
+	it('should return 400 when event.summary is missing', async () => {
+		const event = {};
 
 		const result = await handler(event, mockContext, mockCallback);
 
@@ -127,9 +122,7 @@ describe('handler', () => {
 	it('should return 500 when APP_PASSWORD is not set', async () => {
 		delete process.env.APP_PASSWORD;
 
-		const event = {
-			summaryText: 'Test',
-		};
+		const event = { summary: { summaryText: 'Test' } };
 
 		const result = await handler(event, mockContext, mockCallback);
 
@@ -142,9 +135,7 @@ describe('handler', () => {
 	it('should return 500 when JWT_SECRET is not set', async () => {
 		delete process.env.JWT_SECRET;
 
-		const event = {
-			summaryText: 'Test',
-		};
+		const event = { summary: { summaryText: 'Test' } };
 
 		const result = await handler(event, mockContext, mockCallback);
 
@@ -157,16 +148,14 @@ describe('handler', () => {
 	it('should return 500 when API_BASE_URL is not set', async () => {
 		delete process.env.API_BASE_URL;
 
-		const event = {
-			summaryText: 'Test',
-		};
+		const event = { summary: { summaryText: 'Test' } };
 
 		const result = await handler(event, mockContext, mockCallback);
 
 		expect(result.statusCode).toBe(500);
 		const body = JSON.parse(result.body);
 		expect(body.error).toBe('Configuration error: API_BASE_URL not set');
-		expect(consoleErrorSpy).toHaveBeenCalledWith('API_BASE_URL is missing (neither event.apiBaseUrl nor env var is set)');
+		expect(consoleErrorSpy).toHaveBeenCalledWith('API_BASE_URL environment variable is not set');
 	});
 
 	it('should query DynamoDB with correct filter expression', async () => {
@@ -174,9 +163,7 @@ describe('handler', () => {
 			Items: [],
 		});
 
-		const event = {
-			summaryText: 'Test',
-		};
+		const event = { summary: { summaryText: 'Test' } };
 
 		await handler(event, mockContext, mockCallback);
 
@@ -199,9 +186,7 @@ describe('handler', () => {
 
 		mockSendMail.mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('SMTP Error'));
 
-		const event = {
-			summaryText: 'Test',
-		};
+		const event = { summary: { summaryText: 'Test' } };
 
 		const result = await handler(event, mockContext, mockCallback);
 
@@ -214,9 +199,7 @@ describe('handler', () => {
 	it('should return 500 on DynamoDB errors', async () => {
 		mockSend.mockRejectedValue(new Error('DynamoDB error'));
 
-		const event = {
-			summaryText: 'Test',
-		};
+		const event = { summary: { summaryText: 'Test' } };
 
 		const result = await handler(event, mockContext, mockCallback);
 
@@ -226,7 +209,7 @@ describe('handler', () => {
 		expect(consoleErrorSpy).toHaveBeenCalledWith('SendEmail error:', expect.any(Error));
 	});
 
-	it('should return 500 on sendSummaryEmail errors', async () => {
+	it('should return 200 on sendSummaryEmail errors', async () => {
 		mockSend.mockResolvedValue({
 			Items: [{ email: 'user@example.com' }],
 		});
@@ -234,9 +217,7 @@ describe('handler', () => {
 		// All emails will fail to send
 		mockSendMail.mockRejectedValue(new Error('SMTP connection failed'));
 
-		const event = {
-			summaryText: 'Test',
-		};
+		const event = { summary: { summaryText: 'Test' } };
 
 		const result = await handler(event, mockContext, mockCallback);
 
@@ -252,9 +233,7 @@ describe('handler', () => {
 			Items: undefined,
 		});
 
-		const event = {
-			summaryText: 'Test',
-		};
+		const event = { summary: { summaryText: 'Test' } };
 
 		const result = await handler(event, mockContext, mockCallback);
 
