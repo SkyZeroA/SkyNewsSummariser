@@ -64,7 +64,6 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 		};
 	}
 
-	const s3 = new S3Client({});
 	try {
 		verify(authToken, process.env.JWT_SECRET);
 	} catch (error) {
@@ -79,6 +78,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 		};
 	}
 
+	const s3 = new S3Client({});
 	try {
 		const response = await s3.send(
 			new GetObjectCommand({
