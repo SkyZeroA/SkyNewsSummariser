@@ -91,6 +91,7 @@ export class SummariserStack extends Stack {
 				stageName: props.stage,
 			},
 		});
+		this.apiUrl = restApi.url;
 
 		const authResource = restApi.root.addResource('auth');
 		const loginResource = authResource.addResource('login');
@@ -278,6 +279,7 @@ export class SummariserStack extends Stack {
 				SUBSCRIBERS_TABLE: subscribersTable.tableName,
 				APP_PASSWORD: process.env.APP_PASSWORD ?? '',
 				JWT_SECRET: process.env.JWT_SECRET ?? '',
+				API_BASE_URL: this.apiUrl,
 			},
 		});
 		subscribersTable.grantReadData(sendEmailLambda);
@@ -348,7 +350,5 @@ export class SummariserStack extends Stack {
 				proxy: true,
 			})
 		);
-
-		this.apiUrl = restApi.url;
 	}
 }
