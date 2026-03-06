@@ -1,7 +1,7 @@
 import { Handler } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
-import { formatEmailHtml, formatEmailText } from '@lib/lambdas/sendSummary/utils.ts';
+import { formatEmailHtml, formatEmailText } from '@lib/common/formatEmail.ts';
 import { sendMail } from '@lib/common/email.ts';
 import { sign } from 'jsonwebtoken';
 import { SendSummaryOptions, Subscriber } from '@lib/common/interfaces.ts';
