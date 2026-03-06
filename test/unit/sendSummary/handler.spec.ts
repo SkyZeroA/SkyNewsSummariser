@@ -77,7 +77,9 @@ describe('handler', () => {
 
 		mockSendMail.mockResolvedValue(undefined);
 
-		const event = { summary: { summaryText: 'Breaking news summary', sourceArticles: [{ title: 'Article 1', url: 'https://news.sky.com/article1' }] } };
+		const event = {
+			summary: { summaryText: 'Breaking news summary', sourceArticles: [{ title: 'Article 1', url: 'https://news.sky.com/article1' }] },
+		};
 
 		const result = await handler(event, mockContext, mockCallback);
 
