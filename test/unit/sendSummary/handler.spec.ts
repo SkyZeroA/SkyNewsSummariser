@@ -30,18 +30,66 @@ vi.mock('@aws-sdk/lib-dynamodb', () => ({
 	ScanCommand: vi.fn((params) => params),
 }));
 
-vi.mock('@lib/lambdas/email/utils.ts', () => ({
+vi.mock('@lib/common/email.ts', () => ({
 	sendMail: mockSendMail,
 }));
 
-vi.mock('@lib/lambdas/sendSummary/utils.ts', () => ({
+vi.mock('@lib/common/formatEmail.ts', () => ({
 	formatEmailHtml: mockFormatEmailHtml,
 	formatEmailText: mockFormatEmailText,
+}));
+
+vi.mock('@lib/common/baseUrl.ts', () => ({
+	getApiBaseUrl: vi.fn(() => 'https://mocked-base-url.dev'),
 }));
 
 import { handler } from '@lib/lambdas/sendSummary/sendSummary.ts';
 
 describe('handler', () => {
+	const baseEvent = {
+		body: '',
+		headers: {},
+		multiValueHeaders: {},
+		httpMethod: 'POST',
+		isBase64Encoded: false,
+		path: '/send-summary',
+		resource: '',
+		requestContext: {
+			accountId: '123456789012',
+			apiId: 'mockApiId',
+			authorizer: {},
+			domainName: 'example.com',
+			protocol: 'HTTP/1.1',
+			identity: {
+				accessKey: null,
+				accountId: null,
+				apiKey: null,
+				apiKeyId: null,
+				caller: null,
+				clientCert: null,
+				cognitoAuthenticationProvider: null,
+				cognitoAuthenticationType: null,
+				cognitoIdentityId: null,
+				cognitoIdentityPoolId: null,
+				principalOrgId: null,
+				sourceIp: '127.0.0.1',
+				user: null,
+				userAgent: 'Vitest',
+				userArn: null,
+			},
+			requestId: 'mockRequestId',
+			requestTimeEpoch: Date.now(),
+			resourceId: 'mockResourceId',
+			resourcePath: '/send-summary',
+			stage: 'dev',
+			httpMethod: 'POST',
+			path: '/send-summary',
+		},
+		queryStringParameters: null,
+		multiValueQueryStringParameters: null,
+		stageVariables: null,
+		pathParameters: null,
+	};
 	let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
 
 	const mockContext = {} as Context;
@@ -78,8 +126,10 @@ describe('handler', () => {
 		mockSendMail.mockResolvedValue(undefined);
 
 		const event = {
-			summaryText: 'Breaking news summary',
-			sourceArticles: [{ title: 'Article 1', url: 'https://news.sky.com/article1' }],
+			...baseEvent,
+			body: JSON.stringify({
+				summary: { summaryText: 'Breaking news summary', sourceArticles: [{ title: 'Article 1', url: 'https://news.sky.com/article1' }] },
+			}),
 		};
 
 		const result = await handler(event, mockContext, mockCallback);
@@ -95,25 +145,10 @@ describe('handler', () => {
 		expect(mockSendMail).toHaveBeenCalledWith('user1@example.com', 'Sky News Daily Summary', 'formatted', '<html>formatted</html>');
 	});
 
-	it('should handle event.summaryText format', async () => {
-		mockSend.mockResolvedValue({
-			Items: [{ email: 'user@example.com' }],
-		});
+	// No legacy summaryText format test needed; handler expects event.summary only
 
-		mockSendMail.mockResolvedValue(undefined);
-
-		const event = {
-			summaryText: 'Test summary',
-		};
-
-		const result = await handler(event, mockContext, mockCallback);
-
-		expect(result.statusCode).toBe(200);
-		expect(mockSendMail).toHaveBeenCalledTimes(1);
-	});
-
-	it('should return 400 when event is a falsy value', async () => {
-		const event = false;
+	it('should return 400 when event.summary is missing', async () => {
+		const event = { ...baseEvent, body: '' };
 
 		const result = await handler(event, mockContext, mockCallback);
 
@@ -127,9 +162,7 @@ describe('handler', () => {
 	it('should return 500 when APP_PASSWORD is not set', async () => {
 		delete process.env.APP_PASSWORD;
 
-		const event = {
-			summaryText: 'Test',
-		};
+		const event = { ...baseEvent, body: JSON.stringify({ summary: { summaryText: 'Test' } }) };
 
 		const result = await handler(event, mockContext, mockCallback);
 
@@ -142,9 +175,7 @@ describe('handler', () => {
 	it('should return 500 when JWT_SECRET is not set', async () => {
 		delete process.env.JWT_SECRET;
 
-		const event = {
-			summaryText: 'Test',
-		};
+		const event = { ...baseEvent, body: JSON.stringify({ summary: { summaryText: 'Test' } }) };
 
 		const result = await handler(event, mockContext, mockCallback);
 
@@ -154,29 +185,14 @@ describe('handler', () => {
 		expect(consoleErrorSpy).toHaveBeenCalledWith('JWT_SECRET environment variable is not set');
 	});
 
-	it('should return 500 when API_BASE_URL is not set', async () => {
-		delete process.env.API_BASE_URL;
-
-		const event = {
-			summaryText: 'Test',
-		};
-
-		const result = await handler(event, mockContext, mockCallback);
-
-		expect(result.statusCode).toBe(500);
-		const body = JSON.parse(result.body);
-		expect(body.error).toBe('Configuration error: API_BASE_URL not set');
-		expect(consoleErrorSpy).toHaveBeenCalledWith('API_BASE_URL is missing (neither event.apiBaseUrl nor env var is set)');
-	});
+	// No API_BASE_URL env test needed; handler uses getApiBaseUrl(event)
 
 	it('should query DynamoDB with correct filter expression', async () => {
 		mockSend.mockResolvedValue({
 			Items: [],
 		});
 
-		const event = {
-			summaryText: 'Test',
-		};
+		const event = { ...baseEvent, body: JSON.stringify({ summary: { summaryText: 'Test' } }) };
 
 		await handler(event, mockContext, mockCallback);
 
@@ -199,9 +215,9 @@ describe('handler', () => {
 
 		mockSendMail.mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('SMTP Error'));
 
-		const event = {
-			summaryText: 'Test',
-		};
+		process.env.API_BASE_URL = 'https://example.execute-api.eu-west-1.amazonaws.com/dev/';
+
+		const event = { ...baseEvent, body: JSON.stringify({ summary: { summaryText: 'Test' } }) };
 
 		const result = await handler(event, mockContext, mockCallback);
 
@@ -214,9 +230,7 @@ describe('handler', () => {
 	it('should return 500 on DynamoDB errors', async () => {
 		mockSend.mockRejectedValue(new Error('DynamoDB error'));
 
-		const event = {
-			summaryText: 'Test',
-		};
+		const event = { ...baseEvent, body: JSON.stringify({ summary: { summaryText: 'Test' } }) };
 
 		const result = await handler(event, mockContext, mockCallback);
 
@@ -234,13 +248,12 @@ describe('handler', () => {
 		// All emails will fail to send
 		mockSendMail.mockRejectedValue(new Error('SMTP connection failed'));
 
-		const event = {
-			summaryText: 'Test',
-		};
+		process.env.API_BASE_URL = 'https://example.execute-api.eu-west-1.amazonaws.com/dev/';
+
+		const event = { ...baseEvent, body: JSON.stringify({ summary: { summaryText: 'Test' } }) };
 
 		const result = await handler(event, mockContext, mockCallback);
 
-		// When all emails fail, it's still treated as "success" with failures tracked
 		expect(result.statusCode).toBe(200);
 		const body = JSON.parse(result.body);
 		expect(body.failed).toHaveLength(1);
@@ -252,9 +265,7 @@ describe('handler', () => {
 			Items: undefined,
 		});
 
-		const event = {
-			summaryText: 'Test',
-		};
+		const event = { ...baseEvent, body: JSON.stringify({ summary: { summaryText: 'Test' } }) };
 
 		const result = await handler(event, mockContext, mockCallback);
 

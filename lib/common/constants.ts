@@ -4,7 +4,6 @@ export const SUBSCRIBERS_TABLE_NAME = 'summariser-subscribers';
 export const SMTP_HOST = 'smtp.gmail.com';
 export const SMTP_PORT = 465;
 export const SMTP_USER = 'skyteam5developer@gmail.com';
-export const SMTP_PASS = process.env.APP_PASSWORD;
 
 // Used in FetchAndNormalise lambda
 export const DEFAULT_EXCLUDE_PATHS = ['/', '/uk', '/watch-live', 'home', '/live'];
@@ -21,5 +20,5 @@ export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const HUGGINGFACE_API_URL = 'https://router.huggingface.co/hf-inference/models/sshleifer/distilbart-cnn-12-6';
 
-export const DRAFT_SUMMARY_KEY = 'draft_summary.json';
-export const PUBLISHED_SUMMARY_KEY = 'published_summary.json';
+export const DRAFT_SUMMARY_KEY = 'draft-summary.json';
+export const PUBLISHED_SUMMARY_KEY = 'published-summary.json';

@@ -1,9 +1,12 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { verify } from 'jsonwebtoken';
-import { buildCorsHeaders, getAuthToken, handlePreflight } from '@lib/lambdas/utils.ts';
+import { buildCorsHeaders, handlePreflight } from '@lib/common/cors.ts';
+import { getAuthToken } from '@lib/common/auth.ts';
 import { Summary } from '@lib/common/interfaces.ts';
 import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
+import { PUBLISHED_SUMMARY_KEY } from '@lib/common/constants.ts';
+import { getApiBaseUrl } from '@lib/common/baseUrl.ts';
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
 	if (event.httpMethod === 'OPTIONS') {
@@ -12,7 +15,10 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
 	const corsHeaders = buildCorsHeaders(event);
 	if (!corsHeaders) {
-		return { statusCode: 403, body: 'Forbidden' };
+		return {
+			statusCode: 403,
+			body: 'Forbidden',
+		};
 	}
 
 	if (!process.env.JWT_SECRET) {
@@ -25,7 +31,6 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 			body: JSON.stringify({ error: 'Server misconfigured: JWT_SECRET is missing' }),
 		};
 	}
-
 	if (!process.env.PUBLISHED_SUMMARY_BUCKET_NAME) {
 		return {
 			statusCode: 500,
@@ -49,33 +54,40 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 		};
 	}
 
-	const s3 = new S3Client({});
-	let jwtVerified = false;
-
-	let summary: Summary = { summaryText: '', sourceArticles: [] };
+	let summary: Summary = {
+		summaryText: '',
+		sourceArticles: [],
+	};
 	if (event.body) {
 		summary = JSON.parse(event.body);
 	}
 
 	try {
 		verify(authToken, process.env.JWT_SECRET);
-		jwtVerified = true;
+	} catch (error) {
+		console.warn('JWT verification failed:', error);
+		return {
+			statusCode: 401,
+			headers: {
+				...corsHeaders,
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({ authenticated: false }),
+		};
+	}
 
-		const key = 'published-summary.json';
-
+	const s3 = new S3Client({});
+	try {
 		await s3.send(
 			new PutObjectCommand({
 				Bucket: process.env.PUBLISHED_SUMMARY_BUCKET_NAME,
-				Key: key,
+				Key: PUBLISHED_SUMMARY_KEY,
 				Body: JSON.stringify(summary, null, 2),
 				ContentType: 'application/json',
 			})
 		);
 
-		const forwardedProto = event.headers?.['x-forwarded-proto'] ?? event.headers?.['X-Forwarded-Proto'];
-		const proto = typeof forwardedProto === 'string' && forwardedProto.length > 0 ? forwardedProto : 'https';
-		const apiBaseUrl = `${proto}://${event.requestContext.domainName}/${event.requestContext.stage}`;
-
+		const apiBaseUrl = getApiBaseUrl(event);
 		const lambdaClient = new LambdaClient({});
 		await lambdaClient.send(
 			new InvokeCommand({
@@ -94,40 +106,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 			body: JSON.stringify({ success: true }),
 		};
 	} catch (error) {
-		if (!jwtVerified) {
-			return {
-				statusCode: 401,
-				headers: {
-					...corsHeaders,
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({
-					summary: {
-						summaryText: summary.summaryText ?? '',
-						sourceArticles: summary.sourceArticles ?? [],
-						status: 'pending',
-						createdAt: new Date().toISOString(),
-						updatedAt: new Date().toISOString(),
-					},
-				}),
-			};
-		}
-
-		const maybeError = error as { name?: string; $metadata?: { httpStatusCode?: number } };
-		const errorName = maybeError?.name;
-
-		if (errorName === 'NoSuchKey' || maybeError?.$metadata?.httpStatusCode === 404) {
-			return {
-				statusCode: 200,
-				headers: {
-					...corsHeaders,
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({ summary: null }),
-			};
-		}
-
-		console.error('Failed to read draft summary from S3:', error);
+		console.error('Failed to publish summary to S3:', error);
 		return {
 			statusCode: 500,
 			headers: {

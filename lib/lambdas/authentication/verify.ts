@@ -1,6 +1,8 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { verify } from 'jsonwebtoken';
-import { buildCorsHeaders, getAuthToken, handlePreflight } from '@lib/lambdas/utils.ts';
+import { buildCorsHeaders, handlePreflight } from '@lib/common/cors.ts';
+import { getAuthToken } from '@lib/common/auth.ts';
+import { User } from '@lib/common/interfaces.ts';
 
 // eslint-disable require-await
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
@@ -10,7 +12,10 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
 	const corsHeaders = buildCorsHeaders(event);
 	if (!corsHeaders) {
-		return { statusCode: 403, body: 'Forbidden' };
+		return {
+			statusCode: 403,
+			body: 'Forbidden',
+		};
 	}
 
 	try {
@@ -32,10 +37,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 		}
 
 		try {
-			const decoded = verify(authToken, jwt_secret) as {
-				email: string;
-				name: string;
-			};
+			const decoded = verify(authToken, jwt_secret) as User;
 
 			return {
 				statusCode: 200,
@@ -43,7 +45,10 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 					...corsHeaders,
 					'Content-Type': 'application/json',
 				},
-				body: JSON.stringify({ authenticated: true, user: decoded }),
+				body: JSON.stringify({
+					authenticated: true,
+					user: decoded,
+				}),
 			};
 		} catch (error) {
 			console.error('JWT verification failed:', error);

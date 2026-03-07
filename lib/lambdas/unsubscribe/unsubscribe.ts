@@ -2,7 +2,7 @@ import type { APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResul
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { verify } from 'jsonwebtoken';
-import { handlePreflight } from '../utils.ts';
+import { handlePreflight } from '@lib/common/cors.ts';
 
 const dynamoClient = new DynamoDBClient({});
 const db = DynamoDBDocumentClient.from(dynamoClient);

@@ -1,3 +1,7 @@
+export interface ChartbeatResponse {
+	pages: { path: string; title: string }[];
+}
+
 export interface SourceArticle {
 	title: string;
 	url: string;
@@ -35,4 +39,9 @@ export interface VerificationTokenPayload {
 	email: string;
 	exp: number;
 	iat: number;
+}
+
+export interface User {
+	email: string;
+	name: string;
 }
