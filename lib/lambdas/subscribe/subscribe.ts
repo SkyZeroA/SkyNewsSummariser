@@ -2,7 +2,7 @@ import { APIGatewayProxyHandler, APIGatewayProxyEvent, APIGatewayProxyResult } f
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { buildCorsHeaders, handlePreflight } from '@lib/common/cors.ts';
-import { verifyAndDecodeToken } from '@lib/lambdas/subscribe/verificationToken.ts';
+import { verifyAndDecodeToken } from '@lib/common/verify.ts';
 
 const client = new DynamoDBClient({});
 const db = DynamoDBDocumentClient.from(client);
@@ -12,75 +12,55 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 		return handlePreflight(event);
 	}
 
-	// Email clients / normal browser navigations usually don’t send Origin.
-	// Only enforce the allowlist when Origin is present.
-	const origin = event.headers.origin || event.headers.Origin;
-	const corsHeaders = origin ? buildCorsHeaders(event) : {};
-	if (origin && !corsHeaders) {
+	const corsHeaders = buildCorsHeaders(event);
+	if (!corsHeaders) {
 		return {
 			statusCode: 403,
 			body: 'Forbidden',
 		};
 	}
 
+	if (!process.env.SUBSCRIBERS_TABLE) {
+		console.error('SUBSCRIBERS_TABLE environment variable is not set');
+		return {
+			statusCode: 500,
+			headers: corsHeaders,
+			body: JSON.stringify({ error: 'Server configuration error' }),
+		};
+	}
+	if (!process.env.VERIFICATION_SECRET) {
+		console.error('VERIFICATION_SECRET environment variable is not set');
+		return {
+			statusCode: 500,
+			headers: corsHeaders,
+			body: JSON.stringify({ error: 'Server configuration error' }),
+		};
+	}
+
 	try {
-		if (!process.env.SUBSCRIBERS_TABLE) {
-			console.error('SUBSCRIBERS_TABLE environment variable is not set');
-			return {
-				statusCode: 500,
-				headers: {
-					...corsHeaders,
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({ error: 'Server configuration error' }),
-			};
-		}
-
-		const tokenParam = event.queryStringParameters?.token;
-
-		if (!tokenParam) {
+		const token = event.queryStringParameters?.token;
+		if (!token) {
 			return {
 				statusCode: 400,
-				headers: {
-					...corsHeaders,
-					'Content-Type': 'application/json',
-				},
+				headers: corsHeaders,
 				body: JSON.stringify({ error: 'Missing token' }),
 			};
 		}
 
-		if (!process.env.VERIFICATION_SECRET) {
-			console.error('VERIFICATION_SECRET environment variable is not set');
-			return {
-				statusCode: 500,
-				headers: {
-					...corsHeaders,
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({ error: 'Server configuration error' }),
-			};
-		}
-
-		const token = tokenParam.trim();
-		const decoded = verifyAndDecodeToken(token, process.env.VERIFICATION_SECRET);
+		const decoded = verifyAndDecodeToken(token.trim(), process.env.VERIFICATION_SECRET);
 		if (!decoded) {
 			return {
 				statusCode: 400,
-				headers: {
-					...corsHeaders,
-					'Content-Type': 'application/json',
-				},
+				headers: corsHeaders,
 				body: JSON.stringify({ error: 'Invalid or expired verification link' }),
 			};
 		}
-
-		const normalizedEmail = decoded.email.trim().toLowerCase();
 
 		await db.send(
 			new UpdateCommand({
 				TableName: process.env.SUBSCRIBERS_TABLE,
 				Key: {
-					email: normalizedEmail,
+					email: decoded.email,
 				},
 				UpdateExpression: 'SET #status = :active, createdAt = :now',
 				ExpressionAttributeNames: {
@@ -98,37 +78,28 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 
 		return {
 			statusCode: 200,
-			headers: {
-				...corsHeaders,
-				'Content-Type': 'application/json',
-			},
+			headers: corsHeaders,
 			body: JSON.stringify({ message: 'Email verified. Subscription is now active.' }),
 		};
 	} catch (error) {
+		console.error('VerifySubscription error:', error);
 		const errorName =
 			error && typeof error === 'object' && 'name' in error && typeof (error as { name?: unknown }).name === 'string'
 				? (error as { name: string }).name
 				: undefined;
-		console.error('VerifySubscription error:', error);
 
 		// Clicking a verification link twice should not surface as a 500.
 		if (errorName === 'ConditionalCheckFailedException') {
 			return {
 				statusCode: 200,
-				headers: {
-					...corsHeaders,
-					'Content-Type': 'application/json',
-				},
+				headers: corsHeaders,
 				body: JSON.stringify({ message: 'Email already verified.' }),
 			};
 		}
 
 		return {
 			statusCode: 500,
-			headers: {
-				...corsHeaders,
-				'Content-Type': 'application/json',
-			},
+			headers: corsHeaders,
 			body: JSON.stringify({ error: 'Internal server error' }),
 		};
 	}

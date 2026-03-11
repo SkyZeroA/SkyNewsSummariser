@@ -30,7 +30,7 @@ vi.mock('@lib/common/cors.ts', () => ({
 }));
 
 import { handler as subscribeVerifyHandler } from '@lib/lambdas/subscribe/subscribe.ts';
-import { signVerificationToken } from '@lib/lambdas/subscribe/verificationToken.ts';
+import { signVerificationToken } from '@lib/common/verify.ts';
 
 type VerifyHandler = (event: APIGatewayProxyEvent, context: Context, callback: unknown) => Promise<APIGatewayProxyResult>;
 
@@ -101,12 +101,12 @@ const runVerifyHandlerTests = (name: string, handler: VerifyHandler) => {
 
 			expect(result.statusCode).toBe(200);
 			expect(JSON.parse(result.body)).toEqual({ message: 'Email verified. Subscription is now active.' });
-			expect(mockBuildCorsHeaders).not.toHaveBeenCalled();
+			expect(mockBuildCorsHeaders).toHaveBeenCalledWith(event);
 			expect(mockSend).toHaveBeenCalledWith(
 				expect.objectContaining({
 					TableName: 'test-subscribers-table',
 					Key: {
-						email: 'test@example.com',
+						email: 'Test@Example.com',
 					},
 					UpdateExpression: 'SET #status = :active, createdAt = :now',
 					ExpressionAttributeNames: {

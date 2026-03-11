@@ -1,15 +1,9 @@
 import { APIGatewayProxyHandler, APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { buildCorsHeaders, handlePreflight } from '@lib/common/cors.ts';
-import { signVerificationToken } from '@lib/lambdas/subscribe/verificationToken.ts';
+import { signVerificationToken, buildVerificationUrl } from '@lib/common/verify.ts';
 import { sendMail } from '@lib/common/email.ts';
 import { EMAIL_REGEX, TOKEN_TTL_MS } from '@lib/common/constants.ts';
 import { getApiBaseUrl } from '@lib/common/baseUrl.ts';
-
-const buildVerificationUrl = (baseUrl: string, token: string): string => {
-	const url = new URL('subscribe/verify', baseUrl);
-	url.searchParams.set('token', token);
-	return url.toString();
-};
 
 const sendVerificationEmail = async ({ to, verificationUrl }: { to: string; verificationUrl: string }): Promise<void> => {
 	if (!process.env.APP_PASSWORD) {
@@ -67,8 +61,10 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 				body: JSON.stringify({ error: 'Email is required' }),
 			};
 		}
-		if (!EMAIL_REGEX.test(email)) {
-			console.warn('Subscribe request with invalid email format:', email);
+
+		const normalisedEmail = email.trim().toLowerCase();
+		if (!EMAIL_REGEX.test(normalisedEmail)) {
+			console.warn('Subscribe request with invalid email format:', normalisedEmail);
 			return {
 				statusCode: 400,
 				headers: corsHeaders,
@@ -78,7 +74,7 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 
 		const token = signVerificationToken(
 			{
-				email,
+				email: normalisedEmail,
 				iat: Date.now(),
 				exp: Date.now() + TOKEN_TTL_MS,
 			},
@@ -87,7 +83,7 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 		const baseUrl = getApiBaseUrl(event);
 		const verificationUrl = buildVerificationUrl(baseUrl, token);
 
-		await sendVerificationEmail({ to: email, verificationUrl });
+		await sendVerificationEmail({ to: normalisedEmail, verificationUrl });
 
 		return {
 			statusCode: 202,

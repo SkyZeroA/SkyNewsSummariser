@@ -1,6 +1,12 @@
 import crypto from 'node:crypto';
 import { VerificationTokenPayload } from '@lib/common/interfaces.ts';
 
+export const buildVerificationUrl = (baseUrl: string, token: string): string => {
+	const url = new URL('subscribe/verify', baseUrl);
+	url.searchParams.set('token', token);
+	return url.toString();
+};
+
 const base64UrlEncode = (input: string | Buffer): string => {
 	const buf = typeof input === 'string' ? Buffer.from(input, 'utf8') : input;
 	return buf.toString('base64').replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '');
