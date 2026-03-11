@@ -20,6 +20,7 @@ export const buildCorsHeaders = (event: APIGatewayProxyEvent) => {
 	return {
 		'Access-Control-Allow-Origin': origin!,
 		'Access-Control-Allow-Credentials': 'true',
+		'Content-Type': 'application/json',
 	};
 };
 

@@ -23,10 +23,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 		if (!authToken) {
 			return {
 				statusCode: 401,
-				headers: {
-					...corsHeaders,
-					'Content-Type': 'application/json',
-				},
+				headers: corsHeaders,
 				body: JSON.stringify({ authenticated: false }),
 			};
 		}
@@ -41,10 +38,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
 			return {
 				statusCode: 200,
-				headers: {
-					...corsHeaders,
-					'Content-Type': 'application/json',
-				},
+				headers: corsHeaders,
 				body: JSON.stringify({
 					authenticated: true,
 					user: decoded,
@@ -54,10 +48,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 			console.error('JWT verification failed:', error);
 			return {
 				statusCode: 401,
-				headers: {
-					...corsHeaders,
-					'Content-Type': 'application/json',
-				},
+				headers: corsHeaders,
 				body: JSON.stringify({ authenticated: false }),
 			};
 		}
@@ -65,10 +56,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 		console.error('Auth verification error:', error);
 		return {
 			statusCode: 500,
-			headers: {
-				...corsHeaders,
-				'Content-Type': 'application/json',
-			},
+			headers: corsHeaders,
 			body: JSON.stringify({ error: 'Internal server error' }),
 		};
 	}

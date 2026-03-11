@@ -24,10 +24,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 		console.error('JWT_SECRET environment variable is missing');
 		return {
 			statusCode: 500,
-			headers: {
-				...corsHeaders,
-				'Content-Type': 'application/json',
-			},
+			headers: corsHeaders,
 			body: JSON.stringify({ error: 'Server misconfigured: JWT_SECRET is missing' }),
 		};
 	}
@@ -35,10 +32,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 		console.error('PUBLISHED_SUMMARY_BUCKET_NAME environment variable is missing');
 		return {
 			statusCode: 500,
-			headers: {
-				...corsHeaders,
-				'Content-Type': 'application/json',
-			},
+			headers: corsHeaders,
 			body: JSON.stringify({ error: 'Server misconfigured: PUBLISHED_SUMMARY_BUCKET_NAME is missing' }),
 		};
 	}
@@ -46,10 +40,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 		console.error('SEND_EMAIL_LAMBDA_NAME environment variable is missing');
 		return {
 			statusCode: 500,
-			headers: {
-				...corsHeaders,
-				'Content-Type': 'application/json',
-			},
+			headers: corsHeaders,
 			body: JSON.stringify({ error: 'Server misconfigured: SEND_EMAIL_LAMBDA_NAME is missing' }),
 		};
 	}
@@ -58,10 +49,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 	if (!authToken) {
 		return {
 			statusCode: 401,
-			headers: {
-				...corsHeaders,
-				'Content-Type': 'application/json',
-			},
+			headers: corsHeaders,
 			body: JSON.stringify({ authenticated: false }),
 		};
 	}
@@ -80,10 +68,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 		console.warn('JWT verification failed:', error);
 		return {
 			statusCode: 401,
-			headers: {
-				...corsHeaders,
-				'Content-Type': 'application/json',
-			},
+			headers: corsHeaders,
 			body: JSON.stringify({ authenticated: false }),
 		};
 	}
@@ -112,20 +97,14 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
 		return {
 			statusCode: 200,
-			headers: {
-				...corsHeaders,
-				'Content-Type': 'application/json',
-			},
+			headers: corsHeaders,
 			body: JSON.stringify({ success: true }),
 		};
 	} catch (error) {
 		console.error('Failed to publish summary to S3:', error);
 		return {
 			statusCode: 500,
-			headers: {
-				...corsHeaders,
-				'Content-Type': 'application/json',
-			},
+			headers: corsHeaders,
 			body: JSON.stringify({ error: 'Internal server error' }),
 		};
 	}

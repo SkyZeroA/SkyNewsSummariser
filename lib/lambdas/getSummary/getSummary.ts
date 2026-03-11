@@ -21,10 +21,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 		console.error('JWT_SECRET missing from environment');
 		return {
 			statusCode: 500,
-			headers: {
-				...corsHeaders,
-				'Content-Type': 'application/json',
-			},
+			headers: corsHeaders,
 			body: JSON.stringify({ error: 'Server misconfigured: JWT_SECRET is missing' }),
 		};
 	}
@@ -32,10 +29,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 		console.error('BUCKET_NAME missing from environment');
 		return {
 			statusCode: 500,
-			headers: {
-				...corsHeaders,
-				'Content-Type': 'application/json',
-			},
+			headers: corsHeaders,
 			body: JSON.stringify({ error: 'Server misconfigured: BUCKET_NAME is missing' }),
 		};
 	}
@@ -43,10 +37,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 		console.error('SUMMARY_KEY missing from environment');
 		return {
 			statusCode: 500,
-			headers: {
-				...corsHeaders,
-				'Content-Type': 'application/json',
-			},
+			headers: corsHeaders,
 			body: JSON.stringify({ error: 'Server misconfigured: SUMMARY_KEY is missing' }),
 		};
 	}
@@ -56,10 +47,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 		console.warn('No authToken found in request');
 		return {
 			statusCode: 401,
-			headers: {
-				...corsHeaders,
-				'Content-Type': 'application/json',
-			},
+			headers: corsHeaders,
 			body: JSON.stringify({ authenticated: false }),
 		};
 	}
@@ -70,10 +58,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 		console.warn('JWT verification failed:', error);
 		return {
 			statusCode: 401,
-			headers: {
-				...corsHeaders,
-				'Content-Type': 'application/json',
-			},
+			headers: corsHeaders,
 			body: JSON.stringify({ authenticated: false }),
 		};
 	}
@@ -95,10 +80,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
 		return {
 			statusCode: 200,
-			headers: {
-				...corsHeaders,
-				'Content-Type': 'application/json',
-			},
+			headers: corsHeaders,
 			body: JSON.stringify({
 				summary: parsed
 					? {
@@ -114,10 +96,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 		console.error('Failed to read summary from S3:', error);
 		return {
 			statusCode: 500,
-			headers: {
-				...corsHeaders,
-				'Content-Type': 'application/json',
-			},
+			headers: corsHeaders,
 			body: JSON.stringify({ error: 'Internal server error' }),
 		};
 	}

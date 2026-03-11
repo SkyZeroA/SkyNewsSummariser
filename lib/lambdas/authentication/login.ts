@@ -81,7 +81,6 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 			}),
 			headers: {
 				...corsHeaders,
-				'Content-Type': 'application/json',
 				'Set-Cookie': `authToken=${token}; HttpOnly; Path=/; Max-Age=${60 * 60 * 24 * 7}; SameSite=None; Secure`,
 			},
 		};
