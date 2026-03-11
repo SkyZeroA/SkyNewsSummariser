@@ -39,19 +39,26 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 			body: 'Forbidden',
 		};
 	}
-	
+
+	if (!process.env.VERIFICATION_SECRET) {
+		console.error('VERIFICATION_SECRET environment variable is not set');
+		return {
+			statusCode: 500,
+			headers: corsHeaders,
+			body: JSON.stringify({ error: 'Server configuration error' }),
+		};
+	}
+	if (!event.body) {
+		console.warn('Subscribe request missing body');
+		return {
+			statusCode: 400,
+			headers: corsHeaders,
+			body: JSON.stringify({ error: 'Missing request body' }),
+		};
+	}
+
 	try {
-		if (!event.body) {
-			console.warn('Subscribe request missing body');
-			return {
-				statusCode: 400,
-				headers: corsHeaders,
-				body: JSON.stringify({ error: 'Missing request body' }),
-			};
-		}
-
 		const { email } = JSON.parse(event.body);
-
 		if (!email || typeof email !== 'string') {
 			console.warn('Subscribe request missing email');
 			return {
@@ -60,10 +67,7 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 				body: JSON.stringify({ error: 'Email is required' }),
 			};
 		}
-
-		const normalizedEmail = email.trim().toLowerCase();
-
-		if (!EMAIL_REGEX.test(normalizedEmail)) {
+		if (!EMAIL_REGEX.test(email)) {
 			console.warn('Subscribe request with invalid email format:', email);
 			return {
 				statusCode: 400,
@@ -72,47 +76,23 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 			};
 		}
 
-		const baseUrl = getApiBaseUrl(event);
-		if (!baseUrl) {
-			console.error('Unable to determine base URL from request');
-			return {
-				statusCode: 500,
-				headers: corsHeaders,
-				body: JSON.stringify({ error: 'Server configuration error' }),
-			};
-		}
-
-		if (!process.env.VERIFICATION_SECRET) {
-			console.error('VERIFICATION_SECRET environment variable is not set');
-			return {
-				statusCode: 500,
-				headers: corsHeaders,
-				body: JSON.stringify({ error: 'Server configuration error' }),
-			};
-		}
-
 		const token = signVerificationToken(
 			{
-				email: normalizedEmail,
+				email,
 				iat: Date.now(),
 				exp: Date.now() + TOKEN_TTL_MS,
 			},
 			process.env.VERIFICATION_SECRET
 		);
-
+		const baseUrl = getApiBaseUrl(event);
 		const verificationUrl = buildVerificationUrl(baseUrl, token);
 
-		await sendVerificationEmail({ to: normalizedEmail, verificationUrl });
+		await sendVerificationEmail({ to: email, verificationUrl });
 
 		return {
 			statusCode: 202,
-			headers: {
-				...corsHeaders,
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify({
-				message: 'Verification email sent. Please confirm to activate your subscription.',
-			}),
+			headers: corsHeaders,
+			body: JSON.stringify({ message: 'Verification email sent. Please confirm to activate your subscription.' }),
 		};
 	} catch (error) {
 		console.error('Subscribe error:', error);
