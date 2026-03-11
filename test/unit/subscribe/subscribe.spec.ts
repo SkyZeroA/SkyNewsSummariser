@@ -101,7 +101,7 @@ const runVerifyHandlerTests = (name: string, handler: VerifyHandler) => {
 
 			expect(result.statusCode).toBe(200);
 			expect(JSON.parse(result.body)).toEqual({ message: 'Email verified. Subscription is now active.' });
-			expect(mockBuildCorsHeaders).toHaveBeenCalledWith(event);
+			expect(mockBuildCorsHeaders).not.toHaveBeenCalled();
 			expect(mockSend).toHaveBeenCalledWith(
 				expect.objectContaining({
 					TableName: 'test-subscribers-table',

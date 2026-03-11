@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { buildUrl, getPath } from '@lib/lambdas/fetchAndNormalise/utils.ts';
+import { buildUrl, getPath } from '@lib/common/url.ts';
 
 describe('buildUrl', () => {
 	const host = 'news.sky.com';

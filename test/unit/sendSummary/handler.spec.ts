@@ -194,7 +194,7 @@ describe('handler', () => {
 		expect(result.statusCode).toBe(500);
 		const body = JSON.parse(result.body);
 		expect(body.error).toBe('Internal server error');
-		expect(consoleErrorSpy).toHaveBeenCalledWith('Uncaught error in SendSummary handler:', expect.any(Error));
+		expect(consoleErrorSpy).toHaveBeenCalledWith('SendSummary error:', expect.any(Error));
 	});
 
 	it('should return 500 on sendSummaryEmail errors', async () => {

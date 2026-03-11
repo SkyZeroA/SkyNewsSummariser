@@ -12,13 +12,17 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 		return handlePreflight(event);
 	}
 
-	const corsHeaders = buildCorsHeaders(event);
-	if (!corsHeaders) {
+	// Email clients / normal browser navigations usually do not send Origin.
+	// Only enforce allowlist checks when Origin is explicitly present.
+	const origin = event.headers.origin || event.headers.Origin;
+	const corsHeadersCandidate = origin ? buildCorsHeaders(event) : {};
+	if (origin && !corsHeadersCandidate) {
 		return {
 			statusCode: 403,
 			body: 'Forbidden',
 		};
 	}
+	const corsHeaders = corsHeadersCandidate ?? {};
 
 	if (!process.env.SUBSCRIBERS_TABLE) {
 		console.error('SUBSCRIBERS_TABLE environment variable is not set');

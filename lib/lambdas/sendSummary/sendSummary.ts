@@ -141,7 +141,7 @@ export const handler: Handler<SendSummaryPayload> = async (event) => {
 			}),
 		};
 	} catch (error) {
-		console.error('Uncaught error in SendSummary handler:', error);
+		console.error('SendSummary error:', error);
 		return {
 			statusCode: 500,
 			body: JSON.stringify({ error: 'Internal server error' }),

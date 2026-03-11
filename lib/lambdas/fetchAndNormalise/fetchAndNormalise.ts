@@ -1,8 +1,8 @@
 import { Handler } from 'aws-lambda';
 import * as cheerio from 'cheerio';
-import { isChartbeatResponse, buildUrl, getPath } from '@lib/lambdas/fetchAndNormalise/utils.ts';
+import { buildUrl, getPath } from '@lib/common/url.ts';
 import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
-import { SourceArticle, NormalisedArticle, FetchAndNormaliseResult } from '@lib/common/interfaces.ts';
+import { ChartbeatResponse, SourceArticle, NormalisedArticle, FetchAndNormaliseResult } from '@lib/common/interfaces.ts';
 import {
 	DEFAULT_EXCLUDE_PATHS,
 	LIMIT_START,
@@ -13,6 +13,9 @@ import {
 	NEWS_HOST,
 	CHARTBEAT_API_URL,
 } from '@lib/common/constants.ts';
+
+export const isChartbeatResponse = (data: unknown): data is ChartbeatResponse =>
+	typeof data === 'object' && data !== null && Array.isArray((data as { pages?: unknown }).pages);
 
 export const fetchFromChartBeat = async (apiKey: string, limit: number): Promise<SourceArticle[]> => {
 	try {
