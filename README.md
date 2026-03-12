@@ -150,3 +150,5 @@ Husky runs commands st given points in the git cycle, like before each commit
 The `pre-commit.example` file should be copied into a file called `pre-commit` in the `.husky` folder. This will cause the format commands to be run before each commit, so the builds will not fail due to formatting.
 
 
+
+
