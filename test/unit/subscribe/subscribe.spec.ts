@@ -86,7 +86,9 @@ const runVerifyHandlerTests = (name: string, handler: VerifyHandler) => {
 			const result = (await handler(event, mockContext, mockCallback)) as APIGatewayProxyResult;
 
 			expect(result.statusCode).toBe(400);
-			expect(JSON.parse(result.body)).toEqual({ error: 'Missing token' });
+			expect(result.headers?.['Content-Type']).toBe('text/html; charset=utf-8');
+			expect(result.body).toContain('<!DOCTYPE html>');
+			expect(result.body).toContain('Missing Token');
 		});
 
 		it('verifies when origin header is absent (email link click)', async () => {
@@ -100,7 +102,9 @@ const runVerifyHandlerTests = (name: string, handler: VerifyHandler) => {
 			const result = (await handler(event, mockContext, mockCallback)) as APIGatewayProxyResult;
 
 			expect(result.statusCode).toBe(200);
-			expect(JSON.parse(result.body)).toEqual({ message: 'Email verified. Subscription is now active.' });
+			expect(result.headers?.['Content-Type']).toBe('text/html; charset=utf-8');
+			expect(result.body).toContain('<!DOCTYPE html>');
+			expect(result.body).toContain('Subscription Confirmed!');
 			expect(mockBuildCorsHeaders).not.toHaveBeenCalled();
 			expect(mockSend).toHaveBeenCalledWith(
 				expect.objectContaining({
@@ -147,7 +151,9 @@ const runVerifyHandlerTests = (name: string, handler: VerifyHandler) => {
 			const result = (await handler(event, mockContext, mockCallback)) as APIGatewayProxyResult;
 
 			expect(result.statusCode).toBe(400);
-			expect(JSON.parse(result.body)).toEqual({ error: 'Invalid or expired verification link' });
+			expect(result.headers?.['Content-Type']).toBe('text/html; charset=utf-8');
+			expect(result.body).toContain('<!DOCTYPE html>');
+			expect(result.body).toContain('Invalid Link');
 		});
 
 		it('returns 200 when link is clicked twice (conditional put fails)', async () => {
@@ -158,7 +164,9 @@ const runVerifyHandlerTests = (name: string, handler: VerifyHandler) => {
 
 			const result = (await handler(event, mockContext, mockCallback)) as APIGatewayProxyResult;
 			expect(result.statusCode).toBe(200);
-			expect(JSON.parse(result.body)).toEqual({ message: 'Email already verified.' });
+			expect(result.headers?.['Content-Type']).toBe('text/html; charset=utf-8');
+			expect(result.body).toContain('<!DOCTYPE html>');
+			expect(result.body).toContain('Already Verified');
 		});
 	});
 };
