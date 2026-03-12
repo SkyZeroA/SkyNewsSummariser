@@ -1,6 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 
-const isAllowedOrigin = (origin?: string) => {
+export const isAllowedOrigin = (origin?: string) => {
 	if (!origin) {
 		return false;
 	}
@@ -20,6 +20,7 @@ export const buildCorsHeaders = (event: APIGatewayProxyEvent) => {
 	return {
 		'Access-Control-Allow-Origin': origin!,
 		'Access-Control-Allow-Credentials': 'true',
+		'Content-Type': 'application/json',
 	};
 };
 
@@ -43,21 +44,4 @@ export const handlePreflight = (event: APIGatewayProxyEvent): APIGatewayProxyRes
 		},
 		body: '',
 	};
-};
-
-export const getAuthToken = (event: Pick<APIGatewayProxyEvent, 'headers'>): string | null => {
-	const rawCookie = event.headers.cookie || event.headers.Cookie;
-	if (!rawCookie) {
-		return null;
-	}
-
-	for (const part of rawCookie.split(';')) {
-		const cookie = part.trim();
-		if (cookie.startsWith('authToken=')) {
-			const token = cookie.slice('authToken='.length);
-			return token || null;
-		}
-	}
-
-	return null;
 };

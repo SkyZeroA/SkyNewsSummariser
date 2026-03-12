@@ -24,13 +24,13 @@ vi.mock('@aws-sdk/lib-dynamodb', () => ({
 	UpdateCommand: vi.fn((params) => params),
 }));
 
-vi.mock('@lib/lambdas/utils.ts', () => ({
+vi.mock('@lib/common/cors.ts', () => ({
 	buildCorsHeaders: mockBuildCorsHeaders,
 	handlePreflight: mockHandlePreflight,
 }));
 
 import { handler as subscribeVerifyHandler } from '@lib/lambdas/subscribe/subscribe.ts';
-import { signVerificationToken } from '@lib/lambdas/subscribe/verificationToken.ts';
+import { signVerificationToken } from '@lib/common/verify.ts';
 
 type VerifyHandler = (event: APIGatewayProxyEvent, context: Context, callback: unknown) => Promise<APIGatewayProxyResult>;
 
@@ -106,7 +106,7 @@ const runVerifyHandlerTests = (name: string, handler: VerifyHandler) => {
 				expect.objectContaining({
 					TableName: 'test-subscribers-table',
 					Key: {
-						email: 'test@example.com',
+						email: 'Test@Example.com',
 					},
 					UpdateExpression: 'SET #status = :active, createdAt = :now',
 					ExpressionAttributeNames: {

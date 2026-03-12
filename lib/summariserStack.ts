@@ -91,6 +91,7 @@ export class SummariserStack extends Stack {
 				stageName: props.stage,
 			},
 		});
+		this.apiUrl = restApi.url;
 
 		const authResource = restApi.root.addResource('auth');
 		const loginResource = authResource.addResource('login');
@@ -348,7 +349,5 @@ export class SummariserStack extends Stack {
 				proxy: true,
 			})
 		);
-
-		this.apiUrl = restApi.url;
 	}
 }

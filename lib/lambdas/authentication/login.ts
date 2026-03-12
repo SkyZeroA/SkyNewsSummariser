@@ -3,8 +3,9 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand } from '@aws-sdk/lib-dynamodb';
 import { compare } from 'bcryptjs';
 import { sign } from 'jsonwebtoken';
-import { buildCorsHeaders, handlePreflight } from '@lib/lambdas/utils.ts';
+import { buildCorsHeaders, handlePreflight } from '@lib/common/cors.ts';
 import { ADMIN_TABLE_NAME } from '@lib/common/constants.ts';
+import { User } from '@lib/common/interfaces.ts';
 
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
@@ -31,8 +32,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 			};
 		}
 
-		const body = JSON.parse(event.body);
-		const { email, password } = body;
+		const { email, password } = JSON.parse(event.body);
 		if (!email || !password) {
 			return {
 				statusCode: 400,
@@ -60,9 +60,9 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 			};
 		}
 
-		const userData = {
+		const userData: User = {
 			email: user.email,
-			name: user.Name,
+			name: user.name,
 		};
 
 		const jwt_secret = process.env.JWT_SECRET;
@@ -75,10 +75,12 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
 		return {
 			statusCode: 200,
-			body: JSON.stringify({ success: true, user: userData }),
+			body: JSON.stringify({
+				success: true,
+				user: userData,
+			}),
 			headers: {
 				...corsHeaders,
-				'Content-Type': 'application/json',
 				'Set-Cookie': `authToken=${token}; HttpOnly; Path=/; Max-Age=${60 * 60 * 24 * 7}; SameSite=None; Secure`,
 			},
 		};

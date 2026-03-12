@@ -1,5 +1,5 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { buildCorsHeaders, handlePreflight } from '@lib/lambdas/utils.ts';
+import { buildCorsHeaders, handlePreflight } from '@lib/common/cors.ts';
 
 // eslint-disable require-await
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
@@ -9,7 +9,10 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
 	const corsHeaders = buildCorsHeaders(event);
 	if (!corsHeaders) {
-		return { statusCode: 403, body: 'Forbidden' };
+		return {
+			statusCode: 403,
+			body: 'Forbidden',
+		};
 	}
 
 	try {
@@ -17,7 +20,6 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 			statusCode: 200,
 			headers: {
 				...corsHeaders,
-				'Content-Type': 'application/json',
 				'Set-Cookie': 'authToken=; HttpOnly; Path=/; Max-Age=0; SameSite=None; Secure',
 			},
 			body: JSON.stringify({

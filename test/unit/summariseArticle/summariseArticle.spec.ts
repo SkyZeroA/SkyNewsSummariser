@@ -44,15 +44,12 @@ describe('summariseArticles.handler', () => {
 
 		await handler(event as any, {} as any, vi.fn() as any);
 
-		expect(PutObjectCommand).toHaveBeenCalledTimes(2);
+		expect(PutObjectCommand).toHaveBeenCalledTimes(1);
 
 		const firstCallArg = (PutObjectCommand as any).mock.calls[0][0];
 		expect(firstCallArg.Bucket).toBe('test-bucket');
 		expect(firstCallArg.ContentType).toBe('application/json');
-		const secondCallArg = (PutObjectCommand as any).mock.calls[1][0];
-		expect(secondCallArg.Bucket).toBe('test-bucket');
-		expect(secondCallArg.ContentType).toBe('application/json');
-		expect(secondCallArg.Key).toBe('draft-summary.json');
+		expect(firstCallArg.Key).toBe('draft-summary.json');
 
 		const body = JSON.parse(firstCallArg.Body);
 		expect(body.summaryText).toEqual(expect.any(String));
@@ -67,16 +64,25 @@ describe('summariseArticles.handler', () => {
 		delete process.env.HUGGINGFACE_API_KEY;
 		delete process.env.DRAFT_SUMMARY_BUCKET_NAME;
 		const event = { articles: [] };
-		await expect(handler(event as any, {} as any, vi.fn() as any)).rejects.toThrow('HUGGINGFACE_API_KEY environment variable is required.');
+		await expect(handler(event as any, {} as any, vi.fn() as any)).resolves.toEqual({
+			statusCode: 500,
+			body: JSON.stringify({ error: 'Server misconfigured: HUGGINGFACE_API_KEY is missing' }),
+		});
 		process.env.HUGGINGFACE_API_KEY = 'x';
-		await expect(handler(event as any, {} as any, vi.fn() as any)).rejects.toThrow('DRAFT_SUMMARY_BUCKET_NAME environment variable is required.');
+		await expect(handler(event as any, {} as any, vi.fn() as any)).resolves.toEqual({
+			statusCode: 500,
+			body: JSON.stringify({ error: 'Server misconfigured: DRAFT_SUMMARY_BUCKET_NAME is missing' }),
+		});
 	});
 
 	it('returns early if no articles', async () => {
 		process.env.HUGGINGFACE_API_KEY = 'fake-key';
 		process.env.DRAFT_SUMMARY_BUCKET_NAME = 'test-bucket';
 		const result = await handler({ articles: [] } as any, {} as any, vi.fn() as any);
-		expect(result).toBeUndefined();
+		expect(result).toEqual({
+			statusCode: 500,
+			body: JSON.stringify({ error: 'No articles provided to summarise' }),
+		});
 		expect(PutObjectCommand).not.toHaveBeenCalled();
 	});
 
