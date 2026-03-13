@@ -86,9 +86,9 @@ const runVerifyHandlerTests = (name: string, handler: VerifyHandler) => {
 			const result = (await handler(event, mockContext, mockCallback)) as APIGatewayProxyResult;
 
 			expect(result.statusCode).toBe(400);
-			expect(result.headers?.['Content-Type']).toBe('text/html; charset=utf-8');
-			expect(result.body).toContain('<!DOCTYPE html>');
-			expect(result.body).toContain('Missing Token');
+			expect(result.headers?.['Content-Type']).toBe('application/json');
+			const body = JSON.parse(result.body);
+			expect(body.error).toBe('Missing token');
 		});
 
 		it('verifies when origin header is absent (email link click)', async () => {
@@ -151,9 +151,9 @@ const runVerifyHandlerTests = (name: string, handler: VerifyHandler) => {
 			const result = (await handler(event, mockContext, mockCallback)) as APIGatewayProxyResult;
 
 			expect(result.statusCode).toBe(400);
-			expect(result.headers?.['Content-Type']).toBe('text/html; charset=utf-8');
-			expect(result.body).toContain('<!DOCTYPE html>');
-			expect(result.body).toContain('Invalid Link');
+			expect(result.headers?.['Content-Type']).toBe('application/json');
+			const body = JSON.parse(result.body);
+			expect(body.error).toBe('Invalid or expired verification link');
 		});
 
 		it('returns 200 when link is clicked twice (conditional put fails)', async () => {

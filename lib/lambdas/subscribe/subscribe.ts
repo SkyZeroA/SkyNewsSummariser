@@ -36,52 +36,52 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 	try {
 		if (!process.env.SUBSCRIBERS_TABLE) {
 			console.error('SUBSCRIBERS_TABLE environment variable is not set');
-			return htmlResponse({
+			return {
 				statusCode: 500,
-				body: renderPage({
-					title: 'Configuration Error',
-					message: 'We encountered a server configuration error. Please try again later or contact support.',
-					isSuccess: false,
-				}),
-			});
+				headers: {
+					...corsHeaders,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ error: 'Server configuration error' }),
+			};
 		}
 
 		const tokenParam = event.queryStringParameters?.token;
 
 		if (!tokenParam) {
-			return htmlResponse({
+			return {
 				statusCode: 400,
-				body: renderPage({
-					title: 'Missing Token',
-					message: 'The verification link is incomplete. Please check your email and click the verification link again.',
-					isSuccess: false,
-				}),
-			});
+				headers: {
+					...corsHeaders,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ error: 'Missing token' }),
+			};
 		}
 
 		if (!process.env.VERIFICATION_SECRET) {
 			console.error('VERIFICATION_SECRET environment variable is not set');
-			return htmlResponse({
+			return {
 				statusCode: 500,
-				body: renderPage({
-					title: 'Configuration Error',
-					message: 'We encountered a server configuration error. Please try again later or contact support.',
-					isSuccess: false,
-				}),
-			});
+				headers: {
+					...corsHeaders,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ error: 'Server configuration error' }),
+			};
 		}
 
 		const token = tokenParam.trim();
 		const decoded = verifyAndDecodeToken(token, process.env.VERIFICATION_SECRET);
 		if (!decoded) {
-			return htmlResponse({
+			return {
 				statusCode: 400,
-				body: renderPage({
-					title: 'Invalid Link',
-					message: 'This verification link is invalid or has expired. Please request a new verification email.',
-					isSuccess: false,
-				}),
-			});
+				headers: {
+					...corsHeaders,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ error: 'Invalid or expired verification link' }),
+			};
 		}
 
 		const normalizedEmail = decoded.email.trim().toLowerCase();
@@ -133,14 +133,13 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 			});
 		}
 
-		return htmlResponse({
+		return {
 			statusCode: 500,
-			body: renderPage({
-				title: 'Something Went Wrong',
-				message:
-					'We encountered an unexpected error while processing your request. Please try again later or contact support if the problem persists.',
-				isSuccess: false,
-			}),
-		});
+			headers: {
+				...corsHeaders,
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({ error: 'Internal server error' }),
+		};
 	}
 };
