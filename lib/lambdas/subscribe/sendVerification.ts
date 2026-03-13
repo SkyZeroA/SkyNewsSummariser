@@ -39,19 +39,26 @@ const sendVerificationEmail = async ({ to, verificationUrl }: { to: string; veri
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Confirm your subscription</title>
+	<!--[if mso]>
+	<style type="text/css">
+		body, table, td {font-family: Arial, Helvetica, sans-serif !important;}
+	</style>
+	<![endif]-->
 </head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
-	<table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f5f5f5;">
+<body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #f5f5f5;">
+	<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f5f5f5;">
 		<tr>
 			<td align="center" style="padding: 40px 20px;">
-				<table role="presentation" style="max-width: 600px; width: 100%; border-collapse: collapse; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-					<!-- Header with Sky News branding -->
+				<!-- Main container -->
+				<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width: 600px; background-color: #ffffff;">
+
+					<!-- Header -->
 					<tr>
-						<td style="background: linear-gradient(135deg, #0057a0 0%, #003d73 100%); padding: 40px 30px; text-align: center; border-radius: 8px 8px 0 0;">
-							<h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">
+						<td align="center" style="background-color: #0057a0; padding: 40px 30px;">
+							<h1 style="margin: 0; padding: 0; color: #ffffff; font-size: 28px; font-weight: bold; font-family: Arial, Helvetica, sans-serif;">
 								Sky News Summariser
 							</h1>
-							<p style="margin: 10px 0 0 0; color: #e0f0ff; font-size: 14px; font-weight: 400;">
+							<p style="margin: 10px 0 0 0; padding: 0; color: #ffffff; font-size: 14px; font-family: Arial, Helvetica, sans-serif;">
 								Stay informed with AI-powered news summaries
 							</p>
 						</td>
@@ -59,53 +66,79 @@ const sendVerificationEmail = async ({ to, verificationUrl }: { to: string; veri
 
 					<!-- Main content -->
 					<tr>
-						<td style="padding: 40px 30px;">
-							<h2 style="margin: 0 0 20px 0; color: #1a1a1a; font-size: 24px; font-weight: 600;">
+						<td style="padding: 40px 30px; background-color: #ffffff;">
+							<h2 style="margin: 0 0 20px 0; padding: 0; color: #000000; font-size: 22px; font-weight: bold; font-family: Arial, Helvetica, sans-serif;">
 								Confirm your subscription
 							</h2>
-							<p style="margin: 0 0 20px 0; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
+							<p style="margin: 0 0 20px 0; padding: 0; color: #333333; font-size: 16px; line-height: 24px; font-family: Arial, Helvetica, sans-serif;">
 								Thank you for subscribing to Sky News Summariser! You're one step away from receiving daily AI-powered news summaries delivered straight to your inbox.
 							</p>
-							<p style="margin: 0 0 30px 0; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
+							<p style="margin: 0 0 30px 0; padding: 0; color: #333333; font-size: 16px; line-height: 24px; font-family: Arial, Helvetica, sans-serif;">
 								Click the button below to confirm your email address and activate your subscription:
 							</p>
 
 							<!-- CTA Button -->
-							<table role="presentation" style="width: 100%; border-collapse: collapse;">
+							<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
 								<tr>
 									<td align="center" style="padding: 0 0 30px 0;">
-										<a href="${verificationUrl}" style="display: inline-block; background: linear-gradient(135deg, #0057a0 0%, #003d73 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 6px; font-size: 16px; font-weight: 600; box-shadow: 0 4px 12px rgba(0, 87, 160, 0.3);">
-											Confirm Subscription
-										</a>
+										<table role="presentation" cellpadding="0" cellspacing="0" border="0">
+											<tr>
+												<td align="center" style="background-color: #0057a0; border-radius: 4px;">
+													<a href="${verificationUrl}" target="_blank" style="display: inline-block; padding: 16px 40px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: bold; font-family: Arial, Helvetica, sans-serif;">
+														Confirm Subscription
+													</a>
+												</td>
+											</tr>
+										</table>
 									</td>
 								</tr>
 							</table>
 
 							<!-- Alternative link -->
-							<p style="margin: 0 0 20px 0; color: #6a6a6a; font-size: 14px; line-height: 1.6;">
+							<p style="margin: 0 0 10px 0; padding: 0; color: #666666; font-size: 14px; line-height: 20px; font-family: Arial, Helvetica, sans-serif;">
 								If the button doesn't work, copy and paste this link into your browser:
 							</p>
-							<p style="margin: 0 0 30px 0; padding: 15px; background-color: #f8f9fa; border-left: 3px solid #0057a0; border-radius: 4px; word-break: break-all;">
-								<a href="${verificationUrl}" style="color: #0057a0; text-decoration: none; font-size: 13px;">
+							<p style="margin: 0 0 30px 0; padding: 12px; background-color: #f5f5f5; border-left: 4px solid #0057a0; word-break: break-all;">
+								<a href="${verificationUrl}" target="_blank" style="color: #0057a0; text-decoration: underline; font-size: 13px; font-family: Arial, Helvetica, sans-serif;">
 									${verificationUrl}
 								</a>
 							</p>
 
-							<!-- What to expect -->
-							<div style="background-color: #f0f7ff; border-radius: 6px; padding: 20px; margin: 0 0 20px 0;">
-								<h3 style="margin: 0 0 12px 0; color: #0057a0; font-size: 16px; font-weight: 600;">
-									📰 What to expect:
-								</h3>
-								<ul style="margin: 0; padding: 0 0 0 20px; color: #4a4a4a; font-size: 14px; line-height: 1.8;">
-									<li>Daily curated news summaries</li>
-									<li>AI-powered insights from Sky News</li>
-									<li>Delivered straight to your inbox</li>
-									<li>Unsubscribe anytime with one click</li>
-								</ul>
-							</div>
+							<!-- What to expect box -->
+							<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 0 0 20px 0;">
+								<tr>
+									<td style="padding: 20px; background-color: #f0f7ff; border: 1px solid #d0e7ff;">
+										<p style="margin: 0 0 12px 0; padding: 0; color: #0057a0; font-size: 16px; font-weight: bold; font-family: Arial, Helvetica, sans-serif;">
+											What to expect:
+										</p>
+										<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+											<tr>
+												<td style="padding: 4px 0; color: #333333; font-size: 14px; line-height: 22px; font-family: Arial, Helvetica, sans-serif;">
+													• Daily curated news summaries
+												</td>
+											</tr>
+											<tr>
+												<td style="padding: 4px 0; color: #333333; font-size: 14px; line-height: 22px; font-family: Arial, Helvetica, sans-serif;">
+													• AI-powered insights from Sky News
+												</td>
+											</tr>
+											<tr>
+												<td style="padding: 4px 0; color: #333333; font-size: 14px; line-height: 22px; font-family: Arial, Helvetica, sans-serif;">
+													• Delivered straight to your inbox
+												</td>
+											</tr>
+											<tr>
+												<td style="padding: 4px 0; color: #333333; font-size: 14px; line-height: 22px; font-family: Arial, Helvetica, sans-serif;">
+													• Unsubscribe anytime with one click
+												</td>
+											</tr>
+										</table>
+									</td>
+								</tr>
+							</table>
 
 							<!-- Security notice -->
-							<p style="margin: 0; color: #8a8a8a; font-size: 13px; line-height: 1.6;">
+							<p style="margin: 0; padding: 0; color: #666666; font-size: 13px; line-height: 20px; font-family: Arial, Helvetica, sans-serif;">
 								<strong>Didn't request this?</strong> You can safely ignore this email. Your email address will not be added to our mailing list unless you click the confirmation button above.
 							</p>
 						</td>
@@ -113,15 +146,16 @@ const sendVerificationEmail = async ({ to, verificationUrl }: { to: string; veri
 
 					<!-- Footer -->
 					<tr>
-						<td style="background-color: #f8f9fa; padding: 30px; text-align: center; border-radius: 0 0 8px 8px; border-top: 1px solid #e0e0e0;">
-							<p style="margin: 0 0 10px 0; color: #6a6a6a; font-size: 13px;">
+						<td align="center" style="padding: 30px; background-color: #f5f5f5; border-top: 1px solid #e0e0e0;">
+							<p style="margin: 0 0 10px 0; padding: 0; color: #666666; font-size: 13px; font-family: Arial, Helvetica, sans-serif;">
 								This verification link will expire in 24 hours.
 							</p>
-							<p style="margin: 0; color: #8a8a8a; font-size: 12px;">
-								© ${new Date().getFullYear()} Sky News Summariser. All rights reserved.
+							<p style="margin: 0; padding: 0; color: #999999; font-size: 12px; font-family: Arial, Helvetica, sans-serif;">
+								&copy; ${new Date().getFullYear()} Sky News Summariser. All rights reserved.
 							</p>
 						</td>
 					</tr>
+
 				</table>
 			</td>
 		</tr>
