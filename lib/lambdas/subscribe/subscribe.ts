@@ -3,9 +3,19 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { buildCorsHeaders, handlePreflight } from '@lib/lambdas/utils.ts';
 import { verifyAndDecodeToken } from '@lib/lambdas/subscribe/verificationToken.ts';
+import { renderPage } from '@lib/lambdas/subscribe/utils.ts';
 
 const client = new DynamoDBClient({});
 const db = DynamoDBDocumentClient.from(client);
+
+const htmlResponse = ({ statusCode, body }: { statusCode: number; body: string }): APIGatewayProxyResult => ({
+	statusCode,
+	headers: {
+		'Content-Type': 'text/html; charset=utf-8',
+		'Cache-Control': 'no-store',
+	},
+	body,
+});
 
 export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
 	if (event.httpMethod === 'OPTIONS') {
@@ -96,14 +106,14 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 			})
 		);
 
-		return {
+		return htmlResponse({
 			statusCode: 200,
-			headers: {
-				...corsHeaders,
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify({ message: 'Email verified. Subscription is now active.' }),
-		};
+			body: renderPage({
+				title: 'Subscription Confirmed!',
+				message: 'Your email has been verified successfully. You will now receive daily Sky News summaries in your inbox every morning.',
+				isSuccess: true,
+			}),
+		});
 	} catch (error) {
 		const errorName =
 			error && typeof error === 'object' && 'name' in error && typeof (error as { name?: unknown }).name === 'string'
@@ -113,14 +123,14 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 
 		// Clicking a verification link twice should not surface as a 500.
 		if (errorName === 'ConditionalCheckFailedException') {
-			return {
+			return htmlResponse({
 				statusCode: 200,
-				headers: {
-					...corsHeaders,
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({ message: 'Email already verified.' }),
-			};
+				body: renderPage({
+					title: 'Already Verified',
+					message: 'Your email has already been verified. You are all set to receive daily Sky News summaries!',
+					isSuccess: true,
+				}),
+			});
 		}
 
 		return {
