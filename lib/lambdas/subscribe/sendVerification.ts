@@ -3,6 +3,7 @@ import { buildCorsHeaders, handlePreflight } from '@lib/lambdas/utils.ts';
 import { signVerificationToken } from '@lib/lambdas/subscribe/verificationToken.ts';
 import { sendMail } from '@lib/lambdas/email/utils.ts';
 import { EMAIL_REGEX, TOKEN_TTL_MS } from '@lib/common/constants.ts';
+import { getVerificationEmailHtml } from '@lib/lambdas/subscribe/utils.ts';
 
 const getBaseUrlFromEvent = (event: APIGatewayProxyEvent): string | null => {
 	const headers = event.headers || {};
@@ -32,11 +33,7 @@ const sendVerificationEmail = async ({ to, verificationUrl }: { to: string; veri
 
 	const subject = 'Confirm your Sky News Summariser subscription';
 	const text = `Confirm your subscription by clicking this link:\n\n${verificationUrl}\n\nIf you did not request this, you can ignore this email.`;
-	const html = `
-				<p>Confirm your subscription by clicking this link:</p>
-				<p><a href="${verificationUrl}">${verificationUrl}</a></p>
-				<p>If you did not request this, you can ignore this email.</p>
-				`;
+	const html = getVerificationEmailHtml(verificationUrl);
 
 	await sendMail(to, subject, text, html);
 };
