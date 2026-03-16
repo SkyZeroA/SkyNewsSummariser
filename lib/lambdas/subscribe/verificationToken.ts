@@ -1,5 +1,9 @@
 import crypto from 'node:crypto';
-import { VerificationTokenPayload } from '@lib/common/interfaces.ts';
+
+import { parseSubscriberLanguage } from '@lib/lambdas/subscribe/language.ts';
+import type { VerificationTokenPayload } from '@lib/common/interfaces.ts';
+
+type SubscriberLanguage = import('@lib/lambdas/subscribe/language.ts').SubscriberLanguage;
 
 const base64UrlEncode = (input: string | Buffer): string => {
 	const buf = typeof input === 'string' ? Buffer.from(input, 'utf8') : input;
@@ -20,7 +24,7 @@ export const signVerificationToken = (payload: VerificationTokenPayload, secret:
 	return `${body}.${base64UrlEncode(sig)}`;
 };
 
-export const verifyAndDecodeToken = (token: string, secret: string): { email: string } | null => {
+export const verifyAndDecodeToken = (token: string, secret: string): { email: string; language?: SubscriberLanguage } | null => {
 	const [body, sig] = token.split('.');
 	if (!body || !sig) {
 		return null;
@@ -46,7 +50,7 @@ export const verifyAndDecodeToken = (token: string, secret: string): { email: st
 		return null;
 	}
 
-	const { email, exp } = parsed as { email?: unknown; exp?: unknown };
+	const { email, exp, language } = parsed as { email?: unknown; exp?: unknown; language?: unknown };
 	if (typeof email !== 'string' || typeof exp !== 'number') {
 		return null;
 	}
@@ -54,5 +58,6 @@ export const verifyAndDecodeToken = (token: string, secret: string): { email: st
 		return null;
 	}
 
-	return { email };
+	const parsedLanguage = parseSubscriberLanguage(language);
+	return parsedLanguage ? { email, language: parsedLanguage } : { email };
 };
