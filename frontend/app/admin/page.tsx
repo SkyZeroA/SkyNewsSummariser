@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Card, CardBody, CardHeader, Button, Textarea, Link } from "@heroui/react";
 import { ComprehensiveSummary } from "@/types/summary";
 import { useConfig } from "@/app/providers";
+import { Skeleton, SourceArticleListSkeleton } from "@/components/SkeletonLoader";
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -101,14 +102,56 @@ export default function AdminDashboard() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center animate-fadeIn">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading summary...</p>
+      <div className="max-w-[1400px] mx-auto px-6 py-8">
+        {/* Header Skeleton */}
+        <div className="mb-8 animate-fadeIn">
+          <Skeleton className="h-10 w-64 mb-2" />
+          <Skeleton className="h-5 w-96" />
+        </div>
+
+        {/* Content Skeleton */}
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            {/* Summary Editor Skeleton */}
+            <Card className="overflow-hidden animate-slideUp h-full flex flex-col">
+              <CardHeader className="px-6 pt-6 pb-4 border-b border-gray-200 dark:border-gray-700">
+                <Skeleton className="h-7 w-56" />
+              </CardHeader>
+              <CardBody className="px-6 py-6 flex-1 flex flex-col">
+                <div className="space-y-4">
+                  <Skeleton className="h-6 w-32" />
+                  <div className="space-y-3">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-5/6" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-4/5" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-3/4" />
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+
+            {/* Source Articles Skeleton */}
+            <Card className="overflow-hidden animate-slideUp h-full flex flex-col" style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
+              <CardHeader className="px-6 pt-6 pb-4 border-b border-gray-200 dark:border-gray-700">
+                <Skeleton className="h-6 w-48" />
+              </CardHeader>
+              <CardBody className="px-6 py-6 flex-1">
+                <SourceArticleListSkeleton count={5} />
+              </CardBody>
+            </Card>
+          </div>
+
+          {/* Action Buttons Skeleton */}
+          <div className="flex gap-4 justify-center animate-fadeIn" style={{ animationDelay: '0.4s', animationFillMode: 'both' }}>
+            <Skeleton className="h-12 w-32 rounded-lg" />
+          </div>
         </div>
       </div>
     );
-}  return (
+  }  return (
     <div className="max-w-[1400px] mx-auto px-6 py-8">
       {/* Header */}
       <div className="mb-8 animate-fadeIn">
@@ -123,17 +166,17 @@ export default function AdminDashboard() {
       {summary ? (
         <div className="space-y-6">
           {/* Two Column Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
             {/* Main Summary Editor */}
-            <Card className="overflow-hidden animate-slideUp h-full flex flex-col" style={{ animationDelay: '0.1s', animationFillMode: 'both' }}>
+            <Card className="overflow-hidden animate-slideUp flex flex-col" style={{ animationDelay: '0.1s', animationFillMode: 'both' }}>
               <CardHeader className="px-6 pt-6 pb-4 border-b border-gray-200 dark:border-gray-700">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                   Comprehensive Summary
                 </h2>
               </CardHeader>
-              <CardBody className="px-6 py-6 flex-1 flex flex-col">
-                <div className="flex flex-col gap-6 flex-1">
-                  <div className="animate-fadeIn flex-1 flex flex-col" style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
+              <CardBody className="px-6 py-6 flex-1 flex flex-col min-h-0">
+                <div className="flex flex-col gap-6 flex-1 min-h-0">
+                  <div className="animate-fadeIn flex-1 flex flex-col min-h-0" style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
                     <Textarea
                       label="Summary Text"
                       placeholder="Edit the comprehensive summary..."
@@ -141,12 +184,12 @@ export default function AdminDashboard() {
                       onValueChange={setEditedSummary}
                       variant="bordered"
                       minRows={0}
-                      maxRows={20}
+                      maxRows={45}
                       classNames={{
-                        base: "flex-1",
-                        input: "text-gray-900 dark:text-white text-base leading-relaxed overflow-hidden resize-none",
+                        base: "flex-1 flex flex-col min-h-0",
+                        input: "text-gray-900 dark:text-white text-base leading-relaxed resize-none overflow-y-auto flex-1",
                         label: "text-gray-700 dark:text-gray-300 text-lg font-semibold",
-                        inputWrapper: "transition-all duration-300 hover:border-blue-400 dark:hover:border-blue-500 h-full min-h-[600px]",
+                        inputWrapper: "transition-all duration-300 hover:border-blue-400 dark:hover:border-blue-500 flex-1 flex flex-col min-h-0",
                       }}
                     />
                   </div>
@@ -166,7 +209,7 @@ export default function AdminDashboard() {
             </Card>
 
             {/* Source Articles */}
-            <Card className="overflow-hidden animate-slideUp h-full flex flex-col" style={{ animationDelay: '0.3s', animationFillMode: 'both' }}>
+            <Card className="overflow-hidden animate-slideUp flex flex-col" style={{ animationDelay: '0.3s', animationFillMode: 'both' }}>
               <CardHeader className="px-6 pt-6 pb-4 border-b border-gray-200 dark:border-gray-700">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                   Source Articles ({summary.sourceArticles.length})

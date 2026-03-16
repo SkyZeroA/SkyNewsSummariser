@@ -23,11 +23,21 @@ const config: Config = {
           '0%': { opacity: '0', transform: 'scale(0.95)' },
           '100%': { opacity: '1', transform: 'scale(1)' },
         },
+        shimmer: {
+          '0%': { backgroundPosition: '-1000px 0' },
+          '100%': { backgroundPosition: '1000px 0' },
+        },
+        pulse: {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.5' },
+        },
       },
       animation: {
         fadeIn: 'fadeIn 0.5s ease-out',
         slideUp: 'slideUp 0.6s ease-out',
         scaleIn: 'scaleIn 0.4s ease-out',
+        shimmer: 'shimmer 2s infinite linear',
+        pulse: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
       },
     },
   },

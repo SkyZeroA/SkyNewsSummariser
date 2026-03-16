@@ -15,6 +15,7 @@ export default function AdminLoginPage() {
       console.error("API URL not available");
       return;
     }
+    
     const response = await fetch(`${apiUrl}auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
