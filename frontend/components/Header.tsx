@@ -245,7 +245,8 @@ export default function Header() {
             isLoggedIn ? (
               <div className="flex items-center gap-3">
                 <span className="text-sm text-gray-700 dark:text-gray-300">
-                  Welcome, <span className="font-semibold">{userName}</span>
+                  {/* Welcome, <span className="font-semibold">{userName}</span> */}
+                   Welcome, <span className="font-semibold">Admin</span>
                 </span>
                 <Link href="/admin" className="text-sm transition-all duration-300 hover:scale-105">
                   <Button
